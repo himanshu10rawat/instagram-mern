@@ -9,6 +9,7 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
+import createNotification from "../utils/createNotification.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 
@@ -145,7 +146,7 @@ export const likePost = asyncHandler(async (req, res) => {
 
   validateObjectId(postId, "Invalid post id");
 
-  const post = await Post.findByIdAndUpdate(
+  const post = await Post.findOneAndUpdate(
     {
       _id: postId,
       isDeleted: false,
@@ -162,6 +163,13 @@ export const likePost = asyncHandler(async (req, res) => {
   if (!post) {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Post not found or already liked");
   }
+
+  await createNotification({
+    sender: req.user._id,
+    receiver: post.author,
+    type: "like",
+    post: post._id,
+  });
 
   res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Post liked successfully"));
 });
@@ -261,6 +269,14 @@ export const addComment = asyncHandler(async (req, res) => {
   await post.save();
 
   const createdComment = await Comment.findById(comment._id).populate("author", userPublicFields);
+
+  await createNotification({
+    sender: req.user._id,
+    receiver: post.author,
+    type: "comment",
+    post: post._id,
+    comment: comment._id,
+  });
 
   res
     .status(HTTP_STATUS.CREATED)

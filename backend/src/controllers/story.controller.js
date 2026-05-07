@@ -8,6 +8,7 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
+import createNotification from "../utils/createNotification.js";
 
 const userPublicFields = "username fullname avatar isVerified isPrivate followers closeFriends";
 
@@ -235,6 +236,13 @@ export const likeStory = asyncHandler(async (req, res) => {
   story.likes.push(req.user._id);
   await story.save();
 
+  await createNotification({
+    sender: req.user._id,
+    receiver: story.author._id,
+    type: "story_like",
+    story: story._id,
+  });
+
   res
     .status(HTTP_STATUS.Ok)
     .json(new ApiResponse(HTTP_STATUS.Ok, null, "Story liked successfully"));
@@ -288,6 +296,13 @@ export const replyToStory = asyncHandler(async (req, res) => {
   });
 
   await story.save();
+
+  await createNotification({
+    sender: req.user._id,
+    receiver: story.author._id,
+    type: "story_reply",
+    story: story._id,
+  });
 
   res
     .status(HTTP_STATUS.CREATED)

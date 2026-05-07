@@ -13,6 +13,7 @@ import followRoutes from "./routes/follow.routes.js";
 import postRoutes from "./routes/post.routes.js";
 import storyRoutes from "./routes/story.routes.js";
 import closeFriendRoutes from "./routes/closeFriend.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use("/api/v1/follow", followRoutes);
 app.use("/api/v1/posts", postRoutes);
 app.use("/api/v1/stories", storyRoutes);
 app.use("/api/v1/close-friends", closeFriendRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

@@ -6,6 +6,7 @@ import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import createNotification from "../utils/createNotification.js";
 
 const userPublicFields = "username fullname avatar bio isPrivate isVerified";
 
@@ -68,6 +69,12 @@ export const followUser = asyncHandler(async (req, res) => {
       receiver: userId,
     });
 
+    await createNotification({
+      sender: currentUserId,
+      receiver: userId,
+      type: "follow_request",
+    });
+
     return res
       .status(HTTP_STATUS.CREATED)
       .json(new ApiResponse(HTTP_STATUS.CREATED, followRequest, "Follow request sent"));
@@ -79,6 +86,12 @@ export const followUser = asyncHandler(async (req, res) => {
 
   await User.findByIdAndUpdate(userId, {
     $addToSet: { followers: currentUserId },
+  });
+
+  await createNotification({
+    sender: currentUserId,
+    receiver: userId,
+    type: targetUser.isPrivate ? "follow_request" : "follow",
   });
 
   return res
