@@ -1,0 +1,75 @@
+import mongoose from "mongoose";
+
+const reportSchema = new mongoose.Schema(
+  {
+    reporter: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+
+    reportedUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    post: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Post",
+    },
+
+    reel: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Reel",
+    },
+
+    comment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Comment",
+    },
+
+    type: {
+      type: String,
+      enum: ["user", "post", "reel", "comment"],
+      required: true,
+      index: true,
+    },
+
+    reason: {
+      type: String,
+      enum: [
+        "spam",
+        "nudity",
+        "hate_speech",
+        "violence",
+        "harassment",
+        "false_information",
+        "scam",
+        "other",
+      ],
+      required: true,
+    },
+
+    description: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: "",
+    },
+
+    status: {
+      type: String,
+      enum: ["pending", "reviewed", "resolved", "dismissed"],
+      default: "pending",
+      index: true,
+    },
+  },
+  {
+    timeStamps: true,
+  },
+);
+
+const Report = mongoose.model("Report", reportSchema);
+
+export default Report;
