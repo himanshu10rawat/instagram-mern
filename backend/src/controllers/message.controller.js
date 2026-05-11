@@ -8,6 +8,8 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
+import { getIO } from "../socket/socket.js";
+import { getUserSocket } from "../socket/onlineUsers.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 const messagePopulate = [
@@ -104,6 +106,14 @@ export const sendMessage = asyncHandler(async (req, res) => {
   await conversation.save();
 
   const populatedMessage = await Message.findById(message._id).populate(messagePopulate);
+
+  const io = getIO();
+
+  const receiverSocketId = getUserSocket(receiverId);
+
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("receive_message", populatedMessage);
+  }
 
   res
     .status(HTTP_STATUS.CREATED)
@@ -203,6 +213,21 @@ export const markConversationAsSeen = asyncHandler(async (req, res) => {
       },
     },
   );
+
+  const io = getIO();
+
+  conversation.participants.forEach((participantId) => {
+    if (participantId.toString() !== req.user._id.toString()) {
+      const participantSocketId = getUserSocket(participantId);
+
+      if (participantSocketId) {
+        io.to(participantSocketId).emit("messages_seen", {
+          conversationId,
+          seenBy: req.user._id,
+        });
+      }
+    }
+  });
 
   res
     .status(HTTP_STATUS.OK)
