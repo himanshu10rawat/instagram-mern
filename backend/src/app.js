@@ -21,6 +21,7 @@ import agoraRoutes from "./routes/agora.routes.js";
 import safetyRoutes from "./routes/safety.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import liveRoutes from "./routes/live.routes.js";
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/v1/agora", agoraRoutes);
 app.use("/api/v1/safety", safetyRoutes);
 app.use("/api/v1/settings", settingsRoutes);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/live", liveRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
