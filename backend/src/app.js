@@ -19,6 +19,7 @@ import reelRoutes from "./routes/reel.routes.js";
 import exploreRoutes from "./routes/explore.routes.js";
 import agoraRoutes from "./routes/agora.routes.js";
 import safetyRoutes from "./routes/safety.routes.js";
+import settingsRoutes from "./routes/settings.routes.js";
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use("/api/v1/reels", reelRoutes);
 app.use("/api/v1/explore", exploreRoutes);
 app.use("/api/v1/agora", agoraRoutes);
 app.use("/api/v1/safety", safetyRoutes);
+app.use("/api/v1/settings", settingsRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
