@@ -42,7 +42,7 @@ const reelCommentSchema = new mongoose.Schema(
   },
 );
 
-reelCommentSchema.index({ real: 1, createdAt: -1 });
+reelCommentSchema.index({ reel: 1, createdAt: -1 });
 
 const ReelComment = mongoose.model("ReelComment", reelCommentSchema);
 

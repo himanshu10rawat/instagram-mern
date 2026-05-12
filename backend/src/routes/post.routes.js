@@ -28,7 +28,7 @@ const router = Router();
 router.get("/feed", isAuthenticated, getFeedPosts);
 router.get("/saved", isAuthenticated, getMySavedPosts);
 router.get("/archived", isAuthenticated, getMyArchivedPosts);
-router.get("user/:userId", isAuthenticated, getUserPosts);
+router.get("/user/:userId", isAuthenticated, getUserPosts);
 
 router.post(
   "/",

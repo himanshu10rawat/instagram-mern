@@ -10,6 +10,8 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createNotification from "../utils/createNotification.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
+import { addMediaJob } from "../queues/media.queue.js";
+import { deleteCacheByPattern } from "../utils/cache.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 
@@ -30,6 +32,12 @@ export const createReel = asyncHandler(async (req, res) => {
 
   const uploadedVideo = await uploadToCloudinary(req.file.buffer, "instagram/reels", "video");
 
+  await addMediaJob({
+    type: "video",
+    publicId: uploadedVideo.public_id,
+    url: uploadedVideo.secure_url,
+  });
+
   const reel = await Reel.create({
     author: req.user._id,
     video: {
@@ -37,7 +45,7 @@ export const createReel = asyncHandler(async (req, res) => {
       publicId: uploadedVideo.public_id,
     },
     caption: req.body.caption || "",
-    hashtags: req.body.hashtags || "",
+    hashtags: req.body.hashtags || [],
     audioName: req.body.audioName || "Original Audio",
     location: req.body.location || "",
   });
@@ -142,6 +150,10 @@ export const updateReel = asyncHandler(async (req, res) => {
     },
   ).populate("author", userPublicFields);
 
+  if (!reel) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Reel not found");
+  }
+
   res
     .status(HTTP_STATUS.Ok)
     .json(new ApiResponse(HTTP_STATUS.Ok, reel, "Reel updated successfully"));
@@ -159,7 +171,7 @@ export const deleteReel = asyncHandler(async (req, res) => {
   });
 
   if (!reel) {
-    throw new ApiResponse(HTTP_STATUS.NOT_FOUND, "Reel not found");
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Reel not found");
   }
 
   await cloudinary.uploader.destroy(reel.video.publicId, {
@@ -204,6 +216,9 @@ export const likeReel = asyncHandler(async (req, res) => {
     reel: reel._id,
   });
 
+  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
+  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
+
   res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Reel liked successfully"));
 });
 
@@ -221,6 +236,9 @@ export const unlikeReel = asyncHandler(async (req, res) => {
       $pull: { likes: req.user._id },
     },
   );
+
+  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
+  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
 
   res
     .status(HTTP_STATUS.Ok)
@@ -247,6 +265,9 @@ export const saveReel = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Reel not found");
   }
 
+  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
+  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
+
   res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Reel saved successfully"));
 });
 
@@ -264,6 +285,9 @@ export const unsaveReel = asyncHandler(async (req, res) => {
       $pull: { savedBy: req.user._id },
     },
   );
+
+  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
+  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
 
   res
     .status(HTTP_STATUS.Ok)
@@ -291,6 +315,9 @@ export const viewReel = asyncHandler(async (req, res) => {
   if (!reel) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Reel not found");
   }
+
+  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
+  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
 
   res
     .status(HTTP_STATUS.Ok)
@@ -367,6 +394,9 @@ export const addReelComment = asyncHandler(async (req, res) => {
     comment: comment._id,
   });
 
+  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
+  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
+
   res
     .status(HTTP_STATUS.CREATED)
     .json(new ApiResponse(HTTP_STATUS.CREATED, createdComment, "Comment added successfully"));
@@ -401,7 +431,7 @@ export const deleteReelComment = asyncHandler(async (req, res) => {
   }).populate("reel");
 
   if (!comment) {
-    throw new ApiResponse(HTTP_STATUS.NOT_FOUND, "Comment not found");
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Comment not found");
   }
 
   const isCommentOwner = comment.author.toString() === req.user._id.toString();

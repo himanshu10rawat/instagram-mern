@@ -38,7 +38,7 @@ const conversationSchema = new mongoose.Schema(
       },
     },
 
-    deleteFor: [
+    deletedFor: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

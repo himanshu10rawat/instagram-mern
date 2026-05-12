@@ -7,13 +7,23 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createNotification from "../utils/createNotification.js";
+import { deleteCacheByPattern } from "../utils/cache.js";
 
-const userPublicFields = "username fullname avatar bio isPrivate isVerified";
+const userPublicFields = "username fullName avatar bio isPrivate isVerified";
 
 const validateUserId = (userId) => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid user id");
   }
+};
+
+const hasObjectId = (objectIds = [], id) => {
+  return objectIds.some((objectId) => objectId.toString() === id.toString());
+};
+
+const deleteRecommendationCaches = async (userId) => {
+  await deleteCacheByPattern(`recommendations:*:${userId}:*`);
+  await deleteCacheByPattern(`recommendations:users:${userId}`);
 };
 
 export const followUser = asyncHandler(async (req, res) => {
@@ -39,15 +49,13 @@ export const followUser = asyncHandler(async (req, res) => {
   const currentUser = await User.findById(currentUserId);
 
   if (
-    targetUser.blockedUsers.includes(currentUserId) ||
-    currentUser.blockedUsers.includes(userId)
+    hasObjectId(targetUser.blockedUsers, currentUserId) ||
+    hasObjectId(currentUser.blockedUsers, userId)
   ) {
     throw new ApiError(HTTP_STATUS.FORBIDDEN, "You cannot follow this user");
   }
 
-  const alreadyFollowing = targetUser.followers.some(
-    (followerId) => followerId.toString() === currentUserId.toString(),
-  );
+  const alreadyFollowing = hasObjectId(targetUser.followers, currentUserId);
 
   if (alreadyFollowing) {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "You are already following this user");
@@ -57,23 +65,31 @@ export const followUser = asyncHandler(async (req, res) => {
     const existingRequest = await FollowRequest.findOne({
       sender: currentUserId,
       receiver: userId,
-      status: "pending",
     });
 
-    if (existingRequest) {
+    if (existingRequest?.status === "pending") {
       throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Follow request already sent");
     }
 
-    const followRequest = await FollowRequest.create({
-      sender: currentUserId,
-      receiver: userId,
-    });
+    const followRequest =
+      existingRequest ||
+      (await FollowRequest.create({
+        sender: currentUserId,
+        receiver: userId,
+      }));
+
+    if (existingRequest) {
+      followRequest.status = "pending";
+      await followRequest.save();
+    }
 
     await createNotification({
       sender: currentUserId,
       receiver: userId,
       type: "follow_request",
     });
+
+    await deleteRecommendationCaches(req.user._id);
 
     return res
       .status(HTTP_STATUS.CREATED)
@@ -93,6 +109,8 @@ export const followUser = asyncHandler(async (req, res) => {
     receiver: userId,
     type: targetUser.isPrivate ? "follow_request" : "follow",
   });
+
+  await deleteRecommendationCaches(req.user._id);
 
   return res
     .status(HTTP_STATUS.Ok)
@@ -117,6 +135,8 @@ export const unfollowUser = asyncHandler(async (req, res) => {
     $pull: { followers: currentUserId },
   });
 
+  await deleteRecommendationCaches(req.user._id);
+
   res
     .status(HTTP_STATUS.Ok)
     .json(new ApiResponse(HTTP_STATUS.Ok, null, "User unfollowed successfully"));
@@ -137,6 +157,8 @@ export const cancelFollowRequest = asyncHandler(async (req, res) => {
   if (!request) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Follow request not found");
   }
+
+  await deleteRecommendationCaches(req.user._id);
 
   res
     .status(HTTP_STATUS.Ok)
@@ -170,6 +192,9 @@ export const acceptFollowRequest = asyncHandler(async (req, res) => {
     $addToSet: { followers: request.sender },
   });
 
+  await deleteRecommendationCaches(req.user._id);
+  await deleteRecommendationCaches(request.sender);
+
   res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Follow request accepted"));
 });
 
@@ -196,6 +221,9 @@ export const rejectFollowRequest = asyncHandler(async (req, res) => {
   if (!request) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Follow request not found");
   }
+
+  await deleteRecommendationCaches(req.user._id);
+  await deleteRecommendationCaches(request.sender);
 
   res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Follow request rejected"));
 });

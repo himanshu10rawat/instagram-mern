@@ -6,6 +6,7 @@ import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { addEmailJob } from "../queues/email.queue.js";
 
 const getCookieOptions = () => ({
   httpOnly: true,
@@ -20,7 +21,7 @@ const generateTokens = async (user) => {
   user.refreshToken = refreshToken;
   user.lastLogin = new Date();
 
-  await user.save({ validatedBeforeSave: false });
+  await user.save({ validateBeforeSave: false });
 
   return { accessToken, refreshToken };
 };
@@ -71,7 +72,7 @@ export const register = asyncHandler(async (req, res) => {
   });
 
   const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken, -passwordResetToken -passwordResetExpires",
+    "-password -refreshToken -passwordResetToken -passwordResetExpires",
   );
 
   res
@@ -97,7 +98,7 @@ export const login = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } = await generateTokens(user);
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken, -passwordResetToken -passwordResetExpires",
+    "-password -refreshToken -passwordResetToken -passwordResetExpires",
   );
 
   const cookieOptions = getCookieOptions();
@@ -210,16 +211,23 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-  res.status(HTTP_STATUS.Ok).json(
-    new ApiResponse(
-      HTTP_STATUS.Ok,
-      {
-        resetToken,
-        resetUrl,
-      },
-      "Password reset token generated successfully",
-    ),
-  );
+  await addEmailJob({
+    to: user.email,
+    subject: "Reset your password",
+    html: `
+    <h2>Password Reset Request</h2>
+    <p>Click the link below to reset your password:</p>
+    <a href="${resetUrl}">${resetUrl}</a>
+    <p>This link will expire in 10 minutes.</p>
+  `,
+    text: `Reset your password using this link: ${resetUrl}`,
+  });
+
+  const responseData = process.env.NODE_ENV === "development" ? { resetToken, resetUrl } : null;
+
+  res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, responseData, "Password reset link sent successfully"));
 });
 
 export const resetPassword = asyncHandler(async (req, res) => {
@@ -231,7 +239,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   const user = await User.findOne({
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
-  }).select("+passwod +passwordResetToken +passwordResetExpires");
+  }).select("+passwordResetToken +passwordResetExpires");
 
   if (!user) {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid or expired reset token");

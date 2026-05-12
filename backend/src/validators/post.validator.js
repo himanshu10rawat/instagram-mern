@@ -21,6 +21,7 @@ export const createPostSchema = z.object({
 export const commentSchema = z.object({
   body: z.object({
     text: z.string().trim().min(1, "Comment is required").max(1000),
+    parentComment: z.string().optional(),
   }),
 });
 

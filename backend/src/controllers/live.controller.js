@@ -51,10 +51,11 @@ export const getActiveLives = asyncHandler(async (_req, res) => {
 export const joinLive = asyncHandler(async (req, res) => {
   const { liveId } = req.params;
 
-  const live = await LiveSession.findOneAndUpdate(
+  let live = await LiveSession.findOneAndUpdate(
     {
       _id: liveId,
       status: "live",
+      viewers: { $ne: req.user._id },
     },
     {
       $addToSet: {
@@ -70,7 +71,14 @@ export const joinLive = asyncHandler(async (req, res) => {
   ).populate("host", "username fullName avatar isVerified");
 
   if (!live) {
-    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Live session not found");
+    live = await LiveSession.findOne({
+      _id: liveId,
+      status: "live",
+    }).populate("host", "username fullName avatar isVerified");
+
+    if (!live) {
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, "Live session not found");
+    }
   }
 
   res

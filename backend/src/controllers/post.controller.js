@@ -10,6 +10,8 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import createNotification from "../utils/createNotification.js";
+import { deleteCacheByPattern, getCache, setCache } from "../utils/cache.js";
+import { addMediaJob } from "../queues/media.queue.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 
@@ -39,6 +41,12 @@ export const createPost = asyncHandler(async (req, res) => {
     req.files.map(async (file) => {
       const uploadedFile = await uploadToCloudinary(file.buffer, "instagram/posts", "auto");
 
+      await addMediaJob({
+        type: getMediaType(file.mimetype),
+        publicId: uploadedFile.public_id,
+        url: uploadedFile.secure_url,
+      });
+
       return {
         url: uploadedFile.secure_url,
         publicId: uploadedFile.public_id,
@@ -55,6 +63,8 @@ export const createPost = asyncHandler(async (req, res) => {
     tags: req.body.tags || [],
   });
 
+  await deleteCacheByPattern("feed:*");
+
   const createPost = await Post.findById(post._id).populate("author", userPublicFields);
 
   res
@@ -63,6 +73,15 @@ export const createPost = asyncHandler(async (req, res) => {
 });
 
 export const getFeedPosts = asyncHandler(async (req, res) => {
+  const cacheKey = `feed:${req.user._id}:page:${req.query.page || 1}:limit:${req.query.limit || 10}`;
+
+  const cachedFeed = await getCache(cacheKey);
+
+  if (cachedFeed) {
+    return res
+      .status(HTTP_STATUS.OK)
+      .json(new ApiResponse(HTTP_STATUS.OK, cachedFeed, "Feed posts fetched from cache"));
+  }
   const page = Math.max(Number(req.query.page) || 1, 1);
   const limit = Math.min(Number(req.query.limit) || 10, 30);
   const skip = (page - 1) * limit;
@@ -81,20 +100,20 @@ export const getFeedPosts = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(limit);
 
-  res.status(HTTP_STATUS.Ok).json(
-    new ApiResponse(
-      HTTP_STATUS.Ok,
-      {
-        posts,
-        pagination: {
-          page,
-          limit,
-          hasMore: posts.length === limit,
-        },
-      },
-      "Feed posts fetched successfully",
-    ),
-  );
+  const responseData = {
+    posts,
+    pagination: {
+      page,
+      limit,
+      hasMore: posts.length === limit,
+    },
+  };
+
+  await setCache(cacheKey, responseData, 60);
+
+  res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, responseData, "Feed posts fetched successfully"));
 });
 
 export const getPostById = asyncHandler(async (req, res) => {
@@ -131,10 +150,17 @@ export const deletePost = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Post not found");
   }
 
-  await Promise.all(post.media.map((item) => cloundinary.uploader.destroy(item.publicId)));
+  await Promise.all(
+    post.media.map((item) =>
+      cloundinary.uploader.destroy(item.publicId, {
+        resource_type: item.type,
+      }),
+    ),
+  );
 
   post.isDeleted = true;
   await post.save();
+  await deleteCacheByPattern("feed:*");
 
   res
     .status(HTTP_STATUS.Ok)
@@ -171,6 +197,9 @@ export const likePost = asyncHandler(async (req, res) => {
     post: post._id,
   });
 
+  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
+  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
+
   res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Post liked successfully"));
 });
 
@@ -189,6 +218,9 @@ export const unlikePost = asyncHandler(async (req, res) => {
     },
   );
 
+  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
+  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
+
   res
     .status(HTTP_STATUS.Ok)
     .json(new ApiResponse(HTTP_STATUS.Ok, null, "Post unliked successfully"));
@@ -199,7 +231,7 @@ export const savePost = asyncHandler(async (req, res) => {
 
   validateObjectId(postId, "Invalid post id");
 
-  const post = await Post.findByIdAndUpdate(
+  const post = await Post.findOneAndUpdate(
     {
       _id: postId,
       isDeleted: false,
@@ -215,6 +247,9 @@ export const savePost = asyncHandler(async (req, res) => {
   if (!post) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Post not found");
   }
+
+  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
+  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
 
   res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Post saved successfully"));
 });
@@ -234,6 +269,9 @@ export const unsavePost = asyncHandler(async (req, res) => {
     },
   );
 
+  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
+  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
+
   res
     .status(HTTP_STATUS.Ok)
     .json(new ApiResponse(HTTP_STATUS.Ok, null, "Post unsaved successfully"));
@@ -246,7 +284,7 @@ export const addComment = asyncHandler(async (req, res) => {
   validateObjectId(postId, "Invalid post id");
 
   if (parentComment) {
-    validateObjectId(parentComment, "Invalid parentt comment id");
+    validateObjectId(parentComment, "Invalid parent comment id");
   }
 
   const post = await Post.findOne({
@@ -277,6 +315,9 @@ export const addComment = asyncHandler(async (req, res) => {
     post: post._id,
     comment: comment._id,
   });
+
+  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
+  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
 
   res
     .status(HTTP_STATUS.CREATED)

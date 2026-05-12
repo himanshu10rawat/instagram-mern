@@ -1,5 +1,3 @@
-import mongoose from "mongoose";
-
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import Post from "../models/post.model.js";
 import Reel from "../models/reel.model.js";
@@ -89,7 +87,7 @@ export const searchReels = asyncHandler(async (req, res) => {
     .json(new ApiResponse(HTTP_STATUS.Ok, reels, "Reels fetched successfully"));
 });
 
-export const searchHastags = asyncHandler(async (req, res) => {
+export const searchHashtags = asyncHandler(async (req, res) => {
   const query = req.query.q?.trim()?.replace("#", "");
 
   if (!query) {
@@ -104,7 +102,7 @@ export const searchHastags = asyncHandler(async (req, res) => {
         isDeleted: false,
         tags: {
           $regex: query,
-          $options: "1",
+          $options: "i",
         },
       },
     },
@@ -139,10 +137,10 @@ export const searchHastags = asyncHandler(async (req, res) => {
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, hashtags, "Hastags fetched successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, hashtags, "Hashtags fetched successfully"));
 });
 
-export const getExplored = asyncHandler(async (req, res) => {
+export const getExploreFeed = asyncHandler(async (req, res) => {
   const page = Math.max(Number(req.query.page) || 1, 1);
   const limit = Math.min(Number(req.query.limit) || 20, 50);
 

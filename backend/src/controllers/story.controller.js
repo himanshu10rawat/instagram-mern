@@ -9,8 +9,9 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import createNotification from "../utils/createNotification.js";
+import { addMediaJob } from "../queues/media.queue.js";
 
-const userPublicFields = "username fullname avatar isVerified isPrivate followers closeFriends";
+const userPublicFields = "username fullName avatar isVerified isPrivate followers closeFriends";
 
 const validateObjectId = (id, message = "Invalid id") => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -25,6 +26,23 @@ const getMediaType = (mimeType) => {
   throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid media type");
 };
 
+const canViewAuthorStories = (storyAuthor, currentUserId) => {
+  const currentUserIdString = currentUserId.toString();
+  const isOwner = storyAuthor._id.toString() === currentUserIdString;
+
+  if (isOwner) {
+    return true;
+  }
+
+  if (!storyAuthor.isPrivate) {
+    return true;
+  }
+
+  return storyAuthor.followers.some(
+    (followerId) => followerId.toString() === currentUserIdString,
+  );
+};
+
 const canViewStory = (story, storyAuthor, currentUserId) => {
   const currentUserIdString = currentUserId.toString();
   const isOwner = storyAuthor._id.toString() === currentUserIdString;
@@ -37,13 +55,7 @@ const canViewStory = (story, storyAuthor, currentUserId) => {
     return storyAuthor.closeFriends.some((friendId) => friendId.toString() === currentUserIdString);
   }
 
-  if (!storyAuthor.isPrivate) {
-    return true;
-  }
-
-  return storyAuthor.followers.some(
-    (followerId) => followerId.toString() === currentUserId.toString(),
-  );
+  return canViewAuthorStories(storyAuthor, currentUserId);
 };
 
 export const createStory = asyncHandler(async (req, res) => {
@@ -52,6 +64,12 @@ export const createStory = asyncHandler(async (req, res) => {
   }
 
   const uploadedMedia = await uploadToCloudinary(req.file.buffer, "instagram/stories", "auto");
+
+  await addMediaJob({
+    type: getMediaType(req.file.mimetype),
+    publicId: uploadedMedia.public_id,
+    url: uploadedMedia.secure_url,
+  });
 
   const story = await Story.create({
     author: req.user._id,
@@ -105,7 +123,7 @@ export const getUserStories = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "User not found");
   }
 
-  if (!canViewStory(storyAuthor, req.user._id)) {
+  if (!canViewAuthorStories(storyAuthor, req.user._id)) {
     throw new ApiError(HTTP_STATUS.FORBIDDEN, "This account is private");
   }
 
@@ -174,7 +192,7 @@ export const getStoryViewers = asyncHandler(async (req, res) => {
     _id: storyId,
     author: req.user._id,
     isDeleted: false,
-  }).populate("viewers.user", "username fullname avatar isVerified");
+  }).populate("viewers.user", "username fullName avatar isVerified");
 
   if (!story) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Story not found");
@@ -195,6 +213,10 @@ export const deleteStory = asyncHandler(async (req, res) => {
     author: req.user._id,
     isDeleted: false,
   });
+
+  if (!story) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Story not found");
+  }
 
   await cloudinary.uploader.destroy(story.media.publicId, {
     resource_type: story.media.type,
@@ -318,7 +340,7 @@ export const getStoryReplies = asyncHandler(async (req, res) => {
     _id: storyId,
     author: req.user._id,
     isDeleted: false,
-  }).populate("replies.user", "username fullname avatar isVerified");
+  }).populate("replies.user", "username fullName avatar isVerified");
 
   if (!story) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Story not found");

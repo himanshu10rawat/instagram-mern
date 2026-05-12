@@ -32,7 +32,7 @@ export const updateReelSchema = z.object({
 
         return value
           .split(",")
-          .map((tag) => tag.trim().toLocaleLowerCase().replace("#", ""))
+          .map((tag) => tag.trim().toLowerCase().replace("#", ""))
           .filter(Boolean);
       }),
   }),

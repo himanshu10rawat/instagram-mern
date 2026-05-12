@@ -1,6 +1,7 @@
-import "dotenv/config";
 import http from "http";
+import "dotenv/config";
 
+import "./workers/index.js";
 import app from "./app.js";
 import connectDB from "./config/db.js";
 import { initSocket } from "./socket/socket.js";

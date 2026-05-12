@@ -22,6 +22,7 @@ import safetyRoutes from "./routes/safety.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import liveRoutes from "./routes/live.routes.js";
+import recommendationRoutes from "./routes/recommendation.routes.js";
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use("/api/v1/safety", safetyRoutes);
 app.use("/api/v1/settings", settingsRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/live", liveRoutes);
+app.use("/api/v1/recommendations", recommendationRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

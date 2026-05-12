@@ -17,11 +17,11 @@ const reelSchema = new mongoose.Schema(
     caption: {
       type: String,
       trim: true,
-      maxlength: [2200, "Capation cannot exceed 2200 characters"],
+      maxlength: [2200, "Caption cannot exceed 2200 characters"],
       default: "",
     },
 
-    hashtags: [{ type: String, lowecase: true, trim: true }],
+    hashtags: [{ type: String, lowercase: true, trim: true }],
 
     audioName: {
       type: String,
@@ -64,9 +64,9 @@ const reelSchema = new mongoose.Schema(
   },
 );
 
-reelSchema.index({ caption: "text", hastags: "text", audioName: "text" });
+reelSchema.index({ caption: "text", hashtags: "text", audioName: "text" });
 reelSchema.index({ author: 1, createdAt: -1 });
-reelSchema.index({ createdAt: -1, viewCount: -1 });
+reelSchema.index({ createdAt: -1, viewsCount: -1 });
 
 const Reel = mongoose.model("Reel", reelSchema);
 

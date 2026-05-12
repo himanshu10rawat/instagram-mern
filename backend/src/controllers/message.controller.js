@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+import { getUserSocket } from "../socket/onlineUsers.js";
+import { getIO } from "../socket/socket.js";
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
@@ -8,13 +10,18 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
-import { getIO } from "../socket/socket.js";
-import { getUserSocket } from "../socket/onlineUsers.js";
 
 const userPublicFields = "username fullName avatar isVerified";
+
 const messagePopulate = [
-  { path: "sender", select: userPublicFields },
-  { path: "seenBy.user", select: userPublicFields },
+  {
+    path: "sender",
+    select: userPublicFields,
+  },
+  {
+    path: "seenBy.user",
+    select: userPublicFields,
+  },
 ];
 
 const validateObjectId = (id, message = "Invalid id") => {
@@ -33,7 +40,10 @@ const getMediaType = (mimeType) => {
 const findOrCreateConversation = async (currentUserId, receiverId) => {
   let conversation = await Conversation.findOne({
     isGroup: false,
-    participants: { $all: [currentUserId, receiverId], $size: 2 },
+    participants: {
+      $all: [currentUserId, receiverId],
+      $size: 2,
+    },
   });
 
   if (!conversation) {
@@ -76,6 +86,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
   if (req.file) {
     const uploadedMedia = await uploadToCloudinary(req.file.buffer, "instagram/messages", "auto");
+
     const mediaType = getMediaType(req.file.mimetype);
 
     media = {
@@ -108,14 +119,13 @@ export const sendMessage = asyncHandler(async (req, res) => {
   const populatedMessage = await Message.findById(message._id).populate(messagePopulate);
 
   const io = getIO();
-
-  const receiverSocketId = getUserSocket(receiverId);
+  const receiverSocketId = await getUserSocket(receiverId);
 
   if (receiverSocketId) {
     io.to(receiverSocketId).emit("receive_message", populatedMessage);
   }
 
-  res
+  return res
     .status(HTTP_STATUS.CREATED)
     .json(new ApiResponse(HTTP_STATUS.CREATED, populatedMessage, "Message sent successfully"));
 });
@@ -123,7 +133,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
 export const getConversations = asyncHandler(async (req, res) => {
   const conversations = await Conversation.find({
     participants: req.user._id,
-    deletedFor: { $ne: req.user._id },
+    deletedFor: {
+      $ne: req.user._id,
+    },
   })
     .populate("participants", userPublicFields)
     .populate({
@@ -135,7 +147,7 @@ export const getConversations = asyncHandler(async (req, res) => {
     })
     .sort({ updatedAt: -1 });
 
-  res
+  return res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, conversations, "Conversations fetched successfully"));
 });
@@ -160,7 +172,9 @@ export const getMessages = asyncHandler(async (req, res) => {
 
   const messages = await Message.find({
     conversation: conversationId,
-    deletedFor: { $ne: req.user._id },
+    deletedFor: {
+      $ne: req.user._id,
+    },
     isDeletedForEveryone: false,
   })
     .populate(messagePopulate)
@@ -168,7 +182,7 @@ export const getMessages = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(limit);
 
-  res.status(HTTP_STATUS.OK).json(
+  return res.status(HTTP_STATUS.OK).json(
     new ApiResponse(
       HTTP_STATUS.OK,
       {
@@ -201,8 +215,12 @@ export const markConversationAsSeen = asyncHandler(async (req, res) => {
   await Message.updateMany(
     {
       conversation: conversationId,
-      sender: { $ne: req.user._id },
-      "seenBy.user": { $ne: req.user._id },
+      sender: {
+        $ne: req.user._id,
+      },
+      "seenBy.user": {
+        $ne: req.user._id,
+      },
     },
     {
       $push: {
@@ -216,9 +234,9 @@ export const markConversationAsSeen = asyncHandler(async (req, res) => {
 
   const io = getIO();
 
-  conversation.participants.forEach((participantId) => {
+  for (const participantId of conversation.participants) {
     if (participantId.toString() !== req.user._id.toString()) {
-      const participantSocketId = getUserSocket(participantId);
+      const participantSocketId = await getUserSocket(participantId);
 
       if (participantSocketId) {
         io.to(participantSocketId).emit("messages_seen", {
@@ -227,9 +245,9 @@ export const markConversationAsSeen = asyncHandler(async (req, res) => {
         });
       }
     }
-  });
+  }
 
-  res
+  return res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, null, "Conversation marked as seen"));
 });
@@ -246,14 +264,18 @@ export const deleteMessageForMe = asyncHandler(async (req, res) => {
         deletedFor: req.user._id,
       },
     },
-    { new: true },
+    {
+      new: true,
+    },
   );
 
   if (!message) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Message not found");
   }
 
-  res.status(HTTP_STATUS.OK).json(new ApiResponse(HTTP_STATUS.OK, null, "Message deleted for you"));
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, null, "Message deleted for you"));
 });
 
 export const deleteMessageForEveryone = asyncHandler(async (req, res) => {
@@ -271,14 +293,16 @@ export const deleteMessageForEveryone = asyncHandler(async (req, res) => {
       text: "",
       media: null,
     },
-    { new: true },
+    {
+      new: true,
+    },
   );
 
   if (!message) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Message not found");
   }
 
-  res
+  return res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, null, "Message deleted for everyone"));
 });
@@ -298,14 +322,16 @@ export const deleteConversationForMe = asyncHandler(async (req, res) => {
         deletedFor: req.user._id,
       },
     },
-    { new: true },
+    {
+      new: true,
+    },
   );
 
   if (!conversation) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Conversation not found");
   }
 
-  res
+  return res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, null, "Conversation deleted for you"));
 });

@@ -2,45 +2,86 @@ import { HTTP_STATUS } from "../constants/httpStatus.js";
 import Notification from "../models/notification.model.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { deleteCache, getCache, setCache } from "../utils/cache.js";
 
 export const getNotifications = asyncHandler(async (req, res) => {
-  const notification = await Notification.find({
+  const cacheKey = `notifications:${req.user._id}`;
+
+  const cachedNotifications = await getCache(cacheKey);
+
+  if (cachedNotifications) {
+    return res
+      .status(HTTP_STATUS.OK)
+      .json(
+        new ApiResponse(HTTP_STATUS.OK, cachedNotifications, "Notifications fetched from cache"),
+      );
+  }
+
+  const notifications = await Notification.find({
     receiver: req.user._id,
   })
     .populate("sender", "username fullName avatar isVerified")
     .populate("post")
     .populate("story")
+    .populate("reel")
     .sort({ createdAt: -1 });
 
-  res
-    .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, notification, "Notifications fetched"));
+  await setCache(cacheKey, notifications, 30);
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, notifications, "Notifications fetched"));
 });
 
 export const markAsRead = asyncHandler(async (req, res) => {
   const { notificationId } = req.params;
 
-  await Notification.findByIdAndUpdate(notificationId, {
-    isRead: true,
-  });
+  await Notification.findOneAndUpdate(
+    {
+      _id: notificationId,
+      receiver: req.user._id,
+    },
+    {
+      isRead: true,
+    },
+  );
 
-  res
-    .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, null, "Notification marked as read"));
+  await deleteCache(`notifications:${req.user._id}`);
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, null, "Notification marked as read"));
 });
 
-export const markAllRead = asyncHandler(async (req, res) => {
-  await Notification.updateMany({ receiver: req.user._id, isRead: false }, { isRead: true });
+export const markAllAsRead = asyncHandler(async (req, res) => {
+  await Notification.updateMany(
+    {
+      receiver: req.user._id,
+      isRead: false,
+    },
+    {
+      isRead: true,
+    },
+  );
 
-  res
-    .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, null, "All notification marked as read"));
+  await deleteCache(`notifications:${req.user._id}`);
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, null, "All notifications marked as read"));
 });
 
 export const deleteNotification = asyncHandler(async (req, res) => {
   const { notificationId } = req.params;
 
-  await Notification.findByIdAndDelete(notificationId);
+  await Notification.findOneAndDelete({
+    _id: notificationId,
+    receiver: req.user._id,
+  });
 
-  res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Notification deleted"));
+  await deleteCache(`notifications:${req.user._id}`);
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, null, "Notification deleted"));
 });
