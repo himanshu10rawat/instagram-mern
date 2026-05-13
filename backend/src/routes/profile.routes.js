@@ -17,11 +17,12 @@ import {
   updateProfileSchema,
 } from "../validators/profile.validator.js";
 import { upload } from "../middlewares/upload.middleware.js";
+import { optionalAuth } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
 router.get("/me", isAuthenticated, getMyProfile);
-router.get("/:username", isAuthenticated, getPublicProfile);
+router.get("/:username", optionalAuth, getPublicProfile);
 
 router.patch("/me", isAuthenticated, validate(updateProfileSchema), updateProfile);
 router.patch(

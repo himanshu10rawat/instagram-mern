@@ -3,7 +3,7 @@ import multer from "multer";
 const storage = multer.memoryStorage();
 
 const fileFilter = (_req, file, cb) => {
-  const allowedMineTypes = [
+  const allowedMimeTypes = [
     "image/jpeg",
     "image/png",
     "image/webp",
@@ -12,7 +12,7 @@ const fileFilter = (_req, file, cb) => {
     "video/quicktime",
   ];
 
-  if (!allowedMineTypes.includes(file.mimetype)) {
+  if (!allowedMimeTypes.includes(file.mimetype)) {
     cb(new Error("Only images and video files are allowed"), false);
     return;
   }

@@ -73,8 +73,8 @@ const userSchema = new mongoose.Schema(
 
     email: {
       type: String,
-      required: [true, "Email is required"],
       unique: true,
+      sparse: true,
       lowercase: true,
       trim: true,
       index: true,
@@ -273,6 +273,26 @@ const userSchema = new mongoose.Schema(
     },
 
     twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailVerificationToken: {
+      type: String,
+      select: false,
+    },
+
+    emailVerificationExpires: {
+      type: Date,
+      select: false,
+    },
+
+    isPhoneVerified: {
       type: Boolean,
       default: false,
     },

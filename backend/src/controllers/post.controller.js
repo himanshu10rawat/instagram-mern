@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import cloundinary from "../config/cloudinary.js";
+import cloudinary from "../config/cloudinary.js";
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import Comment from "../models/comment.model.js";
 import Post from "../models/post.model.js";
@@ -186,7 +186,7 @@ export const deletePost = asyncHandler(async (req, res) => {
 
   await Promise.all(
     post.media.map((item) =>
-      cloundinary.uploader.destroy(item.publicId, {
+      cloudinary.uploader.destroy(item.publicId, {
         resource_type: item.type,
       }),
     ),

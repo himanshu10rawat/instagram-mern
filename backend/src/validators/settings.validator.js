@@ -29,6 +29,6 @@ export const updatePrivacyPreferencesSchema = z.object({
     showActivityStatus: z.boolean().optional(),
     allowMessagesFrom: z.enum(["everyone", "followers", "none"]).optional(),
     allowTagsFrom: z.enum(["everyone", "followers", "none"]).optional(),
-    allowMentionsFrom: z.enum(["everyone", "followeres", "none"]).optional(),
+    allowMentionsFrom: z.enum(["everyone", "followers", "none"]).optional(),
   }),
 });

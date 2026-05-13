@@ -11,7 +11,7 @@ export const generateRtcToken = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Channel name is required");
   }
 
-  const uid = Number(req.user._id.toString().slice(-6));
+  const uid = parseInt(req.user._id.toString().slice(-8), 16);
 
   const token = generateAgoraToken({
     channelName,

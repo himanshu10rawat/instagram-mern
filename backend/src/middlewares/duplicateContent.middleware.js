@@ -24,7 +24,14 @@ export const blockDuplicateContent = ({
     const userId = req.user?._id?.toString() || req.ip;
     const key = `${keyPrefix}:${userId}:${hashText(value)}`;
 
-    const exists = await redis.get(key);
+    let exists;
+
+    try {
+      exists = await redis.get(key);
+    } catch {
+      next();
+      return;
+    }
 
     if (exists) {
       throw new ApiError(
@@ -33,7 +40,12 @@ export const blockDuplicateContent = ({
       );
     }
 
-    await redis.set(key, "1", "EX", ttlSeconds);
+    try {
+      await redis.set(key, "1", "EX", ttlSeconds);
+    } catch {
+      next();
+      return;
+    }
 
     next();
   };

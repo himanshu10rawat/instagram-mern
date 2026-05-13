@@ -8,7 +8,7 @@ export const updateProfileSchema = z.object({
     location: z.string().trim().max(80).optional(),
     profession: z.string().trim().max(80).optional(),
     gender: z.enum(["male", "female", "other", "prefer_not_to_say"]).optional(),
-    accountType: z.enum(["Personal", "creator", "business"]).optional(),
+    accountType: z.enum(["personal", "creator", "business"]).optional(),
     theme: z.enum(["light", "dark", "system"]).optional(),
     language: z.string().trim().min(2).max(10).optional(),
     links: z
@@ -28,7 +28,7 @@ export const updatePrivacySettingsSchema = z.object({
     isPrivate: z.boolean().optional(),
     showActivityStatus: z.boolean().optional(),
     allowMessagesFrom: z.enum(["everyone", "followers", "none"]).optional(),
-    allowTagsFrom: z.enum(["everyone", "followers", "none"]),
+    allowTagsFrom: z.enum(["everyone", "followers", "none"]).optional(),
     allowMentionsFrom: z.enum(["everyone", "followers", "none"]).optional(),
   }),
 });

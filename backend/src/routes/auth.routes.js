@@ -20,6 +20,7 @@ import {
 } from "../validators/auth.validator.js";
 import { isAuthenticated } from "../middlewares/auth.middleware.js";
 import { rateLimiter } from "../middlewares/rateLimiter.middleware.js";
+import { resendEmailVerification, verifyEmail } from "../controllers/auth.controller.js";
 
 const router = Router();
 
@@ -44,5 +45,7 @@ router.post(
 );
 router.post("/reset-password/:token", validate(resetPasswordSchema), resetPassword);
 router.post("/change-password", isAuthenticated, validate(changePasswordSchema), changePassword);
+router.get("/verify-email/:token", verifyEmail);
+router.post("/resend-email-verification", isAuthenticated, resendEmailVerification);
 
 export default router;

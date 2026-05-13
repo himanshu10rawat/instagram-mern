@@ -278,20 +278,28 @@ export const deleteMessageForMe = asyncHandler(async (req, res) => {
 
   validateObjectId(messageId, "Invalid message id");
 
-  const message = await Message.findByIdAndUpdate(
-    messageId,
-    {
-      $addToSet: {
-        deletedFor: req.user._id,
-      },
-    },
-    {
-      new: true,
-    },
-  );
+  const message = await Message.findById(messageId);
 
   if (!message) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Message not found");
+  }
+
+  const conversation = await Conversation.findOne({
+    _id: message.conversation,
+    participants: req.user._id,
+  });
+
+  if (!conversation) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Message not found");
+  }
+
+  const alreadyDeleted = message.deletedFor.some(
+    (userId) => userId.toString() === req.user._id.toString(),
+  );
+
+  if (!alreadyDeleted) {
+    message.deletedFor.push(req.user._id);
+    await message.save();
   }
 
   return res

@@ -7,12 +7,20 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { addEmailJob } from "../queues/email.queue.js";
+import Session from "../models/session.model.js";
+import { createRawToken, hashToken } from "../utils/token.js";
+import { emailVerificationTemplate } from "../utils/emailTemplates.js";
+import { createSession, getSessionExpiresAt } from "../utils/session.js";
 
 const getCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 });
+
+const getRefreshTokenCookieMaxAge = () => {
+  return Number(process.env.COOKIE_EXPIRES_IN || 7) * 24 * 60 * 60 * 1000;
+};
 
 const generateTokens = async (user) => {
   const accessToken = user.generateAccessToken();
@@ -71,13 +79,49 @@ export const register = asyncHandler(async (req, res) => {
     accountType,
   });
 
+  let rawEmailVerificationToken;
+  let verificationUrl;
+
+  if (user.email) {
+    rawEmailVerificationToken = createRawToken();
+    verificationUrl = `${process.env.CLIENT_URL}/verify-email/${rawEmailVerificationToken}`;
+
+    user.emailVerificationToken = hashToken(rawEmailVerificationToken);
+    user.emailVerificationExpires = new Date(Date.now() + 30 * 60 * 1000);
+
+    await user.save({ validateBeforeSave: false });
+
+    const emailTemplate = emailVerificationTemplate({
+      fullName: user.fullName,
+      verificationUrl,
+    });
+
+    await addEmailJob({
+      to: user.email,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text,
+    });
+  }
+
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken -passwordResetToken -passwordResetExpires",
   );
 
+  const responseData =
+    process.env.NODE_ENV === "development" && rawEmailVerificationToken
+      ? {
+          user: createdUser,
+          emailVerificationToken: rawEmailVerificationToken,
+          verificationUrl,
+        }
+      : {
+          user: createdUser,
+        };
+
   res
     .status(HTTP_STATUS.CREATED)
-    .json(new ApiResponse(HTTP_STATUS.CREATED, createdUser, "Account created successfully"));
+    .json(new ApiResponse(HTTP_STATUS.CREATED, responseData, "Account created successfully"));
 });
 
 export const login = asyncHandler(async (req, res) => {
@@ -103,6 +147,12 @@ export const login = asyncHandler(async (req, res) => {
 
   const cookieOptions = getCookieOptions();
 
+  await createSession({
+    userId: user._id,
+    refreshToken,
+    req,
+  });
+
   res
     .status(HTTP_STATUS.Ok)
     .cookie("accessToken", accessToken, {
@@ -111,7 +161,7 @@ export const login = asyncHandler(async (req, res) => {
     })
     .cookie("refreshToken", refreshToken, {
       ...cookieOptions,
-      maxAge: Number(process.env.COOKIE_EXPIRES_IN || 7) * 24 * 60 * 60 * 1000,
+      maxAge: getRefreshTokenCookieMaxAge(),
     })
     .json(
       new ApiResponse(
@@ -126,15 +176,19 @@ export const login = asyncHandler(async (req, res) => {
 });
 
 export const logout = asyncHandler(async (req, res) => {
-  await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $unset: {
-        refreshToken: 1,
+  const refreshToken = req.cookies?.refreshToken || req.body.refreshToken;
+
+  if (refreshToken) {
+    await Session.findOneAndUpdate(
+      {
+        user: req.user._id,
+        refreshToken,
       },
-    },
-    { new: true },
-  );
+      {
+        isRevoked: true,
+      },
+    );
+  }
 
   const cookieOptions = getCookieOptions();
 
@@ -158,7 +212,13 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Refresh token is required");
   }
 
-  const decodedToken = jwt.verify(incomingRefreshToken, process.env.JWT_REFRESH_SECRET);
+  let decodedToken;
+
+  try {
+    decodedToken = jwt.verify(incomingRefreshToken, process.env.JWT_REFRESH_SECRET);
+  } catch {
+    throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Invalid refresh token");
+  }
 
   const user = await User.findById(decodedToken.id).select("+refreshToken");
 
@@ -166,11 +226,26 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Invalid refresh token");
   }
 
-  if (incomingRefreshToken !== user.refreshToken) {
+  const session = await Session.findOne({
+    user: user._id,
+    refreshToken: incomingRefreshToken,
+    isRevoked: false,
+    expiresAt: {
+      $gt: new Date(),
+    },
+  }).select("+refreshToken");
+
+  if (!session) {
     throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Refresh token is expired or used");
   }
 
   const { accessToken, refreshToken } = await generateTokens(user);
+
+  session.refreshToken = refreshToken;
+  session.lastUsedAt = new Date();
+  session.expiresAt = getSessionExpiresAt();
+
+  await session.save();
 
   const cookieOptions = getCookieOptions();
 
@@ -182,7 +257,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
     })
     .cookie("refreshToken", refreshToken, {
       ...cookieOptions,
-      maxAge: Number(process.env.COOKIE_EXPIRES_IN || 7) * 24 * 60 * 60 * 1000,
+      maxAge: getRefreshTokenCookieMaxAge(),
     })
     .json(
       new ApiResponse(
@@ -204,6 +279,10 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   if (!user || user.isDeleted || user.isBlockedByAdmin) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "User not found");
+  }
+
+  if (!user.email) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "This account does not have an email address");
   }
 
   const resetToken = user.generatePasswordResetToken();
@@ -251,6 +330,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   user.refreshToken = undefined;
 
   await user.save();
+  await Session.updateMany({ user: user._id, isRevoked: false }, { isRevoked: true });
 
   res
     .status(HTTP_STATUS.Ok)
@@ -272,6 +352,7 @@ export const changePassword = asyncHandler(async (req, res) => {
   user.refreshToken = undefined;
 
   await user.save();
+  await Session.updateMany({ user: user._id, isRevoked: false }, { isRevoked: true });
 
   const cookieOptions = getCookieOptions();
 
@@ -280,4 +361,82 @@ export const changePassword = asyncHandler(async (req, res) => {
     .clearCookie("accessToken", cookieOptions)
     .clearCookie("refreshToken", cookieOptions)
     .json(new ApiResponse(HTTP_STATUS.Ok, null, "Password changed successfully. Please login"));
+});
+
+export const verifyEmail = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+
+  const hashedToken = hashToken(token);
+
+  const user = await User.findOne({
+    emailVerificationToken: hashedToken,
+    emailVerificationExpires: {
+      $gt: new Date(),
+    },
+  }).select("+emailVerificationToken +emailVerificationExpires");
+
+  if (!user) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid or expired verification token");
+  }
+
+  user.isEmailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpires = undefined;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, null, "Email verified successfully"));
+});
+
+export const resendEmailVerification = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select(
+    "+emailVerificationToken +emailVerificationExpires",
+  );
+
+  if (!user) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "User not found");
+  }
+
+  if (user.isEmailVerified) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Email is already verified");
+  }
+
+  if (!user.email) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "This account does not have an email address");
+  }
+
+  const rawEmailVerificationToken = createRawToken();
+
+  user.emailVerificationToken = hashToken(rawEmailVerificationToken);
+  user.emailVerificationExpires = new Date(Date.now() + 30 * 60 * 1000);
+
+  await user.save({ validateBeforeSave: false });
+
+  const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${rawEmailVerificationToken}`;
+
+  const emailTemplate = emailVerificationTemplate({
+    fullName: user.fullName,
+    verificationUrl,
+  });
+
+  await addEmailJob({
+    to: user.email,
+    subject: emailTemplate.subject,
+    html: emailTemplate.html,
+    text: emailTemplate.text,
+  });
+
+  const responseData =
+    process.env.NODE_ENV === "development"
+      ? {
+          emailVerificationToken: rawEmailVerificationToken,
+          verificationUrl,
+        }
+      : null;
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, responseData, "Verification email sent successfully"));
 });
