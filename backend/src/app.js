@@ -3,7 +3,9 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-
+import compression from "compression";
+import hpp from "hpp";
+import mongoSanitize from "mongo-sanitize";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { notFoundMiddleware } from "./middlewares/notFound.middleware.js";
 import healthRoutes from "./routes/health.routes.js";
@@ -42,10 +44,28 @@ app.use(
 );
 
 app.use(helmet());
+app.use(hpp());
+app.use(compression());
+
 app.use(morgan("dev"));
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
+
+app.use((req, _res, next) => {
+  mongoSanitize(req.body);
+  mongoSanitize(req.params);
+
+  Object.defineProperty(req, "query", {
+    value: mongoSanitize(req.query),
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+
+  next();
+});
 
 app.use("/api/v1/health", healthRoutes);
 app.use("/api/v1/auth", authRoutes);
@@ -58,11 +78,11 @@ app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/messages", messageRoutes);
 app.use("/api/v1/reels", reelRoutes);
 app.use("/api/v1/explore", exploreRoutes);
+app.use("/api/v1/live", liveRoutes);
 app.use("/api/v1/agora", agoraRoutes);
 app.use("/api/v1/safety", safetyRoutes);
 app.use("/api/v1/settings", settingsRoutes);
 app.use("/api/v1/admin", adminRoutes);
-app.use("/api/v1/live", liveRoutes);
 app.use("/api/v1/recommendations", recommendationRoutes);
 app.use("/api/v1/analytics", analyticsRoutes);
 app.use("/api/v1/sessions", sessionRoutes);

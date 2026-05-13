@@ -492,30 +492,30 @@ export const verifyLoginTwoFactor = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid 2FA token or backup code");
   }
 
-  const accessToken = user.generateAccessToken();
-  const refreshToken = user.generateRefreshToken();
-
-  user.refreshToken = refreshToken;
-
-  await user.save({ validateBeforeSave: false });
-
-  // Agar tumne session management add kiya hai:
-  // await createSession({ userId: user._id, refreshToken, req });
+  const { accessToken, refreshToken } = await generateTokens(user);
 
   const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken -twoFactorSecret -twoFactorBackupCodes",
   );
 
-  const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  };
+  const cookieOptions = getCookieOptions();
+
+  await createSession({
+    userId: user._id,
+    refreshToken,
+    req,
+  });
 
   return res
     .status(HTTP_STATUS.OK)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, cookieOptions)
+    .cookie("accessToken", accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000,
+    })
+    .cookie("refreshToken", refreshToken, {
+      ...cookieOptions,
+      maxAge: getRefreshTokenCookieMaxAge(),
+    })
     .json(
       new ApiResponse(
         HTTP_STATUS.OK,
