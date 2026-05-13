@@ -29,6 +29,7 @@ import twoFactorRoutes from "./routes/twoFactor.routes.js";
 import collectionRoutes from "./routes/collection.routes.js";
 import shareRoutes from "./routes/share.routes.js";
 import hashtagRoutes from "./routes/hashtag.routes.js";
+import searchHistoryRoutes from "./routes/searchHistory.routes.js";
 
 const app = express();
 
@@ -68,6 +69,7 @@ app.use("/api/v1/2fa", twoFactorRoutes);
 app.use("/api/v1/collections", collectionRoutes);
 app.use("/api/v1/share", shareRoutes);
 app.use("/api/v1/hashtags", hashtagRoutes);
+app.use("/api/v1/search-history", searchHistoryRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

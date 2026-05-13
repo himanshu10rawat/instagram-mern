@@ -27,6 +27,42 @@ const messagePopulate = [
     path: "seenBy.user",
     select: userPublicFields,
   },
+  {
+    path: "replyTo",
+    populate: {
+      path: "sender",
+      select: userPublicFields,
+    },
+  },
+  {
+    path: "reactions.user",
+    select: userPublicFields,
+  },
+  {
+    path: "shared.post",
+    populate: {
+      path: "author",
+      select: userPublicFields,
+    },
+  },
+  {
+    path: "shared.reel",
+    populate: {
+      path: "author",
+      select: userPublicFields,
+    },
+  },
+  {
+    path: "shared.story",
+    populate: {
+      path: "author",
+      select: userPublicFields,
+    },
+  },
+  {
+    path: "shared.profile",
+    select: userPublicFields,
+  },
 ];
 
 const validateObjectId = (id, message = "Invalid id") => {
@@ -52,8 +88,22 @@ const findOrCreateConversation = async (currentUserId, receiverId) => {
   });
 
   if (!conversation) {
+    const receiver = await User.findById(receiverId).select("followers privacySettings");
+
+    const isReceiverFollowingSender = receiver.followers.some(
+      (followerId) => followerId.toString() === currentUserId.toString(),
+    );
+
+    const allowMessagesFrom = receiver.privacySettings?.allowMessagesFrom || "everyone";
+
+    const shouldRequest =
+      allowMessagesFrom === "none" ||
+      (allowMessagesFrom === "followers" && !isReceiverFollowingSender);
+
     conversation = await Conversation.create({
       participants: [currentUserId, receiverId],
+      status: shouldRequest ? "requested" : "accepted",
+      requestedBy: shouldRequest ? currentUserId : null,
     });
   }
 
@@ -62,7 +112,7 @@ const findOrCreateConversation = async (currentUserId, receiverId) => {
 
 export const sendMessage = asyncHandler(async (req, res) => {
   const { receiverId } = req.params;
-  const { text } = req.body;
+  const { text, replyTo } = req.body;
 
   validateObjectId(receiverId, "Invalid receiver id");
 
@@ -78,6 +128,16 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
   if (!receiver) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Receiver not found");
+  }
+
+  if (replyTo) {
+    validateObjectId(replyTo, "Invalid reply message id");
+
+    const replyMessage = await Message.findById(replyTo);
+
+    if (!replyMessage) {
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, "Reply message not found");
+    }
   }
 
   if (!text && !req.file) {
@@ -125,6 +185,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
     text: text || "",
     media,
     messageType,
+    replyTo: replyTo || null,
     seenBy: [
       {
         user: req.user._id,
@@ -154,6 +215,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
 export const getConversations = asyncHandler(async (req, res) => {
   const conversations = await Conversation.find({
     participants: req.user._id,
+    status: "accepted",
     deletedFor: {
       $ne: req.user._id,
     },
@@ -363,4 +425,293 @@ export const deleteConversationForMe = asyncHandler(async (req, res) => {
   return res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, null, "Conversation deleted for you"));
+});
+
+export const reactToMessage = asyncHandler(async (req, res) => {
+  const { messageId } = req.params;
+  const { emoji } = req.body;
+
+  validateObjectId(messageId, "Invalid message id");
+
+  const message = await Message.findOne({
+    _id: messageId,
+    isDeletedForEveryone: false,
+  });
+
+  if (!message) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Message not found");
+  }
+
+  const conversation = await Conversation.findOne({
+    _id: message.conversation,
+    participants: req.user._id,
+  });
+
+  if (!conversation) {
+    throw new ApiError(HTTP_STATUS.FORBIDDEN, "You cannot react to this message");
+  }
+
+  message.reactions = message.reactions.filter(
+    (reaction) => reaction.user.toString() !== req.user._id.toString(),
+  );
+
+  message.reactions.push({
+    user: req.user._id,
+    emoji,
+    reactedAt: new Date(),
+  });
+
+  await message.save();
+
+  const populatedMessage = await Message.findById(message._id).populate(messagePopulate);
+
+  for (const participantId of conversation.participants) {
+    if (participantId.toString() !== req.user._id.toString()) {
+      const participantSocketId = await getUserSocket(participantId);
+
+      if (participantSocketId) {
+        getIO().to(participantSocketId).emit("message_reaction", populatedMessage);
+      }
+    }
+  }
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, populatedMessage, "Reaction added successfully"));
+});
+
+export const removeMessageReaction = asyncHandler(async (req, res) => {
+  const { messageId } = req.params;
+
+  validateObjectId(messageId, "Invalid message id");
+
+  const message = await Message.findOneAndUpdate(
+    {
+      _id: messageId,
+      isDeletedForEveryone: false,
+    },
+    {
+      $pull: {
+        reactions: {
+          user: req.user._id,
+        },
+      },
+    },
+    {
+      new: true,
+    },
+  ).populate(messagePopulate);
+
+  if (!message) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Message not found");
+  }
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, message, "Reaction removed successfully"));
+});
+
+export const editMessage = asyncHandler(async (req, res) => {
+  const { messageId } = req.params;
+  const { text } = req.body;
+
+  validateObjectId(messageId, "Invalid message id");
+
+  const message = await Message.findOne({
+    _id: messageId,
+    sender: req.user._id,
+    messageType: "text",
+    isDeletedForEveryone: false,
+  });
+
+  if (!message) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Message not found or cannot be edited");
+  }
+
+  message.text = text;
+  message.isEdited = true;
+  message.editedAt = new Date();
+
+  await message.save();
+
+  const populatedMessage = await Message.findById(message._id).populate(messagePopulate);
+
+  const conversation = await Conversation.findById(message.conversation);
+
+  for (const participantId of conversation.participants) {
+    if (participantId.toString() !== req.user._id.toString()) {
+      const participantSocketId = await getUserSocket(participantId);
+
+      if (participantSocketId) {
+        getIO().to(participantSocketId).emit("message_edited", populatedMessage);
+      }
+    }
+  }
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, populatedMessage, "Message edited successfully"));
+});
+
+export const forwardMessage = asyncHandler(async (req, res) => {
+  const { messageId } = req.params;
+  const { receiverId } = req.body;
+
+  validateObjectId(messageId, "Invalid message id");
+  validateObjectId(receiverId, "Invalid receiver id");
+
+  if (req.user._id.toString() === receiverId) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "You cannot forward message to yourself");
+  }
+
+  const originalMessage = await Message.findOne({
+    _id: messageId,
+    isDeletedForEveryone: false,
+  });
+
+  if (!originalMessage) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Original message not found");
+  }
+
+  const originalConversation = await Conversation.findOne({
+    _id: originalMessage.conversation,
+    participants: req.user._id,
+  });
+
+  if (!originalConversation) {
+    throw new ApiError(HTTP_STATUS.FORBIDDEN, "You cannot forward this message");
+  }
+
+  const receiver = await User.findOne({
+    _id: receiverId,
+    isDeleted: false,
+    isBlockedByAdmin: false,
+  });
+
+  if (!receiver) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Receiver not found");
+  }
+
+  const conversation = await findOrCreateConversation(req.user._id, receiverId);
+
+  const forwardedMessage = await Message.create({
+    conversation: conversation._id,
+    sender: req.user._id,
+    text: originalMessage.text,
+    media: originalMessage.media,
+    messageType: originalMessage.messageType,
+    shared: originalMessage.shared,
+    seenBy: [
+      {
+        user: req.user._id,
+        seenAt: new Date(),
+      },
+    ],
+  });
+
+  conversation.lastMessage = forwardedMessage._id;
+  conversation.deletedFor = [];
+  await conversation.save();
+
+  const populatedMessage = await Message.findById(forwardedMessage._id).populate(messagePopulate);
+
+  const receiverSocketId = await getUserSocket(receiverId);
+
+  if (receiverSocketId) {
+    getIO().to(receiverSocketId).emit("receive_message", populatedMessage);
+  }
+
+  return res
+    .status(HTTP_STATUS.CREATED)
+    .json(new ApiResponse(HTTP_STATUS.CREATED, populatedMessage, "Message forwarded successfully"));
+});
+
+export const getMessageRequests = asyncHandler(async (req, res) => {
+  const conversations = await Conversation.find({
+    participants: req.user._id,
+    status: "requested",
+    requestedBy: {
+      $ne: req.user._id,
+    },
+    deletedFor: {
+      $ne: req.user._id,
+    },
+  })
+    .populate("participants", userPublicFields)
+    .populate({
+      path: "lastMessage",
+      populate: {
+        path: "sender",
+        select: userPublicFields,
+      },
+    })
+    .sort({ updatedAt: -1 });
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, conversations, "Message requests fetched successfully"));
+});
+
+export const acceptMessageRequest = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+
+  validateObjectId(conversationId, "Invalid conversation id");
+
+  const conversation = await Conversation.findOneAndUpdate(
+    {
+      _id: conversationId,
+      participants: req.user._id,
+      status: "requested",
+      requestedBy: {
+        $ne: req.user._id,
+      },
+    },
+    {
+      status: "accepted",
+    },
+    {
+      new: true,
+    },
+  ).populate("participants", userPublicFields);
+
+  if (!conversation) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Message request not found");
+  }
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, conversation, "Message request accepted"));
+});
+
+export const rejectMessageRequest = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+
+  validateObjectId(conversationId, "Invalid conversation id");
+
+  const conversation = await Conversation.findOneAndUpdate(
+    {
+      _id: conversationId,
+      participants: req.user._id,
+      status: "requested",
+      requestedBy: {
+        $ne: req.user._id,
+      },
+    },
+    {
+      $addToSet: {
+        deletedFor: req.user._id,
+      },
+    },
+    {
+      new: true,
+    },
+  );
+
+  if (!conversation) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Message request not found");
+  }
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, null, "Message request rejected"));
 });

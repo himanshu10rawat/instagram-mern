@@ -44,6 +44,19 @@ const conversationSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+
+    status: {
+      type: String,
+      enum: ["accepted", "requested"],
+      default: "accepted",
+      index: true,
+    },
+
+    requestedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   {
     timestamps: true,

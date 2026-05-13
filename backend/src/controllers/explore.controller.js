@@ -4,8 +4,31 @@ import Reel from "../models/reel.model.js";
 import User from "../models/user.model.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import SearchHistory from "../models/searchHistory.model.js";
 
 const userPublicFields = "username fullName avatar bio isVerified followers following isPrivate";
+
+const saveTextSearch = async ({ userId, searchType, query }) => {
+  if (!query) return;
+
+  await SearchHistory.findOneAndUpdate(
+    {
+      user: userId,
+      searchType,
+      query: query.toLowerCase(),
+    },
+    {
+      user: userId,
+      searchType,
+      query: query.toLowerCase(),
+    },
+    {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+    },
+  );
+};
 
 export const searchUsers = asyncHandler(async (req, res) => {
   const query = req.query.q?.trim();
@@ -15,6 +38,12 @@ export const searchUsers = asyncHandler(async (req, res) => {
       .status(HTTP_STATUS.Ok)
       .json(new ApiResponse(HTTP_STATUS.Ok, [], "Users fetched successfully"));
   }
+
+  await saveTextSearch({
+    userId: req.user._id,
+    searchType: "user",
+    query,
+  });
 
   const users = await User.find({
     isDeleted: false,
@@ -41,6 +70,12 @@ export const searchPosts = asyncHandler(async (req, res) => {
       .status(HTTP_STATUS.Ok)
       .json(new ApiResponse(HTTP_STATUS.Ok, [], "Posts fetched successfully"));
   }
+
+  await saveTextSearch({
+    userId: req.user._id,
+    searchType: "post",
+    query,
+  });
 
   const posts = await Post.find({
     isDeleted: false,
@@ -69,6 +104,12 @@ export const searchReels = asyncHandler(async (req, res) => {
       .json(new ApiResponse(HTTP_STATUS.Ok, [], "Reels fetched successfully"));
   }
 
+  await saveTextSearch({
+    userId: req.user._id,
+    searchType: "reel",
+    query,
+  });
+
   const reels = await Reel.find({
     isDeleted: false,
     $text: {
@@ -95,6 +136,12 @@ export const searchHashtags = asyncHandler(async (req, res) => {
       .status(HTTP_STATUS.Ok)
       .json(new ApiResponse(HTTP_STATUS.Ok, [], "Hashtags fetched successfully"));
   }
+
+  await saveTextSearch({
+    userId: req.user._id,
+    searchType: "hashtag",
+    query,
+  });
 
   const hashtags = await Post.aggregate([
     {
