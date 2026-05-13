@@ -296,6 +296,24 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    twoFactorSecret: {
+      type: String,
+      select: false,
+    },
+
+    twoFactorBackupCodes: [
+      {
+        code: {
+          type: String,
+          select: false,
+        },
+        used: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

@@ -25,6 +25,7 @@ import { commentSchema, createPostSchema, updatePostSchema } from "../validators
 import { rateLimiter } from "../middlewares/rateLimiter.middleware.js";
 import { moderateBodyText } from "../middlewares/moderation.middleware.js";
 import { blockDuplicateContent } from "../middlewares/duplicateContent.middleware.js";
+import { removeTagFromPost } from "../controllers/post.controller.js";
 
 const router = Router();
 
@@ -73,5 +74,6 @@ router.post(
 router.get("/:postId/comments", isAuthenticated, getPostComments);
 
 router.delete("/comments/:commentId", isAuthenticated, deleteComment);
+router.patch("/:postId/remove-tag", isAuthenticated, removeTagFromPost);
 
 export default router;

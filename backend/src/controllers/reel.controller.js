@@ -16,6 +16,8 @@ import trackAnalytics from "../utils/trackAnalytics.js";
 import { getOptimizedVideoUrl, getVideoThumbnailUrl } from "../utils/cloudinaryUrl.js";
 
 const userPublicFields = "username fullName avatar isVerified";
+import { upsertHashtags } from "../utils/hashtag.js";
+import { extractHashtags, extractMentions } from "../utils/socialParser.js";
 
 const validateObjectId = (id, message = "Invalid id") => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -40,6 +42,18 @@ export const createReel = asyncHandler(async (req, res) => {
     url: uploadedVideo.secure_url,
   });
 
+  const extractedHashtags = extractHashtags(req.body.caption || "");
+  const extractedMentions = extractMentions(req.body.caption || "");
+
+  const mentionedUsers = await User.find({
+    username: {
+      $in: extractedMentions,
+    },
+    isDeleted: false,
+  }).select("_id");
+
+  const finalHashtags = [...new Set([...(req.body.hashtags || []), ...extractedHashtags])];
+
   const reel = await Reel.create({
     author: req.user._id,
     video: {
@@ -53,10 +67,24 @@ export const createReel = asyncHandler(async (req, res) => {
       publicId: uploadedVideo.public_id,
     },
     caption: req.body.caption || "",
-    hashtags: req.body.hashtags || [],
+    hashtags: finalHashtags,
+    mentions: mentionedUsers.map((user) => user._id),
     audioName: req.body.audioName || "Original Audio",
     location: req.body.location || "",
   });
+
+  await upsertHashtags(finalHashtags, "reel");
+
+  await Promise.all(
+    mentionedUsers.map((mentionedUser) =>
+      createNotification({
+        sender: req.user._id,
+        receiver: mentionedUser._id,
+        type: "mention",
+        reel: reel._id,
+      }),
+    ),
+  );
 
   const createdReel = await Reel.findById(reel._id).populate("author", userPublicFields);
 

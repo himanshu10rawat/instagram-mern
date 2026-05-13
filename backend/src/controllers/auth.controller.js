@@ -11,6 +11,7 @@ import Session from "../models/session.model.js";
 import { createRawToken, hashToken } from "../utils/token.js";
 import { emailVerificationTemplate } from "../utils/emailTemplates.js";
 import { createSession, getSessionExpiresAt } from "../utils/session.js";
+import { verifyTwoFactorToken, hashBackupCode } from "../utils/twoFactor.js";
 
 const getCookieOptions = () => ({
   httpOnly: true,
@@ -137,6 +138,19 @@ export const login = asyncHandler(async (req, res) => {
 
   if (!isPasswordValid) {
     throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Invalid credentials");
+  }
+
+  if (user.twoFactorEnabled) {
+    return res.status(HTTP_STATUS.OK).json(
+      new ApiResponse(
+        HTTP_STATUS.OK,
+        {
+          requiresTwoFactor: true,
+          userId: user._id,
+        },
+        "2FA verification required",
+      ),
+    );
   }
 
   const { accessToken, refreshToken } = await generateTokens(user);
@@ -439,4 +453,78 @@ export const resendEmailVerification = asyncHandler(async (req, res) => {
   return res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, responseData, "Verification email sent successfully"));
+});
+
+export const verifyLoginTwoFactor = asyncHandler(async (req, res) => {
+  const { userId, token, backupCode } = req.body;
+
+  const user = await User.findById(userId).select(
+    "+password +refreshToken +twoFactorSecret +twoFactorBackupCodes.code",
+  );
+
+  if (!user || user.isDeleted || user.isBlockedByAdmin) {
+    throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Invalid request");
+  }
+
+  let isVerified = false;
+
+  if (token) {
+    isVerified = verifyTwoFactorToken({
+      token,
+      secret: user.twoFactorSecret,
+    });
+  }
+
+  if (!isVerified && backupCode) {
+    const hashedCode = hashBackupCode(backupCode);
+
+    const matchedCode = user.twoFactorBackupCodes.find(
+      (item) => item.code === hashedCode && !item.used,
+    );
+
+    if (matchedCode) {
+      matchedCode.used = true;
+      isVerified = true;
+    }
+  }
+
+  if (!isVerified) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid 2FA token or backup code");
+  }
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+
+  await user.save({ validateBeforeSave: false });
+
+  // Agar tumne session management add kiya hai:
+  // await createSession({ userId: user._id, refreshToken, req });
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken -twoFactorSecret -twoFactorBackupCodes",
+  );
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  };
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .json(
+      new ApiResponse(
+        HTTP_STATUS.OK,
+        {
+          user: loggedInUser,
+          accessToken,
+          refreshToken,
+        },
+        "Login successful",
+      ),
+    );
 });

@@ -23,6 +23,12 @@ const mediaSchema = new mongoose.Schema(
       enum: ["image", "video"],
       required: true,
     },
+    taggedUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { _id: false },
 );

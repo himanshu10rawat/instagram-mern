@@ -76,3 +76,15 @@ export const changePasswordSchema = z.object({
     newPassword: z.string().min(8, "New password must be at least 8 characters").max(64),
   }),
 });
+
+export const verifyLoginTwoFactorSchema = z.object({
+  body: z
+    .object({
+      userId: z.string().trim().min(1, "User id is required"),
+      token: z.string().trim().optional(),
+      backupCode: z.string().trim().optional(),
+    })
+    .refine((data) => data.token || data.backupCode, {
+      message: "2FA token or backup code is required",
+    }),
+});

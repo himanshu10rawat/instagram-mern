@@ -55,9 +55,40 @@ const messageSchema = new mongoose.Schema(
       default: null,
     },
 
+    shared: {
+      post: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Post",
+        default: null,
+      },
+      reel: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Reel",
+        default: null,
+      },
+      story: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Story",
+        default: null,
+      },
+      profile: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+    },
+
     messageType: {
       type: String,
-      enum: ["text", "image", "video"],
+      enum: [
+        "text",
+        "image",
+        "video",
+        "shared_post",
+        "shared_reel",
+        "shared_story",
+        "shared_profile",
+      ],
       default: "text",
     },
 

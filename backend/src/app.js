@@ -25,6 +25,10 @@ import liveRoutes from "./routes/live.routes.js";
 import recommendationRoutes from "./routes/recommendation.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import sessionRoutes from "./routes/session.routes.js";
+import twoFactorRoutes from "./routes/twoFactor.routes.js";
+import collectionRoutes from "./routes/collection.routes.js";
+import shareRoutes from "./routes/share.routes.js";
+import hashtagRoutes from "./routes/hashtag.routes.js";
 
 const app = express();
 
@@ -60,6 +64,10 @@ app.use("/api/v1/live", liveRoutes);
 app.use("/api/v1/recommendations", recommendationRoutes);
 app.use("/api/v1/analytics", analyticsRoutes);
 app.use("/api/v1/sessions", sessionRoutes);
+app.use("/api/v1/2fa", twoFactorRoutes);
+app.use("/api/v1/collections", collectionRoutes);
+app.use("/api/v1/share", shareRoutes);
+app.use("/api/v1/hashtags", hashtagRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

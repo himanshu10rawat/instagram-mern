@@ -18,6 +18,8 @@ import {
   getOptimizedVideoUrl,
   getVideoThumbnailUrl,
 } from "../utils/cloudinaryUrl.js";
+import { upsertHashtags } from "../utils/hashtag.js";
+import { extractHashtags, extractMentions } from "../utils/socialParser.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 
@@ -79,13 +81,53 @@ export const createPost = asyncHandler(async (req, res) => {
     }),
   );
 
+  const extractedHashtags = extractHashtags(req.body.caption || "");
+  const extractedMentions = extractMentions(req.body.caption || "");
+
+  const mentionedUsers = await User.find({
+    username: {
+      $in: extractedMentions,
+    },
+    isDeleted: false,
+  }).select("_id");
+
+  const taggedUsers = req.body.taggedUsers || [];
+
+  const finalTags = [...new Set([...(req.body.tags || []), ...extractedHashtags])];
+
   const post = await Post.create({
     author: req.user._id,
     media: uploadedMedia,
     caption: req.body.caption || "",
     location: req.body.location || "",
-    tags: req.body.tags || [],
+    tags: finalTags,
+    mentions: mentionedUsers.map((user) => user._id),
+    taggedUsers,
   });
+
+  await upsertHashtags(finalTags, "post");
+
+  await Promise.all(
+    mentionedUsers.map((mentionedUser) =>
+      createNotification({
+        sender: req.user._id,
+        receiver: mentionedUser._id,
+        type: "mention",
+        post: post._id,
+      }),
+    ),
+  );
+
+  await Promise.all(
+    taggedUsers.map((taggedUserId) =>
+      createNotification({
+        sender: req.user._id,
+        receiver: taggedUserId,
+        type: "tag",
+        post: post._id,
+      }),
+    ),
+  );
 
   await deleteCacheByPattern("feed:*");
 
@@ -551,4 +593,34 @@ export const getMyArchivedPosts = asyncHandler(async (req, res) => {
   res
     .status(HTTP_STATUS.Ok)
     .json(new ApiResponse(HTTP_STATUS.Ok, posts, "Archived posts fetched successfully"));
+});
+
+export const removeTagFromPost = asyncHandler(async (req, res) => {
+  const { postId } = req.params;
+
+  validateObjectId(postId, "Invalid post id");
+
+  const post = await Post.findOneAndUpdate(
+    {
+      _id: postId,
+      taggedUsers: req.user._id,
+      isDeleted: false,
+    },
+    {
+      $pull: {
+        taggedUsers: req.user._id,
+      },
+    },
+    {
+      new: true,
+    },
+  ).populate("author", userPublicFields);
+
+  if (!post) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Post not found or you are not tagged");
+  }
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, post, "Tag removed successfully"));
 });

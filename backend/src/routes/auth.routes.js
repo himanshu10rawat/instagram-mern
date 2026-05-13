@@ -21,6 +21,8 @@ import {
 import { isAuthenticated } from "../middlewares/auth.middleware.js";
 import { rateLimiter } from "../middlewares/rateLimiter.middleware.js";
 import { resendEmailVerification, verifyEmail } from "../controllers/auth.controller.js";
+import { verifyLoginTwoFactor } from "../controllers/auth.controller.js";
+import { verifyLoginTwoFactorSchema } from "../validators/auth.validator.js";
 
 const router = Router();
 
@@ -47,5 +49,6 @@ router.post("/reset-password/:token", validate(resetPasswordSchema), resetPasswo
 router.post("/change-password", isAuthenticated, validate(changePasswordSchema), changePassword);
 router.get("/verify-email/:token", verifyEmail);
 router.post("/resend-email-verification", isAuthenticated, resendEmailVerification);
+router.post("/verify-2fa-login", validate(verifyLoginTwoFactorSchema), verifyLoginTwoFactor);
 
 export default router;

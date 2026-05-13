@@ -27,6 +27,8 @@ const notificationSchema = new mongoose.Schema(
         "story_reply",
         "reel_like",
         "reel_comment",
+        "mention",
+        "tag",
       ],
       required: true,
       index: true,

@@ -15,6 +15,17 @@ export const createPostSchema = z.object({
           .map((tag) => tag.trim().toLowerCase())
           .filter(Boolean);
       }),
+    taggedUsers: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return [];
+
+        return value
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean);
+      }),
   }),
 });
 
@@ -38,6 +49,17 @@ export const updatePostSchema = z.object({
         return value
           .split(",")
           .map((tag) => tag.trim().toLowerCase())
+          .filter(Boolean);
+      }),
+    taggedUsers: z
+      .string()
+      .optional()
+      .transform((value) => {
+        if (!value) return [];
+
+        return value
+          .split(",")
+          .map((id) => id.trim())
           .filter(Boolean);
       }),
   }),

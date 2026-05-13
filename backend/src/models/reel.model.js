@@ -37,6 +37,13 @@ const reelSchema = new mongoose.Schema(
 
     hashtags: [{ type: String, lowercase: true, trim: true }],
 
+    mentions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
     audioName: {
       type: String,
       trim: true,
