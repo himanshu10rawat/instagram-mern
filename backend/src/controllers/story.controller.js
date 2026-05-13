@@ -10,6 +10,12 @@ import asyncHandler from "../utils/asyncHandler.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import createNotification from "../utils/createNotification.js";
 import { addMediaJob } from "../queues/media.queue.js";
+import trackAnalytics from "../utils/trackAnalytics.js";
+import {
+  getOptimizedImageUrl,
+  getOptimizedVideoUrl,
+  getVideoThumbnailUrl,
+} from "../utils/cloudinaryUrl.js";
 
 const userPublicFields = "username fullName avatar isVerified isPrivate followers closeFriends";
 
@@ -38,9 +44,7 @@ const canViewAuthorStories = (storyAuthor, currentUserId) => {
     return true;
   }
 
-  return storyAuthor.followers.some(
-    (followerId) => followerId.toString() === currentUserIdString,
-  );
+  return storyAuthor.followers.some((followerId) => followerId.toString() === currentUserIdString);
 };
 
 const canViewStory = (story, storyAuthor, currentUserId) => {
@@ -71,12 +75,30 @@ export const createStory = asyncHandler(async (req, res) => {
     url: uploadedMedia.secure_url,
   });
 
+  const mediaType = getMediaType(req.file.mimetype);
+
   const story = await Story.create({
     author: req.user._id,
     media: {
       url: uploadedMedia.secure_url,
+      optimizedUrl:
+        mediaType === "image"
+          ? getOptimizedImageUrl(uploadedMedia.public_id)
+          : getOptimizedVideoUrl(uploadedMedia.public_id),
+      thumbnailUrl:
+        mediaType === "image"
+          ? getOptimizedImageUrl(uploadedMedia.public_id, {
+              width: 400,
+              height: 700,
+              crop: "fill",
+            })
+          : getVideoThumbnailUrl(uploadedMedia.public_id, {
+              width: 400,
+              height: 700,
+              crop: "fill",
+            }),
       publicId: uploadedMedia.public_id,
-      type: getMediaType(req.file.mimetype),
+      type: mediaType,
     },
     caption: req.body.caption || "",
     visibility: req.body.visibility || "public",
@@ -177,6 +199,16 @@ export const viewStory = asyncHandler(async (req, res) => {
       await story.save();
     }
   }
+
+  await trackAnalytics({
+    owner: story.author._id || story.author,
+    viewer: req.user._id,
+    type: "story_impression",
+    story: story._id,
+    source: "story",
+    ip: req.ip,
+    device: req.headers["user-agent"] || "",
+  });
 
   res
     .status(HTTP_STATUS.Ok)

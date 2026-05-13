@@ -10,6 +10,11 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
+import {
+  getOptimizedImageUrl,
+  getOptimizedVideoUrl,
+  getVideoThumbnailUrl,
+} from "../utils/cloudinaryUrl.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 
@@ -91,6 +96,22 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
     media = {
       url: uploadedMedia.secure_url,
+      optimizedUrl:
+        mediaType === "image"
+          ? getOptimizedImageUrl(uploadedMedia.public_id)
+          : getOptimizedVideoUrl(uploadedMedia.public_id),
+      thumbnailUrl:
+        mediaType === "image"
+          ? getOptimizedImageUrl(uploadedMedia.public_id, {
+              width: 400,
+              height: 400,
+              crop: "fill",
+            })
+          : getVideoThumbnailUrl(uploadedMedia.public_id, {
+              width: 400,
+              height: 400,
+              crop: "fill",
+            }),
       publicId: uploadedMedia.public_id,
       type: mediaType,
     };

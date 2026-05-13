@@ -12,6 +12,8 @@ import createNotification from "../utils/createNotification.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import { addMediaJob } from "../queues/media.queue.js";
 import { deleteCacheByPattern } from "../utils/cache.js";
+import trackAnalytics from "../utils/trackAnalytics.js";
+import { getOptimizedVideoUrl, getVideoThumbnailUrl } from "../utils/cloudinaryUrl.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 
@@ -42,6 +44,12 @@ export const createReel = asyncHandler(async (req, res) => {
     author: req.user._id,
     video: {
       url: uploadedVideo.secure_url,
+      optimizedUrl: getOptimizedVideoUrl(uploadedVideo.public_id),
+      thumbnailUrl: getVideoThumbnailUrl(uploadedVideo.public_id, {
+        width: 720,
+        height: 1280,
+        crop: "fill",
+      }),
       publicId: uploadedVideo.public_id,
     },
     caption: req.body.caption || "",
@@ -102,6 +110,16 @@ export const getReelById = asyncHandler(async (req, res) => {
   if (!reel) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Reel not found");
   }
+
+  await trackAnalytics({
+    owner: reel.author._id || reel.author,
+    viewer: req.user._id,
+    type: "reel_impression",
+    reel: reel._id,
+    source: req.query.source || "reels",
+    ip: req.ip,
+    device: req.headers["user-agent"] || "",
+  });
 
   res
     .status(HTTP_STATUS.Ok)
@@ -315,6 +333,16 @@ export const viewReel = asyncHandler(async (req, res) => {
   if (!reel) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Reel not found");
   }
+
+  await trackAnalytics({
+    owner: reel.author,
+    viewer: req.user._id,
+    type: "reel_impression",
+    reel: reel._id,
+    source: "reels",
+    ip: req.ip,
+    device: req.headers["user-agent"] || "",
+  });
 
   await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
   await deleteCacheByPattern(`recommendations:users:${req.user._id}`);

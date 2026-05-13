@@ -6,6 +6,14 @@ const mediaSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    optimizedUrl: {
+      type: String,
+      default: "",
+    },
+    thumbnailUrl: {
+      type: String,
+      default: "",
+    },
     publicId: {
       type: String,
       required: true,

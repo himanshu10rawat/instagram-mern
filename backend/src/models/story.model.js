@@ -6,6 +6,14 @@ const storyMediaSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    optimizedUrl: {
+      type: String,
+      default: "",
+    },
+    thumbnailUrl: {
+      type: String,
+      default: "",
+    },
     publicId: {
       type: String,
       required: true,
@@ -16,9 +24,7 @@ const storyMediaSchema = new mongoose.Schema(
       required: true,
     },
   },
-  {
-    _id: false,
-  },
+  { _id: false },
 );
 
 const storyViewerSchema = new mongoose.Schema(

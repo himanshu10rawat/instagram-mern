@@ -23,6 +23,7 @@ import settingsRoutes from "./routes/settings.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import liveRoutes from "./routes/live.routes.js";
 import recommendationRoutes from "./routes/recommendation.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use("/api/v1/settings", settingsRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/live", liveRoutes);
 app.use("/api/v1/recommendations", recommendationRoutes);
+app.use("/api/v1/analytics", analyticsRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

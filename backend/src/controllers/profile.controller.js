@@ -5,6 +5,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import cloudinary from "../config/cloudinary.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
+import trackAnalytics from "../utils/trackAnalytics.js";
 
 const userSelectFields =
   "-password -refreshToken -passwordResetToken -passwordResetExpires -loginAttempts -lockUntil";
@@ -30,7 +31,17 @@ export const getPublicProfile = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "User not found");
   }
 
+  await trackAnalytics({
+    owner: user._id,
+    viewer: req.user?._id,
+    type: "profile_visit",
+    source: "profile",
+    ip: req.ip,
+    device: req.headers["user-agent"] || "",
+  });
+
   const isOwnProfile = req.user?._id?.toString() === user._id.toString();
+
   const isFollowing = user.followers.some(
     (followerId) => followerId.toString() === req.user?._id?.toString(),
   );

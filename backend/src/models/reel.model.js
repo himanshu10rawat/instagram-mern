@@ -10,8 +10,22 @@ const reelSchema = new mongoose.Schema(
     },
 
     video: {
-      url: { type: String, required: true },
-      publicId: { type: String, required: true },
+      url: {
+        type: String,
+        required: true,
+      },
+      optimizedUrl: {
+        type: String,
+        default: "",
+      },
+      thumbnailUrl: {
+        type: String,
+        default: "",
+      },
+      publicId: {
+        type: String,
+        required: true,
+      },
     },
 
     caption: {

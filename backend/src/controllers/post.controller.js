@@ -12,6 +12,12 @@ import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import createNotification from "../utils/createNotification.js";
 import { deleteCacheByPattern, getCache, setCache } from "../utils/cache.js";
 import { addMediaJob } from "../queues/media.queue.js";
+import trackAnalytics from "../utils/trackAnalytics.js";
+import {
+  getOptimizedImageUrl,
+  getOptimizedVideoUrl,
+  getVideoThumbnailUrl,
+} from "../utils/cloudinaryUrl.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 
@@ -47,10 +53,28 @@ export const createPost = asyncHandler(async (req, res) => {
         url: uploadedFile.secure_url,
       });
 
+      const mediaType = getMediaType(file.mimetype);
+
       return {
         url: uploadedFile.secure_url,
+        optimizedUrl:
+          mediaType === "image"
+            ? getOptimizedImageUrl(uploadedFile.public_id)
+            : getOptimizedVideoUrl(uploadedFile.public_id),
+        thumbnailUrl:
+          mediaType === "image"
+            ? getOptimizedImageUrl(uploadedFile.public_id, {
+                width: 400,
+                height: 400,
+                crop: "fill",
+              })
+            : getVideoThumbnailUrl(uploadedFile.public_id, {
+                width: 400,
+                height: 400,
+                crop: "fill",
+              }),
         publicId: uploadedFile.public_id,
-        type: getMediaType(file.mimetype),
+        type: mediaType,
       };
     }),
   );
@@ -129,6 +153,16 @@ export const getPostById = asyncHandler(async (req, res) => {
   if (!post) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Post not found");
   }
+
+  await trackAnalytics({
+    owner: post.author._id || post.author,
+    viewer: req.user._id,
+    type: "post_impression",
+    post: post._id,
+    source: req.query.source || "direct",
+    ip: req.ip,
+    device: req.headers["user-agent"] || "",
+  });
 
   res
     .status(HTTP_STATUS.Ok)
