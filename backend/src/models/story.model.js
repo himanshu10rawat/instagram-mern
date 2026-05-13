@@ -107,6 +107,18 @@ const storySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    isArchived: {
+      type: Boolean,
+      default: false,
+    },
+
+    mentions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   {
     timestamps: true,

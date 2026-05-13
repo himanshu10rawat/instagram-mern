@@ -30,6 +30,7 @@ import collectionRoutes from "./routes/collection.routes.js";
 import shareRoutes from "./routes/share.routes.js";
 import hashtagRoutes from "./routes/hashtag.routes.js";
 import searchHistoryRoutes from "./routes/searchHistory.routes.js";
+import highlightRoutes from "./routes/highlight.routes.js";
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use("/api/v1/collections", collectionRoutes);
 app.use("/api/v1/share", shareRoutes);
 app.use("/api/v1/hashtags", hashtagRoutes);
 app.use("/api/v1/search-history", searchHistoryRoutes);
+app.use("/api/v1/highlights", highlightRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

@@ -11,6 +11,8 @@ import {
   replyToStory,
   unlikeStory,
   viewStory,
+  archiveStory,
+  getArchivedStories,
 } from "../controllers/story.controller.js";
 import { isAuthenticated } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/upload.middleware.js";
@@ -47,5 +49,7 @@ router.get("/:storyId/replies", isAuthenticated, getStoryReplies);
 router.get("/:storyId/viewers", isAuthenticated, getStoryViewers);
 router.get("/:storyId", isAuthenticated, viewStory);
 router.delete("/:storyId", isAuthenticated, deleteStory);
+router.get("/archive", isAuthenticated, getArchivedStories);
+router.patch("/:storyId/archive", isAuthenticated, archiveStory);
 
 export default router;

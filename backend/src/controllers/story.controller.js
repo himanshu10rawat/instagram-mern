@@ -16,6 +16,7 @@ import {
   getOptimizedVideoUrl,
   getVideoThumbnailUrl,
 } from "../utils/cloudinaryUrl.js";
+import { extractMentions } from "../utils/socialParser.js";
 
 const userPublicFields = "username fullName avatar isVerified isPrivate followers closeFriends";
 
@@ -77,6 +78,15 @@ export const createStory = asyncHandler(async (req, res) => {
 
   const mediaType = getMediaType(req.file.mimetype);
 
+  const extractedMentions = extractMentions(req.body.caption || "");
+
+  const mentionedUsers = await User.find({
+    username: {
+      $in: extractedMentions,
+    },
+    isDeleted: false,
+  }).select("_id");
+
   const story = await Story.create({
     author: req.user._id,
     media: {
@@ -100,10 +110,22 @@ export const createStory = asyncHandler(async (req, res) => {
       publicId: uploadedMedia.public_id,
       type: mediaType,
     },
+    mentions: mentionedUsers.map((user) => user._id),
     caption: req.body.caption || "",
     visibility: req.body.visibility || "public",
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
   });
+
+  await Promise.all(
+    mentionedUsers.map((mentionedUser) =>
+      createNotification({
+        sender: req.user._id,
+        receiver: mentionedUser._id,
+        type: "mention",
+        story: story._id,
+      }),
+    ),
+  );
 
   const createdStory = await Story.findById(story._id).populate("author", userPublicFields);
 
@@ -381,4 +403,46 @@ export const getStoryReplies = asyncHandler(async (req, res) => {
   res
     .status(HTTP_STATUS.Ok)
     .json(new ApiResponse(HTTP_STATUS.Ok, story.replies, "Story replies fetched successfully"));
+});
+
+export const getArchivedStories = asyncHandler(async (req, res) => {
+  const stories = await Story.find({
+    author: req.user._id,
+    expiresAt: {
+      $lte: new Date(),
+    },
+    isDeleted: false,
+  }).sort({ createdAt: -1 });
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, stories, "Archived stories fetched successfully"));
+});
+
+export const archiveStory = asyncHandler(async (req, res) => {
+  const { storyId } = req.params;
+
+  validateObjectId(storyId, "Invalid story id");
+
+  const story = await Story.findOneAndUpdate(
+    {
+      _id: storyId,
+      author: req.user._id,
+      isDeleted: false,
+    },
+    {
+      isArchived: true,
+    },
+    {
+      new: true,
+    },
+  );
+
+  if (!story) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Story not found");
+  }
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, story, "Story archived successfully"));
 });
