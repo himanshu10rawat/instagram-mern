@@ -147,9 +147,13 @@ export const getActiveStories = asyncHandler(async (req, res) => {
     .populate("author", userPublicFields)
     .sort({ createdAt: -1 });
 
+  const visibleStories = stories.filter(
+    (story) => story.author && canViewStory(story, story.author, req.user._id),
+  );
+
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, stories, "Stories fetched successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, visibleStories, "Stories fetched successfully"));
 });
 
 export const getUserStories = asyncHandler(async (req, res) => {

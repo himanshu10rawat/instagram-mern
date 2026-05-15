@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import CreatePage from "../pages/CreatePage";
 import ExplorePage from "../pages/ExplorePage";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import HomePage from "../pages/HomePage";
 import LoginPage from "../pages/LoginPage";
 import MessagesPage from "../pages/MessagesPage";
@@ -10,8 +11,10 @@ import NotificationsPage from "../pages/NotificationsPage";
 import ProfilePage from "../pages/ProfilePage";
 import ReelsPage from "../pages/ReelsPage";
 import RegisterPage from "../pages/RegisterPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage";
 import SearchPage from "../pages/SearchPage";
 import SettingsPage from "../pages/SettingsPage";
+import VerifyEmailPage from "../pages/VerifyEmailPage";
 import VerifyTwoFactorPage from "../pages/VerifyTwoFactorPage";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -20,6 +23,9 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+      <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
       <Route path="/verify-2fa" element={<VerifyTwoFactorPage />} />
 
       <Route element={<ProtectedRoute />}>

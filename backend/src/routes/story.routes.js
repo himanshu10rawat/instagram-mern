@@ -23,6 +23,7 @@ import { moderateBodyText } from "../middlewares/moderation.middleware.js";
 const router = Router();
 
 router.get("/", isAuthenticated, getActiveStories);
+router.get("/archive", isAuthenticated, getArchivedStories);
 router.get("/user/:userId", isAuthenticated, getUserStories);
 
 router.post(
@@ -49,7 +50,6 @@ router.get("/:storyId/replies", isAuthenticated, getStoryReplies);
 router.get("/:storyId/viewers", isAuthenticated, getStoryViewers);
 router.get("/:storyId", isAuthenticated, viewStory);
 router.delete("/:storyId", isAuthenticated, deleteStory);
-router.get("/archive", isAuthenticated, getArchivedStories);
 router.patch("/:storyId/archive", isAuthenticated, archiveStory);
 
 export default router;

@@ -29,6 +29,14 @@ const validateObjectId = (id, message = "Invalid id") => {
   }
 };
 
+const invalidatePostInteractionCaches = async (userId) => {
+  await Promise.all([
+    deleteCacheByPattern("feed:*"),
+    deleteCacheByPattern(`recommendations:*:${userId}:*`),
+    deleteCacheByPattern(`recommendations:users:${userId}`),
+  ]);
+};
+
 const getMediaType = (mimeType = "") => {
   if (mimeType.startsWith("image/")) return "image";
   if (mimeType.startsWith("video/")) return "video";
@@ -273,10 +281,10 @@ export const likePost = asyncHandler(async (req, res) => {
     post: post._id,
   });
 
-  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
-  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
+  await invalidatePostInteractionCaches(req.user._id);
+  await post.populate("author", userPublicFields);
 
-  res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Post liked successfully"));
+  res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, post, "Post liked successfully"));
 });
 
 export const unlikePost = asyncHandler(async (req, res) => {
@@ -284,7 +292,7 @@ export const unlikePost = asyncHandler(async (req, res) => {
 
   validateObjectId(postId, "Invalid post id");
 
-  await Post.findOneAndUpdate(
+  const post = await Post.findOneAndUpdate(
     {
       _id: postId,
       isDeleted: false,
@@ -292,14 +300,21 @@ export const unlikePost = asyncHandler(async (req, res) => {
     {
       $pull: { likes: req.user._id },
     },
+    {
+      new: true,
+    },
   );
 
-  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
-  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
+  if (!post) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Post not found");
+  }
+
+  await invalidatePostInteractionCaches(req.user._id);
+  await post.populate("author", userPublicFields);
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, null, "Post unliked successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, post, "Post unliked successfully"));
 });
 
 export const savePost = asyncHandler(async (req, res) => {
@@ -324,10 +339,10 @@ export const savePost = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Post not found");
   }
 
-  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
-  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
+  await invalidatePostInteractionCaches(req.user._id);
+  await post.populate("author", userPublicFields);
 
-  res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Post saved successfully"));
+  res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, post, "Post saved successfully"));
 });
 
 export const unsavePost = asyncHandler(async (req, res) => {
@@ -335,7 +350,7 @@ export const unsavePost = asyncHandler(async (req, res) => {
 
   validateObjectId(postId, "Invalid post id");
 
-  await Post.findOneAndUpdate(
+  const post = await Post.findOneAndUpdate(
     {
       _id: postId,
       isDeleted: false,
@@ -343,14 +358,21 @@ export const unsavePost = asyncHandler(async (req, res) => {
     {
       $pull: { savedBy: req.user._id },
     },
+    {
+      new: true,
+    },
   );
 
-  await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
-  await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
+  if (!post) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Post not found");
+  }
+
+  await invalidatePostInteractionCaches(req.user._id);
+  await post.populate("author", userPublicFields);
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, null, "Post unsaved successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, post, "Post unsaved successfully"));
 });
 
 export const addComment = asyncHandler(async (req, res) => {

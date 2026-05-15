@@ -100,7 +100,7 @@ const storySchema = new mongoose.Schema(
     expiresAt: {
       type: Date,
       required: true,
-      index: { expires: 0 },
+      index: true,
     },
 
     isDeleted: {
