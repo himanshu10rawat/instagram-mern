@@ -1,6 +1,6 @@
 import Notification from "../models/notification.model.js";
-import { getIO } from "../socket/socket.js";
 import { getUserSocket } from "../socket/onlineUsers.js";
+import { getIO } from "../socket/socket.js";
 import { deleteCache } from "./cache.js";
 
 const createNotification = async ({
@@ -8,21 +8,21 @@ const createNotification = async ({
   receiver,
   type,
   post = null,
-  story = null,
   reel = null,
+  story = null,
   comment = null,
 }) => {
-  if (sender.toString() === receiver.toString()) {
-    return;
-  }
+  if (!sender || !receiver) return null;
+
+  if (sender.toString() === receiver.toString()) return null;
 
   const notification = await Notification.create({
     sender,
     receiver,
     type,
     post,
-    story,
     reel,
+    story,
     comment,
   });
 
@@ -31,15 +31,13 @@ const createNotification = async ({
   const populatedNotification = await Notification.findById(notification._id)
     .populate("sender", "username fullName avatar isVerified")
     .populate("post")
-    .populate("story")
-    .populate("reel");
-
-  const io = getIO();
+    .populate("reel")
+    .populate("story");
 
   const receiverSocketId = await getUserSocket(receiver);
 
   if (receiverSocketId) {
-    io.to(receiverSocketId).emit("new_notification", populatedNotification);
+    getIO().to(receiverSocketId).emit("new_notification", populatedNotification);
   }
 
   return populatedNotification;

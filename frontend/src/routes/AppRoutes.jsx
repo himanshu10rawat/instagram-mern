@@ -17,6 +17,8 @@ import SettingsPage from "../pages/SettingsPage";
 import VerifyEmailPage from "../pages/VerifyEmailPage";
 import VerifyTwoFactorPage from "../pages/VerifyTwoFactorPage";
 import ProtectedRoute from "./ProtectedRoute";
+import EditProfilePage from "../pages/EditProfilePage";
+import FollowRequestsPage from "../pages/FollowRequestsPage";
 
 const AppRoutes = () => {
   return (
@@ -37,7 +39,9 @@ const AppRoutes = () => {
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/create" element={<CreatePage />} />
+          <Route path="/follow-requests" element={<FollowRequestsPage />} />
           <Route path="/profile/:username" element={<ProfilePage />} />
+          <Route path="/profile/me/edit" element={<EditProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>

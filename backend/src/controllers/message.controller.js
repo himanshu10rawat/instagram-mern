@@ -715,3 +715,41 @@ export const rejectMessageRequest = asyncHandler(async (req, res) => {
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, null, "Message request rejected"));
 });
+
+export const createOrGetConversation = asyncHandler(async (req, res) => {
+  const { receiverId } = req.params;
+
+  validateObjectId(receiverId, "Invalid receiver id");
+
+  if (req.user._id.toString() === receiverId) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "You cannot create conversation with yourself");
+  }
+
+  const receiver = await User.findOne({
+    _id: receiverId,
+    isDeleted: false,
+    isBlockedByAdmin: false,
+  });
+
+  if (!receiver) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Receiver not found");
+  }
+
+  const conversation = await findOrCreateConversation(req.user._id, receiverId);
+
+  const populatedConversation = await Conversation.findById(conversation._id)
+    .populate("participants", userPublicFields)
+    .populate({
+      path: "lastMessage",
+      populate: {
+        path: "sender",
+        select: userPublicFields,
+      },
+    });
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(
+      new ApiResponse(HTTP_STATUS.OK, populatedConversation, "Conversation ready successfully"),
+    );
+});

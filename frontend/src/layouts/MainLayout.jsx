@@ -2,8 +2,13 @@ import { Outlet } from "react-router-dom";
 
 import MobileNavbar from "../components/layout/MobileNavbar";
 import Sidebar from "../components/layout/Sidebar";
+import useSocketMessages from "../hooks/useSocketMessages";
+import useSocketNotifications from "../hooks/useSocketNotifications";
 
 const MainLayout = () => {
+  useSocketNotifications();
+  useSocketMessages();
+
   return (
     <div className="min-h-screen bg-white text-slate-950">
       <Sidebar />

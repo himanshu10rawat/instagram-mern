@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import {
   acceptMessageRequest,
+  createOrGetConversation,
   deleteConversationForMe,
   deleteMessageForEveryone,
   deleteMessageForMe,
@@ -47,6 +48,7 @@ router.post(
 router.get("/conversation/:conversationId", isAuthenticated, getMessages);
 router.patch("/conversation/:conversationId/seen", isAuthenticated, markConversationAsSeen);
 router.delete("/conversation/:conversationId", isAuthenticated, deleteConversationForMe);
+router.post("/conversations/:receiverId", isAuthenticated, createOrGetConversation);
 
 router.delete("/:messageId/me", isAuthenticated, deleteMessageForMe);
 router.delete("/:messageId/everyone", isAuthenticated, deleteMessageForEveryone);

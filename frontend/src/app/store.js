@@ -1,15 +1,29 @@
 import { configureStore } from "@reduxjs/toolkit";
 
 import authReducer from "../features/auth/authSlice";
+import createReducer from "../features/create/createSlice";
+import followReducer from "../features/follow/followSlice";
+import messageReducer from "../features/messages/messageSlice";
+import notificationReducer from "../features/notifications/notificationSlice";
 import postReducer from "../features/posts/postSlice";
+import profileReducer from "../features/profile/profileSlice";
 import recommendationReducer from "../features/profile/recommendationSlice";
+import reelReducer from "../features/reels/reelSlice";
+import searchReducer from "../features/search/searchSlice";
 import storyReducer from "../features/stories/storySlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    create: createReducer,
+    follow: followReducer,
+    messages: messageReducer,
+    notifications: notificationReducer,
     posts: postReducer,
-    stories: storyReducer,
+    profile: profileReducer,
     recommendations: recommendationReducer,
+    reels: reelReducer,
+    search: searchReducer,
+    stories: storyReducer,
   },
 });

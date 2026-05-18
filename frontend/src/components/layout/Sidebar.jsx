@@ -9,9 +9,10 @@ import {
   Search,
   Settings,
   User,
+  UserPlus,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { logoutUser } from "../../features/auth/authSlice";
 
@@ -61,11 +62,20 @@ const navItems = [
     path: "/settings",
     icon: Settings,
   },
+  {
+    label: "Requests",
+    path: "/follow-requests",
+    icon: UserPlus,
+  },
 ];
 
 const Sidebar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const unreadNotifications = useSelector(
+    (state) => state.notifications.unreadCount,
+  );
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -95,7 +105,15 @@ const Sidebar = () => {
               }
             >
               <Icon size={22} />
-              <span>{item.label}</span>
+              <span className="flex flex-1 items-center justify-between">
+                <span>{item.label}</span>
+
+                {item.label === "Notifications" && unreadNotifications > 0 ? (
+                  <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                    {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                  </span>
+                ) : null}
+              </span>
             </NavLink>
           );
         })}

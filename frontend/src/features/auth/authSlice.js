@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import api from "../../lib/axios";
+import { disconnectSocket } from "../../lib/socket";
 
 const getInitialUser = () => {
   try {
@@ -140,6 +141,7 @@ const authSlice = createSlice({
       state.twoFactorUserId = null;
 
       clearStoredCredentials();
+      disconnectSocket();
     },
 
     setCredentials: (state, action) => {
@@ -199,6 +201,7 @@ const authSlice = createSlice({
         state.twoFactorUserId = null;
 
         clearStoredCredentials();
+        disconnectSocket();
       });
   },
 });
