@@ -68,9 +68,11 @@ const EditProfileForm = ({ profile, updating }) => {
     <>
       <div className="mt-6 space-y-6">
         <div>
-          <p className="mb-2 text-sm font-medium text-slate-700">Cover photo</p>
+          <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            Cover photo
+          </p>
 
-          <label className="relative flex h-44 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
+          <label className="relative flex h-44 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-900">
             {profile?.coverImage?.url || profile?.cover?.url ? (
               <img
                 src={profile.coverImage?.url || profile.cover?.url}
@@ -93,9 +95,11 @@ const EditProfileForm = ({ profile, updating }) => {
         </div>
 
         <div>
-          <p className="mb-2 text-sm font-medium text-slate-700">Avatar</p>
+          <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            Avatar
+          </p>
 
-          <label className="relative block h-24 w-24 cursor-pointer overflow-hidden rounded-full bg-slate-100">
+          <label className="relative block h-24 w-24 cursor-pointer overflow-hidden rounded-full bg-slate-100 dark:bg-slate-900">
             {profile?.avatar?.url ? (
               <img
                 src={profile.avatar.url}
@@ -130,7 +134,7 @@ const EditProfileForm = ({ profile, updating }) => {
         <div>
           <label
             htmlFor="bio"
-            className="mb-1 block text-sm font-medium text-slate-700"
+            className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
           >
             Bio
           </label>
@@ -143,10 +147,10 @@ const EditProfileForm = ({ profile, updating }) => {
             rows={4}
             maxLength={150}
             placeholder="Write your bio"
-            className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-900"
+            className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
           />
 
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {formData.bio.length}/150
           </p>
         </div>
@@ -159,12 +163,12 @@ const EditProfileForm = ({ profile, updating }) => {
           placeholder="https://example.com"
         />
 
-        <label className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
+        <label className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800">
           <span>
-            <span className="block text-sm font-semibold text-slate-900">
+            <span className="block text-sm font-semibold text-slate-900 dark:text-white">
               Private account
             </span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               Only approved followers can see your posts.
             </span>
           </span>
@@ -203,8 +207,10 @@ const EditProfilePage = () => {
 
   return (
     <section className="mx-auto max-w-3xl">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
-        <h1 className="text-2xl font-bold text-slate-950">Edit Profile</h1>
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+        <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
+          Edit Profile
+        </h1>
 
         {error ? (
           <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -225,7 +231,9 @@ const EditProfilePage = () => {
             updating={updating}
           />
         ) : (
-          <p className="mt-6 text-sm text-slate-500">Profile not found.</p>
+          <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
+            Profile not found.
+          </p>
         )}
       </div>
     </section>

@@ -1,9 +1,13 @@
+import { Link } from "react-router-dom";
+
 const ProfilePostsGrid = ({ posts = [] }) => {
   if (!posts.length) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
-        <h2 className="text-lg font-semibold text-slate-950">No posts yet</h2>
-        <p className="mt-2 text-sm text-slate-500">
+      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-950">
+        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
+          No posts yet
+        </h2>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Posts will appear here after creation.
         </p>
       </div>
@@ -16,9 +20,10 @@ const ProfilePostsGrid = ({ posts = [] }) => {
         const media = post.media?.[0];
 
         return (
-          <div
+          <Link
             key={post._id}
-            className="aspect-square overflow-hidden bg-slate-100"
+            to={`/posts/${post._id}`}
+            className="aspect-square overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-900"
           >
             {media?.type === "video" ? (
               <video
@@ -33,7 +38,7 @@ const ProfilePostsGrid = ({ posts = [] }) => {
                 className="h-full w-full object-cover"
               />
             )}
-          </div>
+          </Link>
         );
       })}
     </div>

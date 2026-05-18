@@ -15,6 +15,7 @@ const getNotificationText = (notification) => {
     story_reply: `${username} replied to your story`,
     reel_like: `${username} liked your reel`,
     reel_comment: `${username} commented on your reel`,
+    message: `${username} sent you a message`,
     mention: `${username} mentioned you`,
     tag: `${username} tagged you in a post`,
   };
@@ -26,6 +27,9 @@ const getNotificationLink = (notification) => {
   if (notification.post?._id) return `/posts/${notification.post._id}`;
   if (notification.reel?._id) return `/reels/${notification.reel._id}`;
   if (notification.story?._id) return `/stories/${notification.story._id}`;
+  if (notification.type === "message" && notification.sender?._id) {
+    return `/messages?user=${notification.sender._id}`;
+  }
   if (notification.sender?.username)
     return `/profile/${notification.sender.username}`;
 
@@ -37,8 +41,8 @@ const NotificationItem = ({ notification, onRead, onDelete }) => {
     <div
       className={`flex items-center justify-between gap-4 rounded-2xl border p-4 ${
         notification.isRead
-          ? "border-slate-200 bg-white"
-          : "border-blue-100 bg-blue-50"
+          ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
+          : "border-blue-100 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-950/30"
       }`}
     >
       <Link
@@ -57,11 +61,11 @@ const NotificationItem = ({ notification, onRead, onDelete }) => {
         />
 
         <div>
-          <p className="text-sm font-medium text-slate-900">
+          <p className="text-sm font-medium text-slate-900 dark:text-white">
             {getNotificationText(notification)}
           </p>
 
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {notification.createdAt
               ? new Date(notification.createdAt).toLocaleString()
               : ""}
@@ -72,7 +76,7 @@ const NotificationItem = ({ notification, onRead, onDelete }) => {
       <button
         type="button"
         onClick={() => onDelete(notification._id)}
-        className="rounded-xl p-2 text-slate-500 hover:bg-red-50 hover:text-red-600"
+        className="rounded-xl p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-950/30 dark:hover:text-red-300"
         aria-label="Delete notification"
       >
         <Trash2 size={18} />

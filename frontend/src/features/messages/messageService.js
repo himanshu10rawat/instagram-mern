@@ -11,7 +11,7 @@ export const getMessagesApi = async ({
   limit = 30,
 }) => {
   const response = await api.get(
-    `/messages/${conversationId}?page=${page}&limit=${limit}`,
+    `/messages/conversation/${conversationId}?page=${page}&limit=${limit}`,
   );
 
   return response.data.data;
@@ -44,7 +44,7 @@ export const sendMessageApi = async ({ receiverId, text, replyTo, file }) => {
 };
 
 export const markConversationSeenApi = async (conversationId) => {
-  const response = await api.patch(`/messages/${conversationId}/seen`);
+  const response = await api.patch(`/messages/conversation/${conversationId}/seen`);
   return response.data.data;
 };
 

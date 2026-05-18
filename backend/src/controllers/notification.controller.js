@@ -24,6 +24,7 @@ export const getNotifications = asyncHandler(async (req, res) => {
     .populate("post")
     .populate("story")
     .populate("reel")
+    .populate("message")
     .sort({ createdAt: -1 });
 
   await setCache(cacheKey, notifications, 30);

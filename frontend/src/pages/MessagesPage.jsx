@@ -29,7 +29,7 @@ const MessagesPage = () => {
   const receiverIdFromQuery = searchParams.get("user");
 
   const [activeTab, setActiveTab] = useState("inbox");
-  const [hasHandledQueryUser, setHasHandledQueryUser] = useState(false);
+  const [handledReceiverId, setHandledReceiverId] = useState(null);
 
   const currentUser = useSelector((state) => state.auth.user);
   const currentUserId = currentUser?._id;
@@ -64,13 +64,17 @@ const MessagesPage = () => {
 
   useEffect(() => {
     const openOrStartChat = async () => {
-      if (!receiverIdFromQuery || !currentUserId || hasHandledQueryUser) {
+      if (
+        !receiverIdFromQuery ||
+        !currentUserId ||
+        handledReceiverId === receiverIdFromQuery
+      ) {
         return;
       }
 
       if (existingConversationFromQuery) {
         dispatch(setActiveConversation(existingConversationFromQuery));
-        setHasHandledQueryUser(true);
+        setHandledReceiverId(receiverIdFromQuery);
         return;
       }
 
@@ -90,7 +94,7 @@ const MessagesPage = () => {
           setActiveTab("requests");
         }
 
-        setHasHandledQueryUser(true);
+        setHandledReceiverId(receiverIdFromQuery);
       }
     };
 
@@ -99,7 +103,7 @@ const MessagesPage = () => {
     currentUserId,
     dispatch,
     existingConversationFromQuery,
-    hasHandledQueryUser,
+    handledReceiverId,
     receiverIdFromQuery,
   ]);
 
@@ -108,30 +112,34 @@ const MessagesPage = () => {
   };
 
   return (
-    <section className="h-[calc(100vh-48px)] overflow-hidden rounded-2xl border border-slate-200 bg-white">
+    <section className="flex h-[calc(100dvh-3rem)] min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
       {error ? (
-        <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="shrink-0 border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}
         </div>
       ) : null}
 
       {sending ? (
-        <div className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-500">
+        <div className="shrink-0 border-b border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
           Starting chat...
         </div>
       ) : null}
 
-      <div className="grid h-full grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)]">
-        <div className={`${activeConversation ? "hidden md:block" : "block"}`}>
-          <div className="h-full border-r border-slate-200">
-            <div className="flex border-b border-slate-200">
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)]">
+        <div
+          className={`min-h-0 ${
+            activeConversation ? "hidden md:block" : "block"
+          }`}
+        >
+          <div className="flex h-full min-h-0 flex-col border-r border-slate-200 dark:border-slate-800">
+            <div className="flex shrink-0 border-b border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setActiveTab("inbox")}
                 className={`flex-1 px-4 py-3 text-sm font-semibold ${
                   activeTab === "inbox"
-                    ? "border-b-2 border-slate-950 text-slate-950"
-                    : "text-slate-500"
+                    ? "border-b-2 border-slate-950 text-slate-950 dark:border-white dark:text-white"
+                    : "text-slate-500 dark:text-slate-400"
                 }`}
               >
                 Inbox
@@ -142,35 +150,41 @@ const MessagesPage = () => {
                 onClick={() => setActiveTab("requests")}
                 className={`flex-1 px-4 py-3 text-sm font-semibold ${
                   activeTab === "requests"
-                    ? "border-b-2 border-slate-950 text-slate-950"
-                    : "text-slate-500"
+                    ? "border-b-2 border-slate-950 text-slate-950 dark:border-white dark:text-white"
+                    : "text-slate-500 dark:text-slate-400"
                 }`}
               >
                 Requests
               </button>
             </div>
 
-            {activeTab === "inbox" ? (
-              loading ? (
-                <p className="p-4 text-sm text-slate-500">
-                  Loading conversations...
-                </p>
+            <div className="min-h-0 flex-1">
+              {activeTab === "inbox" ? (
+                loading ? (
+                  <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
+                    Loading conversations...
+                  </p>
+                ) : (
+                  <ConversationList
+                    conversations={conversations}
+                    activeConversationId={activeConversation?._id}
+                    currentUserId={currentUserId}
+                    onlineUsers={onlineUsers}
+                    onSelect={handleSelectConversation}
+                  />
+                )
               ) : (
-                <ConversationList
-                  conversations={conversations}
-                  activeConversationId={activeConversation?._id}
-                  currentUserId={currentUserId}
-                  onlineUsers={onlineUsers}
-                  onSelect={handleSelectConversation}
-                />
-              )
-            ) : (
-              <MessageRequestsPanel />
-            )}
+                <MessageRequestsPanel />
+              )}
+            </div>
           </div>
         </div>
 
-        <div className={`${activeConversation ? "block" : "hidden md:block"}`}>
+        <div
+          className={`min-h-0 ${
+            activeConversation ? "block" : "hidden md:block"
+          }`}
+        >
           <ChatWindow />
         </div>
       </div>

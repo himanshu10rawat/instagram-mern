@@ -19,6 +19,11 @@ import VerifyTwoFactorPage from "../pages/VerifyTwoFactorPage";
 import ProtectedRoute from "./ProtectedRoute";
 import EditProfilePage from "../pages/EditProfilePage";
 import FollowRequestsPage from "../pages/FollowRequestsPage";
+import PostDetailPage from "../pages/PostDetailPage";
+import ReelDetailPage from "../pages/ReelDetailPage";
+import ArchivedPostsPage from "../pages/ArchivedPostsPage";
+import SavedPostsPage from "../pages/SavedPostsPage";
+import StoryViewerPage from "../pages/StoryViewerPage";
 
 const AppRoutes = () => {
   return (
@@ -43,6 +48,11 @@ const AppRoutes = () => {
           <Route path="/profile/:username" element={<ProfilePage />} />
           <Route path="/profile/me/edit" element={<EditProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/posts/:postId" element={<PostDetailPage />} />
+          <Route path="/reels/:reelId" element={<ReelDetailPage />} />
+          <Route path="/saved" element={<SavedPostsPage />} />
+          <Route path="/archive" element={<ArchivedPostsPage />} />
+          <Route path="/stories/:storyId" element={<StoryViewerPage />} />
         </Route>
       </Route>
     </Routes>

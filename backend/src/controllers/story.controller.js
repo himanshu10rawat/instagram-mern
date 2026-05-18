@@ -325,7 +325,7 @@ export const likeStory = asyncHandler(async (req, res) => {
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, null, "Story liked successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, story, "Story liked successfully"));
 });
 
 export const unlikeStory = asyncHandler(async (req, res) => {
@@ -333,7 +333,7 @@ export const unlikeStory = asyncHandler(async (req, res) => {
 
   validateObjectId(storyId, "Invalid story id");
 
-  await Story.findOneAndUpdate(
+  const story = await Story.findOneAndUpdate(
     {
       _id: storyId,
       expiresAt: { $gt: new Date() },
@@ -342,11 +342,18 @@ export const unlikeStory = asyncHandler(async (req, res) => {
     {
       $pull: { likes: req.user._id },
     },
-  );
+    {
+      new: true,
+    },
+  ).populate("author", userPublicFields);
+
+  if (!story) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Story not found or expired");
+  }
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, null, "Story unliked successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, story, "Story unliked successfully"));
 });
 
 export const replyToStory = asyncHandler(async (req, res) => {
@@ -367,6 +374,10 @@ export const replyToStory = asyncHandler(async (req, res) => {
 
   if (!canViewStory(story, story.author, req.user._id)) {
     throw new ApiError(HTTP_STATUS.FORBIDDEN, "You cannot reply to this story");
+  }
+
+  if (story.author._id.toString() === req.user._id.toString()) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "You cannot reply to your own story");
   }
 
   story.replies.push({

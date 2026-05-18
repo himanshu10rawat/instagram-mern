@@ -3,8 +3,10 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
   getMyProfileApi,
   getUserProfileApi,
+  removeAccountApi,
   updateAvatarApi,
   updateCoverApi,
+  updatePrivacySettingsApi,
   updateProfileApi,
 } from "./profileService";
 
@@ -67,12 +69,38 @@ export const updateCover = createAsyncThunk(
   async (file, { rejectWithValue }) => {
     try {
       const formData = new FormData();
-      formData.append("cover", file);
+      formData.append("coverImage", file);
 
       return await updateCoverApi(formData);
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to update cover",
+      );
+    }
+  },
+);
+
+export const updatePrivacySettings = createAsyncThunk(
+  "profile/updatePrivacySettings",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await updatePrivacySettingsApi(payload);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update privacy settings",
+      );
+    }
+  },
+);
+
+export const removeAccount = createAsyncThunk(
+  "profile/removeAccount",
+  async (password, { rejectWithValue }) => {
+    try {
+      return await removeAccountApi(password);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to remove account",
       );
     }
   },
@@ -169,6 +197,35 @@ const profileSlice = createSlice({
         state.successMessage = "Cover updated successfully";
       })
       .addCase(updateCover.rejected, (state, action) => {
+        state.updating = false;
+        state.error = action.payload;
+      })
+
+      .addCase(updatePrivacySettings.pending, (state) => {
+        state.updating = true;
+        state.error = null;
+        state.successMessage = "";
+      })
+      .addCase(updatePrivacySettings.fulfilled, (state, action) => {
+        state.updating = false;
+        state.profile = action.payload;
+        state.successMessage = "Privacy settings updated successfully";
+      })
+      .addCase(updatePrivacySettings.rejected, (state, action) => {
+        state.updating = false;
+        state.error = action.payload;
+      })
+
+      .addCase(removeAccount.pending, (state) => {
+        state.updating = true;
+        state.error = null;
+      })
+      .addCase(removeAccount.fulfilled, (state) => {
+        state.updating = false;
+        state.profile = null;
+        state.successMessage = "Account removed successfully";
+      })
+      .addCase(removeAccount.rejected, (state, action) => {
         state.updating = false;
         state.error = action.payload;
       });

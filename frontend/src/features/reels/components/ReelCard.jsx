@@ -119,7 +119,7 @@ const ReelCard = ({ reel }) => {
           <div className="pointer-events-auto flex flex-col items-center gap-5">
             <button
               type="button"
-              onClick={() => dispatch(likeReel(reel._id))}
+              onClick={() => dispatch(likeReel({ reelId: reel._id, isLiked }))}
               className="flex flex-col items-center gap-1"
             >
               <Heart size={28} fill={isLiked ? "currentColor" : "none"} />
@@ -141,7 +141,10 @@ const ReelCard = ({ reel }) => {
               <Send size={28} />
             </button>
 
-            <button type="button" onClick={() => dispatch(saveReel(reel._id))}>
+            <button
+              type="button"
+              onClick={() => dispatch(saveReel({ reelId: reel._id, isSaved }))}
+            >
               <Bookmark size={28} fill={isSaved ? "currentColor" : "none"} />
             </button>
 

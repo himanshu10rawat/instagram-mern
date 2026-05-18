@@ -71,21 +71,26 @@ const SearchPage = () => {
 
   return (
     <section className="mx-auto max-w-5xl">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
-        <h1 className="text-2xl font-bold text-slate-950">Search</h1>
-        <p className="mt-1 text-sm text-slate-500">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+        <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
+          Search
+        </h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Search users, posts, reels and hashtags.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6">
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 focus-within:border-slate-950">
-            <Search size={20} className="text-slate-500" />
+          <div className="flex items-center gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 focus-within:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:focus-within:border-white">
+            <Search
+              size={20}
+              className="text-slate-500 dark:text-slate-400"
+            />
 
             <input
               value={localQuery}
               onChange={(event) => setLocalQuery(event.target.value)}
               placeholder="Search Instagram"
-              className="flex-1 bg-transparent text-sm outline-none"
+              className="flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
             />
 
             {localQuery ? (
@@ -95,7 +100,7 @@ const SearchPage = () => {
                   setLocalQuery("");
                   dispatch(clearSearchResults());
                 }}
-                className="text-slate-500"
+                className="text-slate-500 dark:text-slate-400"
               >
                 <X size={18} />
               </button>
@@ -106,7 +111,7 @@ const SearchPage = () => {
         {!hasQuery ? (
           <div className="mt-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-950">
+              <h2 className="text-sm font-semibold text-slate-950 dark:text-white">
                 Recent searches
               </h2>
 
@@ -123,14 +128,16 @@ const SearchPage = () => {
 
             <div className="mt-4 flex flex-wrap gap-2">
               {recentSearches.length === 0 ? (
-                <p className="text-sm text-slate-500">No recent searches.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  No recent searches.
+                </p>
               ) : (
                 recentSearches.map((item) => (
                   <button
                     key={item}
                     type="button"
                     onClick={() => handleRecentClick(item)}
-                    className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-700"
+                    className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-700 dark:bg-slate-900 dark:text-slate-200"
                   >
                     {item}
                   </button>
@@ -142,7 +149,7 @@ const SearchPage = () => {
 
         {hasQuery ? (
           <>
-            <div className="mt-6 flex gap-2 overflow-x-auto border-b border-slate-200">
+            <div className="mt-6 flex gap-2 overflow-x-auto border-b border-slate-200 dark:border-slate-800">
               {tabs.map((tab) => (
                 <button
                   key={tab}
@@ -150,8 +157,8 @@ const SearchPage = () => {
                   onClick={() => setActiveTab(tab)}
                   className={`px-4 py-3 text-sm font-semibold capitalize ${
                     activeTab === tab
-                      ? "border-b-2 border-slate-950 text-slate-950"
-                      : "text-slate-500"
+                      ? "border-b-2 border-slate-950 text-slate-950 dark:border-white dark:text-white"
+                      : "text-slate-500 dark:text-slate-400"
                   }`}
                 >
                   {tab}
@@ -160,7 +167,9 @@ const SearchPage = () => {
             </div>
 
             {loading ? (
-              <p className="mt-6 text-sm text-slate-500">Searching...</p>
+              <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
+                Searching...
+              </p>
             ) : null}
 
             {error ? (
@@ -173,7 +182,9 @@ const SearchPage = () => {
               {activeTab === "users" ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {users.length === 0 && !loading ? (
-                    <p className="text-sm text-slate-500">No users found.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      No users found.
+                    </p>
                   ) : (
                     users.map((user) => (
                       <UserSearchResult key={user._id} user={user} />
@@ -193,7 +204,9 @@ const SearchPage = () => {
               {activeTab === "hashtags" ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {hashtags.length === 0 && !loading ? (
-                    <p className="text-sm text-slate-500">No hashtags found.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      No hashtags found.
+                    </p>
                   ) : (
                     hashtags.map((hashtag) => (
                       <HashtagSearchResult

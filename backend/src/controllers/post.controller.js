@@ -214,9 +214,23 @@ export const getPostById = asyncHandler(async (req, res) => {
     device: req.headers["user-agent"] || "",
   });
 
+  const comments = await Comment.find({
+    post: post._id,
+    parentComment: null,
+    isDeleted: false,
+  })
+    .populate("author", userPublicFields)
+    .sort({ createdAt: -1 });
+
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, post, "Post fetched successfully"));
+    .json(
+      new ApiResponse(
+        HTTP_STATUS.Ok,
+        { ...post.toObject(), comments },
+        "Post fetched successfully",
+      ),
+    );
 });
 
 export const deletePost = asyncHandler(async (req, res) => {
@@ -303,7 +317,7 @@ export const unlikePost = asyncHandler(async (req, res) => {
     {
       new: true,
     },
-  );
+  ).populate("author", userPublicFields);
 
   if (!post) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Post not found");
@@ -569,9 +583,11 @@ export const archivePost = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Post not found");
   }
 
+  await deleteCacheByPattern("feed:*");
+
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, null, "Post archived successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, post, "Post archived successfully"));
 });
 
 export const unarchivePost = asyncHandler(async (req, res) => {
@@ -592,15 +608,17 @@ export const unarchivePost = asyncHandler(async (req, res) => {
     {
       new: true,
     },
-  );
+  ).populate("author", userPublicFields);
 
   if (!post) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Archived post not found");
   }
 
+  await deleteCacheByPattern("feed:*");
+
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, null, "Post unarchived successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, post, "Post unarchived successfully"));
 });
 
 export const getMyArchivedPosts = asyncHandler(async (req, res) => {

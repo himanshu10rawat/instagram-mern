@@ -11,6 +11,7 @@ import recommendationReducer from "../features/profile/recommendationSlice";
 import reelReducer from "../features/reels/reelSlice";
 import searchReducer from "../features/search/searchSlice";
 import storyReducer from "../features/stories/storySlice";
+import themeReducer from "../features/theme/themeSlice";
 
 export const store = configureStore({
   reducer: {
@@ -25,5 +26,6 @@ export const store = configureStore({
     reels: reelReducer,
     search: searchReducer,
     stories: storyReducer,
+    theme: themeReducer,
   },
 });

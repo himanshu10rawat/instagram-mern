@@ -36,9 +36,12 @@ export const fetchSingleReel = createAsyncThunk(
 
 export const likeReel = createAsyncThunk(
   "reels/likeReel",
-  async (reelId, { rejectWithValue }) => {
+  async (payload, { rejectWithValue }) => {
     try {
-      return await likeReelApi(reelId);
+      const { reelId, isLiked = false } =
+        typeof payload === "string" ? { reelId: payload } : payload;
+
+      return await likeReelApi(reelId, isLiked);
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to like reel",
@@ -49,9 +52,12 @@ export const likeReel = createAsyncThunk(
 
 export const saveReel = createAsyncThunk(
   "reels/saveReel",
-  async (reelId, { rejectWithValue }) => {
+  async (payload, { rejectWithValue }) => {
     try {
-      return await saveReelApi(reelId);
+      const { reelId, isSaved = false } =
+        typeof payload === "string" ? { reelId: payload } : payload;
+
+      return await saveReelApi(reelId, isSaved);
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to save reel",
@@ -75,6 +81,16 @@ export const commentReel = createAsyncThunk(
 
 const updateReelInList = (reels, updatedReel) =>
   reels.map((reel) => (reel._id === updatedReel._id ? updatedReel : reel));
+
+const addCommentToReel = (reel, comment) => {
+  if (!reel || !comment) return reel;
+
+  return {
+    ...reel,
+    comments: [...(reel.comments || []), comment],
+    commentsCount: (reel.commentsCount || 0) + 1,
+  };
+};
 
 const initialState = {
   reels: [],
@@ -138,6 +154,9 @@ const reelSlice = createSlice({
       })
       .addCase(likeReel.fulfilled, (state, action) => {
         state.actionLoading = false;
+
+        if (!action.payload?._id) return;
+
         state.reels = updateReelInList(state.reels, action.payload);
 
         if (state.currentReel?._id === action.payload._id) {
@@ -154,6 +173,9 @@ const reelSlice = createSlice({
       })
       .addCase(saveReel.fulfilled, (state, action) => {
         state.actionLoading = false;
+
+        if (!action.payload?._id) return;
+
         state.reels = updateReelInList(state.reels, action.payload);
 
         if (state.currentReel?._id === action.payload._id) {
@@ -166,12 +188,20 @@ const reelSlice = createSlice({
       })
 
       .addCase(commentReel.fulfilled, (state, action) => {
-        const updatedReel = action.payload;
+        const newComment = action.payload;
+        const reelId = newComment?.reel || action.meta.arg.reelId;
 
-        state.reels = updateReelInList(state.reels, updatedReel);
+        state.reels = state.reels.map((reel) =>
+          reel._id === reelId
+            ? {
+                ...reel,
+                commentsCount: (reel.commentsCount || 0) + 1,
+              }
+            : reel,
+        );
 
-        if (state.currentReel?._id === updatedReel._id) {
-          state.currentReel = updatedReel;
+        if (state.currentReel?._id === reelId) {
+          state.currentReel = addCommentToReel(state.currentReel, newComment);
         }
       });
   },

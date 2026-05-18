@@ -2,7 +2,7 @@ import api from "../../lib/axios";
 
 export const searchUsersApi = async (query) => {
   const response = await api.get(
-    `/explore/search/users?query=${encodeURIComponent(query)}`,
+    `/explore/search/users?q=${encodeURIComponent(query)}`,
   );
 
   return response.data.data;
@@ -10,7 +10,7 @@ export const searchUsersApi = async (query) => {
 
 export const searchPostsApi = async (query) => {
   const response = await api.get(
-    `/explore/search/posts?query=${encodeURIComponent(query)}`,
+    `/explore/search/posts?q=${encodeURIComponent(query)}`,
   );
 
   return response.data.data;
@@ -18,7 +18,7 @@ export const searchPostsApi = async (query) => {
 
 export const searchReelsApi = async (query) => {
   const response = await api.get(
-    `/explore/search/reels?query=${encodeURIComponent(query)}`,
+    `/explore/search/reels?q=${encodeURIComponent(query)}`,
   );
 
   return response.data.data;
@@ -26,14 +26,20 @@ export const searchReelsApi = async (query) => {
 
 export const searchHashtagsApi = async (query) => {
   const response = await api.get(
-    `/hashtags/search?query=${encodeURIComponent(query)}`,
+    `/explore/search/hashtags?q=${encodeURIComponent(query)}`,
   );
 
   return response.data.data;
 };
 
 export const getTrendingContentApi = async () => {
-  const response = await api.get("/explore/trending");
+  const [feedResponse, reelsResponse] = await Promise.all([
+    api.get("/explore/feed"),
+    api.get("/explore/trending/reels"),
+  ]);
 
-  return response.data.data;
+  return {
+    posts: feedResponse.data.data?.posts || [],
+    reels: reelsResponse.data.data || [],
+  };
 };

@@ -27,6 +27,7 @@ const notificationSchema = new mongoose.Schema(
         "story_reply",
         "reel_like",
         "reel_comment",
+        "message",
         "mention",
         "tag",
       ],
@@ -58,6 +59,11 @@ const notificationSchema = new mongoose.Schema(
     reel: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Reel",
+    },
+
+    message: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
     },
   },
   {

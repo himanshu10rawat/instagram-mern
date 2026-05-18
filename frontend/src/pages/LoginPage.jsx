@@ -78,10 +78,12 @@ const LoginPage = () => {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <section className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
-        <h1 className="text-center text-3xl font-bold">Instagram Clone</h1>
-        <p className="mt-2 text-center text-sm text-slate-500">
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 dark:bg-slate-950">
+      <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <h1 className="text-center text-3xl font-bold text-slate-950 dark:text-white">
+          Instagram Clone
+        </h1>
+        <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">
           Login to continue your social experience
         </p>
 
@@ -121,15 +123,18 @@ const LoginPage = () => {
         <div className="mt-4 text-center">
           <Link
             to="/forgot-password"
-            className="text-sm font-medium text-slate-700"
+            className="text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Forgot password?
           </Link>
         </div>
 
-        <p className="mt-6 text-center text-sm text-slate-500">
+        <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
           Don&apos;t have an account?{" "}
-          <Link to="/register" className="font-semibold text-slate-900">
+          <Link
+            to="/register"
+            className="font-semibold text-slate-900 dark:text-white"
+          >
             Sign up
           </Link>
         </p>

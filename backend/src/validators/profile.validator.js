@@ -5,6 +5,7 @@ export const updateProfileSchema = z.object({
     fullName: z.string().trim().min(2).max(60).optional(),
     bio: z.string().trim().max(150).optional(),
     website: z.string().trim().url("Invalid website URL").optional().or(z.literal("")),
+    isPrivate: z.boolean().optional(),
     location: z.string().trim().max(80).optional(),
     profession: z.string().trim().max(80).optional(),
     gender: z.enum(["male", "female", "other", "prefer_not_to_say"]).optional(),

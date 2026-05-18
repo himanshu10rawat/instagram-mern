@@ -28,8 +28,10 @@ const ReelsPage = () => {
   return (
     <section className="mx-auto max-w-xl">
       <div className="mb-4">
-        <h1 className="text-2xl font-bold text-slate-950">Reels</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
+          Reels
+        </h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Watch short videos from creators.
         </p>
       </div>
@@ -41,13 +43,17 @@ const ReelsPage = () => {
       ) : null}
 
       {loading && reels.length === 0 ? (
-        <p className="text-sm text-slate-500">Loading reels...</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Loading reels...
+        </p>
       ) : null}
 
       {!loading && reels.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-          <h2 className="text-lg font-semibold text-slate-950">No reels yet</h2>
-          <p className="mt-2 text-sm text-slate-500">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-950">
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
+            No reels yet
+          </h2>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Create your first reel from Create page.
           </p>
         </div>
@@ -64,7 +70,7 @@ const ReelsPage = () => {
           type="button"
           onClick={handleLoadMore}
           disabled={loading}
-          className="mt-6 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 disabled:opacity-60"
+          className="mt-6 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
         >
           {loading ? "Loading..." : "Load more reels"}
         </button>

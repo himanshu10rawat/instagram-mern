@@ -7,8 +7,8 @@ const Avatar = ({ src, alt = "User", size = "md", ring = false }) => {
 
   return (
     <div
-      className={`${sizes[size]} shrink-0 overflow-hidden rounded-full bg-slate-200 ${
-        ring ? "ring-2 ring-pink-500 ring-offset-2" : ""
+      className={`${sizes[size]} shrink-0 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800 ${
+        ring ? "ring-2 ring-pink-500 ring-offset-2 dark:ring-offset-slate-950" : ""
       }`}
     >
       {src ? (

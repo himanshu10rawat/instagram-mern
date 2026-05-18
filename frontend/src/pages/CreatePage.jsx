@@ -167,9 +167,13 @@ const CreatePage = () => {
 
   return (
     <section className="mx-auto max-w-3xl">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
-        <h1 className="text-2xl font-bold">Create</h1>
-        <p className="mt-2 text-slate-500">Create post, reel or story.</p>
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+        <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
+          Create
+        </h1>
+        <p className="mt-2 text-slate-500 dark:text-slate-400">
+          Create post, reel or story.
+        </p>
 
         <div className="mt-6 grid grid-cols-3 gap-3">
           {createTypes.map((item) => {
@@ -181,7 +185,11 @@ const CreatePage = () => {
                 key={item.value}
                 type="button"
                 onClick={() => handleTypeChange(item.value)}
-                className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition ${isActive ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
+                className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                  isActive
+                    ? "border-slate-950 bg-slate-950 text-white dark:border-white dark:bg-white dark:text-slate-950"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                }`}
               >
                 <Icon size={18} />
                 {item.label}
@@ -204,26 +212,29 @@ const CreatePage = () => {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
+            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
               Upload {createType}
             </label>
 
-            <label className="flex min-h-52 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center hover:bg-slate-100">
+            <label className="flex min-h-52 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800">
               <input
-                type="text"
+                type="file"
                 accept={acceptType}
                 multiple={isPost}
                 onChange={handleFileChange}
                 className="hidden"
               />
 
-              <PlusCircle size={36} className="text-slate-500" />
+              <PlusCircle
+                size={36}
+                className="text-slate-500 dark:text-slate-400"
+              />
 
-              <p className="mt-3 text-sm font-medium text-slate-800">
+              <p className="mt-3 text-sm font-medium text-slate-800 dark:text-white">
                 Click to upload
               </p>
 
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 {isPost
                   ? "Post supports multiple images/videos"
                   : "Story and reel support single media"}
@@ -240,7 +251,7 @@ const CreatePage = () => {
                 return (
                   <div
                     key={url}
-                    className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100"
+                    className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900"
                   >
                     {isVideo ? (
                       <video
@@ -264,7 +275,7 @@ const CreatePage = () => {
           <div>
             <label
               htmlFor="caption"
-              className="mb-1 block text-sm font-medium text-slate-700"
+              className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               Caption
             </label>
@@ -278,7 +289,7 @@ const CreatePage = () => {
               }}
               placeholder="Write a caption..."
               rows={4}
-              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-900"
+              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white"
             />
           </div>
 
@@ -296,7 +307,7 @@ const CreatePage = () => {
             <div>
               <label
                 htmlFor="visibility"
-                className="mb-1 block text-sm font-medium text-slate-700"
+                className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
               >
                 Story visibility
               </label>
@@ -305,7 +316,7 @@ const CreatePage = () => {
                 id="visibility"
                 value={visibility}
                 onChange={(event) => setVisibility(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-900"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
               >
                 <option value="public">Public</option>
                 <option value="followers">Followers</option>

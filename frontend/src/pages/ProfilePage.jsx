@@ -32,7 +32,11 @@ const ProfilePage = () => {
   }, [dispatch, username, isMyProfile]);
 
   if (loading) {
-    return <p className="text-sm text-slate-500">Loading profile...</p>;
+    return (
+      <p className="text-sm text-slate-500 dark:text-slate-400">
+        Loading profile...
+      </p>
+    );
   }
 
   if (error) {

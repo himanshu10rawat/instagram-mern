@@ -72,13 +72,13 @@ const VerifyTwoFactorPage = () => {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <section className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
-        <h1 className="text-center text-3xl font-bold text-slate-900">
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 dark:bg-slate-950">
+      <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <h1 className="text-center text-3xl font-bold text-slate-900 dark:text-white">
           Verify 2FA
         </h1>
 
-        <p className="mt-2 text-center text-sm text-slate-500">
+        <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">
           Enter your authenticator code to continue
         </p>
 
@@ -118,7 +118,7 @@ const VerifyTwoFactorPage = () => {
             setUseBackupCode((prev) => !prev);
             setError("");
           }}
-          className="mt-4 w-full text-center text-sm font-medium text-slate-700"
+          className="mt-4 w-full text-center text-sm font-medium text-slate-700 dark:text-slate-200"
         >
           {useBackupCode ? "Use authenticator code" : "Use backup code"}
         </button>

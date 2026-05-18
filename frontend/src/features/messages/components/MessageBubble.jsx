@@ -13,7 +13,7 @@ const MessageBubble = ({ message, isMine }) => {
     dispatch(
       reactMessage({
         messageId: message._id,
-        emoji: "❤️",
+        emoji: "<3",
       }),
     );
   };
@@ -37,13 +37,17 @@ const MessageBubble = ({ message, isMine }) => {
     <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
       <div
         className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-          isMine ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-950"
+          isMine
+            ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
+            : "bg-slate-100 text-slate-950 dark:bg-slate-900 dark:text-white"
         }`}
       >
         {message.replyTo ? (
           <div
             className={`mb-2 rounded-xl px-3 py-2 text-xs ${
-              isMine ? "bg-white/10 text-white/80" : "bg-white text-slate-500"
+              isMine
+                ? "bg-white/10 text-white/80 dark:bg-slate-950/10 dark:text-slate-600"
+                : "bg-white text-slate-500 dark:bg-slate-950 dark:text-slate-300"
             }`}
           >
             Replying to: {message.replyTo.text || message.replyTo.messageType}
@@ -120,7 +124,7 @@ const MessageBubble = ({ message, isMine }) => {
 
         <div
           className={`mt-1 flex items-center gap-2 text-[11px] ${
-            isMine ? "text-white/60" : "text-slate-500"
+            isMine ? "text-white/60 dark:text-slate-500" : "text-slate-500"
           }`}
         >
           <span>
@@ -139,16 +143,22 @@ const MessageBubble = ({ message, isMine }) => {
           <button
             type="button"
             onClick={handleReact}
-            className={`text-xs ${isMine ? "text-white/80" : "text-slate-500"}`}
+            className={`text-xs ${
+              isMine ? "text-white/80 dark:text-slate-600" : "text-slate-500"
+            }`}
           >
-            ❤️
+            Like
           </button>
 
           {isMine && message.messageType === "text" && !isEditing ? (
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className={`text-xs ${isMine ? "text-white/80" : "text-slate-500"}`}
+              className={`text-xs ${
+                isMine
+                  ? "text-white/80 dark:text-slate-600"
+                  : "text-slate-500"
+              }`}
             >
               Edit
             </button>

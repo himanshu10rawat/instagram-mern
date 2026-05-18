@@ -159,6 +159,115 @@ const upsertMessage = (messages, incomingMessage) => {
   return [...messages, incomingMessage];
 };
 
+const getId = (value) => (typeof value === "string" ? value : value?._id);
+
+const getConversationKey = (conversation) => {
+  if (!conversation) return "";
+
+  if (conversation.isGroup) return conversation._id || "";
+
+  const participantIds = (conversation.participants || [])
+    .map(getId)
+    .filter(Boolean)
+    .sort();
+
+  return participantIds.length > 1
+    ? participantIds.join(":")
+    : conversation._id || "";
+};
+
+const getConversationTime = (conversation) => {
+  const timestamp =
+    conversation?.lastMessage?.createdAt ||
+    conversation?.updatedAt ||
+    conversation?.createdAt;
+
+  return timestamp ? Date.parse(timestamp) || 0 : 0;
+};
+
+const shouldPreferConversation = (incoming, existing) => {
+  if (!existing) return true;
+  if (incoming?.lastMessage && !existing?.lastMessage) return true;
+  if (!incoming?.lastMessage && existing?.lastMessage) return false;
+
+  return getConversationTime(incoming) > getConversationTime(existing);
+};
+
+const mergeConversations = (base, incoming) => ({
+  ...base,
+  ...incoming,
+  participants: incoming?.participants?.length
+    ? incoming.participants
+    : base?.participants,
+  lastMessage: incoming?.lastMessage || base?.lastMessage || null,
+});
+
+const dedupeConversations = (conversations = []) => {
+  const uniqueConversations = [];
+  const keyToIndex = new Map();
+
+  conversations.filter(Boolean).forEach((conversation) => {
+    const key = getConversationKey(conversation);
+
+    if (!key || !keyToIndex.has(key)) {
+      keyToIndex.set(key, uniqueConversations.length);
+      uniqueConversations.push(conversation);
+      return;
+    }
+
+    const existingIndex = keyToIndex.get(key);
+    const existingConversation = uniqueConversations[existingIndex];
+
+    uniqueConversations[existingIndex] = shouldPreferConversation(
+      conversation,
+      existingConversation,
+    )
+      ? mergeConversations(existingConversation, conversation)
+      : mergeConversations(conversation, existingConversation);
+  });
+
+  return uniqueConversations;
+};
+
+const upsertConversation = (
+  conversations = [],
+  incomingConversation,
+  moveToTop = false,
+) => {
+  if (!incomingConversation?._id) {
+    return dedupeConversations(conversations);
+  }
+
+  const incomingKey = getConversationKey(incomingConversation);
+  const existingIndex = conversations.findIndex(
+    (conversation) =>
+      conversation?._id === incomingConversation._id ||
+      (incomingKey && getConversationKey(conversation) === incomingKey),
+  );
+
+  if (existingIndex === -1) {
+    return dedupeConversations([incomingConversation, ...conversations]);
+  }
+
+  const mergedConversation = mergeConversations(
+    conversations[existingIndex],
+    incomingConversation,
+  );
+
+  const remainingConversations = conversations.filter(
+    (_, index) => index !== existingIndex,
+  );
+
+  if (moveToTop) {
+    return dedupeConversations([mergedConversation, ...remainingConversations]);
+  }
+
+  const nextConversations = [...remainingConversations];
+  nextConversations.splice(existingIndex, 0, mergedConversation);
+
+  return dedupeConversations(nextConversations);
+};
+
 const initialState = {
   conversations: [],
   activeConversation: null,
@@ -179,6 +288,12 @@ const messageSlice = createSlice({
   initialState,
   reducers: {
     setActiveConversation: (state, action) => {
+      if (state.activeConversation?._id === action.payload?._id) {
+        state.activeConversation = action.payload;
+        state.error = null;
+        return;
+      }
+
       state.activeConversation = action.payload;
       state.messages = [];
       state.page = 1;
@@ -201,6 +316,18 @@ const messageSlice = createSlice({
           ? { ...conversation, lastMessage: message }
           : conversation,
       );
+
+      const updatedConversation =
+        state.conversations.find(
+          (conversation) => conversation._id === message.conversation,
+        ) ||
+        (state.activeConversation?._id === message.conversation
+          ? { ...state.activeConversation, lastMessage: message }
+          : null);
+
+      state.conversations = updatedConversation
+        ? upsertConversation(state.conversations, updatedConversation, true)
+        : dedupeConversations(state.conversations);
     },
 
     updateRealtimeMessage: (state, action) => {
@@ -240,7 +367,7 @@ const messageSlice = createSlice({
       })
       .addCase(fetchConversations.fulfilled, (state, action) => {
         state.loading = false;
-        state.conversations = action.payload || [];
+        state.conversations = dedupeConversations(action.payload || []);
       })
       .addCase(fetchConversations.rejected, (state, action) => {
         state.loading = false;
@@ -279,11 +406,33 @@ const messageSlice = createSlice({
         state.sending = false;
         state.messages = upsertMessage(state.messages, action.payload);
 
-        state.conversations = state.conversations.map((conversation) =>
-          conversation._id === action.payload.conversation
-            ? { ...conversation, lastMessage: action.payload }
-            : conversation,
-        );
+        const updatedConversation =
+          state.conversations.find(
+            (conversation) => conversation._id === action.payload.conversation,
+          ) ||
+          (state.activeConversation?._id === action.payload.conversation
+            ? { ...state.activeConversation, lastMessage: action.payload }
+            : null);
+
+        if (updatedConversation) {
+          state.conversations = upsertConversation(
+            state.conversations,
+            {
+              ...updatedConversation,
+              lastMessage: action.payload,
+            },
+            true,
+          );
+
+          if (state.activeConversation?._id === action.payload.conversation) {
+            state.activeConversation = {
+              ...state.activeConversation,
+              lastMessage: action.payload,
+            };
+          }
+        } else {
+          state.conversations = dedupeConversations(state.conversations);
+        }
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.sending = false;
@@ -313,7 +462,11 @@ const messageSlice = createSlice({
           (request) => request._id !== acceptedConversation._id,
         );
 
-        state.conversations.unshift(acceptedConversation);
+        state.conversations = upsertConversation(
+          state.conversations,
+          acceptedConversation,
+          true,
+        );
       })
 
       .addCase(rejectMessageRequest.fulfilled, (state, action) => {
@@ -331,12 +484,14 @@ const messageSlice = createSlice({
 
         const conversation = action.payload;
 
-        const exists = state.conversations.some(
-          (item) => item._id === conversation._id,
-        );
-
-        if (!exists && conversation.status === "accepted") {
-          state.conversations.unshift(conversation);
+        if (conversation.status === "accepted") {
+          state.conversations = upsertConversation(
+            state.conversations,
+            conversation,
+            true,
+          );
+        } else {
+          state.conversations = dedupeConversations(state.conversations);
         }
 
         state.activeConversation = conversation;

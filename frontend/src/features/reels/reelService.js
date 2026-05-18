@@ -10,13 +10,19 @@ export const getSingleReelApi = async (reelId) => {
   return response.data.data;
 };
 
-export const likeReelApi = async (reelId) => {
-  const response = await api.patch(`/reels/${reelId}/like`);
+export const likeReelApi = async (reelId, isLiked = false) => {
+  const response = isLiked
+    ? await api.delete(`/reels/${reelId}/like`)
+    : await api.post(`/reels/${reelId}/like`);
+
   return response.data.data;
 };
 
-export const saveReelApi = async (reelId) => {
-  const response = await api.patch(`/reels/${reelId}/save`);
+export const saveReelApi = async (reelId, isSaved = false) => {
+  const response = isSaved
+    ? await api.delete(`/reels/${reelId}/save`)
+    : await api.post(`/reels/${reelId}/save`);
+
   return response.data.data;
 };
 

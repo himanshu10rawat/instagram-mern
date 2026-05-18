@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 * {
   box-sizing: border-box;
 }
@@ -22,8 +24,14 @@ body {
     sans-serif;
 }
 
+html.dark body {
+  background: #020617;
+  color: #f8fafc;
+}
+
 button,
 input,
+select,
 textarea {
   font-family: inherit;
 }

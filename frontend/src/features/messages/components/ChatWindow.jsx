@@ -1,4 +1,4 @@
-import { Image, Send } from "lucide-react";
+import { ArrowLeft, Image, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -8,6 +8,7 @@ import {
   fetchMessages,
   markConversationSeen,
   sendMessage,
+  setActiveConversation,
 } from "../messageSlice";
 import MessageBubble from "./MessageBubble";
 
@@ -54,10 +55,12 @@ const ChatWindow = () => {
 
   if (!activeConversation) {
     return (
-      <div className="flex h-full items-center justify-center text-center">
+      <div className="flex h-full min-h-0 items-center justify-center text-center">
         <div>
-          <h2 className="text-xl font-bold text-slate-950">Your messages</h2>
-          <p className="mt-2 text-sm text-slate-500">
+          <h2 className="text-xl font-bold text-slate-950 dark:text-white">
+            Your messages
+          </h2>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Select a conversation to start chatting.
           </p>
         </div>
@@ -109,31 +112,42 @@ const ChatWindow = () => {
   const isTyping = Boolean(typingUsers[activeConversation._id]);
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex items-center gap-3 border-b border-slate-200 p-4">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 p-4 dark:border-slate-800">
+        <button
+          type="button"
+          onClick={() => dispatch(setActiveConversation(null))}
+          className="rounded-xl p-2 text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900 md:hidden"
+          aria-label="Back to conversations"
+        >
+          <ArrowLeft size={20} />
+        </button>
+
         <Avatar src={otherUser?.avatar?.url} alt={otherUser?.username} />
 
         <div>
-          <h2 className="text-sm font-semibold text-slate-950">
+          <h2 className="text-sm font-semibold text-slate-950 dark:text-white">
             {otherUser?.username}
           </h2>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {isTyping ? "typing..." : otherUser?.fullName || "Chat"}
           </p>
         </div>
       </header>
 
       {activeConversation.status === "requested" ? (
-        <div className="border-b border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-700">
+        <div className="shrink-0 border-b border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
           This conversation is in message requests. Messages may not appear in
           inbox until accepted.
         </div>
       ) : null}
 
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
         {messagesLoading ? (
-          <p className="text-sm text-slate-500">Loading messages...</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Loading messages...
+          </p>
         ) : null}
 
         {messages.map((message) => (
@@ -148,7 +162,7 @@ const ChatWindow = () => {
       </div>
 
       {file ? (
-        <div className="border-t border-slate-200 px-4 py-2 text-sm text-slate-600">
+        <div className="shrink-0 border-t border-slate-200 px-4 py-2 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-300">
           Selected: {file.name}
           <button
             type="button"
@@ -162,9 +176,9 @@ const ChatWindow = () => {
 
       <form
         onSubmit={handleSend}
-        className="flex items-center gap-3 border-t border-slate-200 p-4"
+        className="flex shrink-0 items-center gap-3 border-t border-slate-200 p-4 dark:border-slate-800"
       >
-        <label className="cursor-pointer rounded-xl p-2 hover:bg-slate-100">
+        <label className="cursor-pointer rounded-xl p-2 text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900">
           <Image size={22} />
 
           <input
@@ -182,7 +196,7 @@ const ChatWindow = () => {
             handleTyping();
           }}
           placeholder="Message..."
-          className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-950"
+          className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
         />
 
         <button

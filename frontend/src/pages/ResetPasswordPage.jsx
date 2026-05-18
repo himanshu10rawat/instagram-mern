@@ -58,12 +58,12 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <section className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
-        <h1 className="text-center text-3xl font-bold text-slate-900">
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 dark:bg-slate-950">
+      <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <h1 className="text-center text-3xl font-bold text-slate-900 dark:text-white">
           Create New Password
         </h1>
-        <p className="mt-2 text-center text-sm text-slate-500">
+        <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">
           Choose a new password for your account
         </p>
 
@@ -105,9 +105,12 @@ const ResetPasswordPage = () => {
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-500">
+        <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
           Back to{" "}
-          <Link to="/login" className="font-semibold text-slate-900">
+          <Link
+            to="/login"
+            className="font-semibold text-slate-900 dark:text-white"
+          >
             login
           </Link>
         </p>

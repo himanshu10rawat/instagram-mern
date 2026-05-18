@@ -1,14 +1,18 @@
-import { Calendar, Globe, Settings } from "lucide-react";
+import { Calendar, Globe, Lock, Settings } from "lucide-react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
 import { followUser, unfollowUser } from "../../follow/followSlice";
 import { fetchUserProfile } from "../profileSlice";
+import FollowListModal from "./FollowListModal";
 
 const ProfileHeader = ({ profile, isMyProfile }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const [followListType, setFollowListType] = useState(null);
 
   const currentUser = useSelector((state) => state.auth.user);
   const { actionLoading } = useSelector((state) => state.follow);
@@ -27,13 +31,15 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
     return follower?._id === currentUser?._id;
   });
 
-  const hasRequested = profile?.followRequests?.some((request) => {
-    if (typeof request === "string") {
-      return request === currentUser?._id;
-    }
+  const hasRequested =
+    profile?.hasPendingFollowRequest ||
+    profile?.followRequests?.some((request) => {
+      if (typeof request === "string") {
+        return request === currentUser?._id;
+      }
 
-    return request?._id === currentUser?._id;
-  });
+      return request?._id === currentUser?._id;
+    });
 
   const handleFollowToggle = async () => {
     if (!profile?._id) return;
@@ -66,8 +72,8 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="h-48 bg-slate-100">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+      <div className="h-48 bg-slate-100 dark:bg-slate-900">
         {profile?.coverImage?.url || profile?.cover?.url ? (
           <img
             src={profile.coverImage?.url || profile.cover?.url}
@@ -78,27 +84,30 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
       </div>
 
       <div className="px-6 pb-6">
-        <div className="-mt-14 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <Avatar
-            src={profile?.avatar?.url}
-            alt={profile?.username}
-            size="lg"
-            ring
-          />
+        <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="-mt-14">
+            <Avatar
+              src={profile?.avatar?.url}
+              alt={profile?.username}
+              size="lg"
+              ring
+            />
+          </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {isMyProfile ? (
               <>
                 <Link
                   to="/profile/me/edit"
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
                 >
                   Edit Profile
                 </Link>
 
                 <Link
                   to="/settings"
-                  className="rounded-xl border border-slate-300 p-2 hover:bg-slate-50"
+                  className="rounded-xl border border-slate-300 p-2 text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
+                  aria-label="Settings"
                 >
                   <Settings size={20} />
                 </Link>
@@ -111,8 +120,8 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
                   disabled={actionLoading || hasRequested}
                   className={`rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70 ${
                     isFollowing || hasRequested
-                      ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
-                      : "bg-slate-950 text-white hover:bg-slate-800"
+                      ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-900"
+                      : "bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950"
                   }`}
                 >
                   {getFollowButtonText()}
@@ -121,7 +130,7 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
                 <button
                   type="button"
                   onClick={handleMessage}
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
                 >
                   Message
                 </button>
@@ -131,19 +140,28 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
         </div>
 
         <div className="mt-4">
-          <h1 className="text-2xl font-bold text-slate-950">
+          <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
             {profile?.fullName || "User"}
           </h1>
 
-          <p className="text-sm text-slate-500">@{profile?.username}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+            <span>@{profile?.username}</span>
+
+            {profile?.isPrivate ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                <Lock size={12} />
+                Private
+              </span>
+            ) : null}
+          </div>
 
           {profile?.bio ? (
-            <p className="mt-3 max-w-2xl text-sm text-slate-700">
+            <p className="mt-3 max-w-2xl text-sm text-slate-700 dark:text-slate-300">
               {profile.bio}
             </p>
           ) : null}
 
-          <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-600">
+          <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-600 dark:text-slate-400">
             {profile?.website ? (
               <a
                 href={profile.website}
@@ -165,23 +183,43 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-3 rounded-2xl border border-slate-200 text-center">
+        <div className="mt-6 grid grid-cols-3 overflow-hidden rounded-2xl border border-slate-200 text-center dark:border-slate-800">
           <div className="p-4">
             <p className="font-bold">{postsCount}</p>
-            <p className="text-sm text-slate-500">Posts</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Posts</p>
           </div>
 
-          <div className="border-x border-slate-200 p-4">
+          <button
+            type="button"
+            onClick={() => setFollowListType("followers")}
+            className="border-x border-slate-200 p-4 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900"
+          >
             <p className="font-bold">{followersCount}</p>
-            <p className="text-sm text-slate-500">Followers</p>
-          </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Followers
+            </p>
+          </button>
 
-          <div className="p-4">
+          <button
+            type="button"
+            onClick={() => setFollowListType("following")}
+            className="p-4 transition hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
             <p className="font-bold">{followingCount}</p>
-            <p className="text-sm text-slate-500">Following</p>
-          </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Following
+            </p>
+          </button>
         </div>
       </div>
+
+      {followListType ? (
+        <FollowListModal
+          profileId={profile._id}
+          type={followListType}
+          onClose={() => setFollowListType(null)}
+        />
+      ) : null}
     </div>
   );
 };

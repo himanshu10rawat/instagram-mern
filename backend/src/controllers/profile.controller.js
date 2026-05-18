@@ -1,4 +1,6 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
+import FollowRequest from "../models/followRequest.model.js";
+import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -10,12 +12,42 @@ import trackAnalytics from "../utils/trackAnalytics.js";
 const userSelectFields =
   "-password -refreshToken -passwordResetToken -passwordResetExpires -loginAttempts -lockUntil";
 
+const getProfilePosts = async (userId) => {
+  return Post.find({
+    author: userId,
+    isDeleted: false,
+    isArchived: false,
+  })
+    .populate("author", "username fullName avatar isVerified")
+    .sort({ createdAt: -1 });
+};
+
+const buildProfilePayload = async (user, extraFields = {}) => {
+  const posts = await getProfilePosts(user._id);
+  const userObject = user.toObject();
+
+  return {
+    ...userObject,
+    ...extraFields,
+    posts,
+    postsCount: posts.length,
+    followersCount: user.followers?.length || 0,
+    followingCount: user.following?.length || 0,
+  };
+};
+
+const getUpdatedProfilePayload = async (userId, extraFields = {}) => {
+  const user = await User.findById(userId).select(userSelectFields);
+  return buildProfilePayload(user, extraFields);
+};
+
 export const getMyProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select(userSelectFields);
+  const profile = await buildProfilePayload(user);
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, user, "My profile fetched successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, profile, "My profile fetched successfully"));
 });
 
 export const getPublicProfile = asyncHandler(async (req, res) => {
@@ -47,6 +79,16 @@ export const getPublicProfile = asyncHandler(async (req, res) => {
   );
 
   if (user.isPrivate && !isOwnProfile && !isFollowing) {
+    const hasPendingFollowRequest = req.user?._id
+      ? Boolean(
+          await FollowRequest.exists({
+            sender: req.user._id,
+            receiver: user._id,
+            status: "pending",
+          }),
+        )
+      : false;
+
     return res.status(HTTP_STATUS.Ok).json(
       new ApiResponse(
         HTTP_STATUS.Ok,
@@ -58,6 +100,8 @@ export const getPublicProfile = asyncHandler(async (req, res) => {
           bio: user.bio,
           isPrivate: user.isPrivate,
           isVerified: user.isVerified,
+          hasPendingFollowRequest,
+          postsCount: 0,
           followersCount: user.followers.length,
           followingCount: user.following.length,
         },
@@ -66,9 +110,22 @@ export const getPublicProfile = asyncHandler(async (req, res) => {
     );
   }
 
+  const hasPendingFollowRequest =
+    !isOwnProfile && req.user?._id
+      ? Boolean(
+          await FollowRequest.exists({
+            sender: req.user._id,
+            receiver: user._id,
+            status: "pending",
+          }),
+        )
+      : false;
+
+  const profile = await buildProfilePayload(user, { hasPendingFollowRequest });
+
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, user, "Public profile fetched successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, profile, "Public profile fetched successfully"));
 });
 
 export const updateProfile = asyncHandler(async (req, res) => {
@@ -76,6 +133,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
     "fullName",
     "bio",
     "website",
+    "isPrivate",
     "location",
     "profession",
     "gender",
@@ -97,10 +155,11 @@ export const updateProfile = asyncHandler(async (req, res) => {
     new: true,
     runValidators: true,
   }).select(userSelectFields);
+  const profile = await buildProfilePayload(user);
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, user, "Profile updated successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, profile, "Profile updated successfully"));
 });
 
 export const updatePrivacySettings = asyncHandler(async (req, res) => {
@@ -133,10 +192,11 @@ export const updatePrivacySettings = asyncHandler(async (req, res) => {
     new: true,
     runValidators: true,
   }).select(userSelectFields);
+  const profile = await buildProfilePayload(user);
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, user, "Privacy settings updated successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, profile, "Privacy settings updated successfully"));
 });
 
 export const softDeleteAccount = asyncHandler(async (req, res) => {
@@ -182,11 +242,11 @@ export const updateAvatar = asyncHandler(async (req, res) => {
 
   await currentUser.save({ validateBeforeSave: false });
 
-  const user = await User.findById(req.user._id).select(userSelectFields);
+  const profile = await getUpdatedProfilePayload(req.user._id);
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, user, "Avatar updated successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, profile, "Avatar updated successfully"));
 });
 
 export const updateCoverImage = asyncHandler(async (req, res) => {
@@ -209,9 +269,9 @@ export const updateCoverImage = asyncHandler(async (req, res) => {
 
   await currentUser.save({ validateBeforeSave: false });
 
-  const user = await User.findById(req.user._id).select(userSelectFields);
+  const profile = await getUpdatedProfilePayload(req.user._id);
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, user, "Cover image updated successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, profile, "Cover image updated successfully"));
 });

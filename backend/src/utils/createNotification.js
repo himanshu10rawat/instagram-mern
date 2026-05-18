@@ -11,6 +11,7 @@ const createNotification = async ({
   reel = null,
   story = null,
   comment = null,
+  message = null,
 }) => {
   if (!sender || !receiver) return null;
 
@@ -24,6 +25,7 @@ const createNotification = async ({
     reel,
     story,
     comment,
+    message,
   });
 
   await deleteCache(`notifications:${receiver}`);
@@ -32,7 +34,8 @@ const createNotification = async ({
     .populate("sender", "username fullName avatar isVerified")
     .populate("post")
     .populate("reel")
-    .populate("story");
+    .populate("story")
+    .populate("message");
 
   const receiverSocketId = await getUserSocket(receiver);
 

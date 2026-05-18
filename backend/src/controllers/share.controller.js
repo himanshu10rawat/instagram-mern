@@ -12,6 +12,7 @@ import { getIO } from "../socket/socket.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import createNotification from "../utils/createNotification.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 
@@ -222,6 +223,13 @@ export const shareToUser = asyncHandler(async (req, res) => {
   if (receiverSocketId) {
     getIO().to(receiverSocketId).emit("receive_message", populatedMessage);
   }
+
+  await createNotification({
+    sender: req.user._id,
+    receiver: receiverId,
+    type: "message",
+    message: message._id,
+  });
 
   return res
     .status(HTTP_STATUS.CREATED)

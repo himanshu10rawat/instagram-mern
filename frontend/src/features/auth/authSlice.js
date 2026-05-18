@@ -1,7 +1,15 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import api from "../../lib/axios";
 import { disconnectSocket } from "../../lib/socket";
+import {
+  changePasswordApi,
+  forgotPasswordApi,
+  getCurrentUserApi,
+  loginUserApi,
+  logoutUserApi,
+  registerUserApi,
+  resetPasswordApi,
+} from "./authService";
 
 const getInitialUser = () => {
   try {
@@ -37,6 +45,7 @@ const applyCredentials = (state, payload) => {
   state.requiresTwoFactor = false;
   state.twoFactorUserId = null;
   state.error = null;
+  state.successMessage = "";
 
   if (user) {
     localStorage.setItem("user", JSON.stringify(user));
@@ -57,13 +66,26 @@ const applyCredentials = (state, payload) => {
   }
 };
 
+const resetAuthState = (state) => {
+  state.user = null;
+  state.accessToken = null;
+  state.refreshToken = null;
+  state.isAuthenticated = false;
+  state.requiresTwoFactor = false;
+  state.twoFactorUserId = null;
+  state.loading = false;
+  state.error = null;
+  state.successMessage = "";
+
+  clearStoredCredentials();
+  disconnectSocket();
+};
+
 export const loginUser = createAsyncThunk(
-  "/auth/loginUser",
+  "auth/loginUser",
   async (payload, { rejectWithValue }) => {
     try {
-      const response = await api.post("/auth/login", payload);
-
-      return response.data.data;
+      return await loginUserApi(payload);
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Login failed");
     }
@@ -74,9 +96,7 @@ export const registerUser = createAsyncThunk(
   "auth/registerUser",
   async (payload, { rejectWithValue }) => {
     try {
-      const response = await api.post("/auth/register", payload);
-
-      return response.data.data;
+      return await registerUserApi(payload);
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Registration failed",
@@ -89,9 +109,7 @@ export const getCurrentUser = createAsyncThunk(
   "auth/getCurrentUser",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get("/auth/me");
-
-      return response.data.data;
+      return await getCurrentUserApi();
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch user",
@@ -104,11 +122,49 @@ export const logoutUser = createAsyncThunk(
   "auth/logoutUser",
   async (_, { rejectWithValue }) => {
     try {
-      await api.post("/auth/logout");
-
+      await logoutUserApi();
       return true;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Logout failed");
+    }
+  },
+);
+
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await changePasswordApi(payload);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to change password",
+      );
+    }
+  },
+);
+
+export const forgotPassword = createAsyncThunk(
+  "auth/forgotPassword",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await forgotPasswordApi(payload);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to send reset email",
+      );
+    }
+  },
+);
+
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await resetPasswordApi(payload);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to reset password",
+      );
     }
   },
 );
@@ -122,6 +178,7 @@ const initialState = {
   twoFactorUserId: null,
   loading: false,
   error: null,
+  successMessage: "",
 };
 
 const authSlice = createSlice({
@@ -132,16 +189,13 @@ const authSlice = createSlice({
       state.error = null;
     },
 
-    logoutLocally: (state) => {
-      state.user = null;
-      state.accessToken = null;
-      state.refreshToken = null;
-      state.isAuthenticated = false;
-      state.requiresTwoFactor = false;
-      state.twoFactorUserId = null;
+    clearAuthStatus: (state) => {
+      state.error = null;
+      state.successMessage = "";
+    },
 
-      clearStoredCredentials();
-      disconnectSocket();
+    logoutLocally: (state) => {
+      resetAuthState(state);
     },
 
     setCredentials: (state, action) => {
@@ -154,6 +208,7 @@ const authSlice = createSlice({
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.successMessage = "";
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -175,38 +230,90 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.successMessage = "";
       })
       .addCase(registerUser.fulfilled, (state) => {
         state.loading = false;
+        state.successMessage = "Account created successfully";
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
+
+      .addCase(getCurrentUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(getCurrentUser.fulfilled, (state, action) => {
+        state.loading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
 
         localStorage.setItem("user", JSON.stringify(action.payload));
       })
-      .addCase(logoutUser.fulfilled, (state) => {
-        state.user = null;
-        state.accessToken = null;
-        state.refreshToken = null;
-        state.isAuthenticated = false;
-        state.requiresTwoFactor = false;
-        state.twoFactorUserId = null;
+      .addCase(getCurrentUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
 
-        clearStoredCredentials();
-        disconnectSocket();
+      .addCase(logoutUser.fulfilled, (state) => {
+        resetAuthState(state);
+      })
+
+      .addCase(changePassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.successMessage = "";
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.loading = false;
+        state.successMessage = "Password changed successfully";
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(forgotPassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.successMessage = "";
+      })
+      .addCase(forgotPassword.fulfilled, (state) => {
+        state.loading = false;
+        state.successMessage = "Password reset link sent successfully";
+      })
+      .addCase(forgotPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(resetPassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.successMessage = "";
+      })
+      .addCase(resetPassword.fulfilled, (state) => {
+        state.loading = false;
+        state.successMessage = "Password reset successfully";
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { clearAuthError, logoutLocally, setCredentials } =
-  authSlice.actions;
+export const {
+  clearAuthError,
+  clearAuthStatus,
+  logoutLocally,
+  setCredentials,
+} = authSlice.actions;
 
 export default authSlice.reducer;

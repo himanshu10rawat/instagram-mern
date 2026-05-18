@@ -15,6 +15,7 @@ import {
   getOptimizedVideoUrl,
   getVideoThumbnailUrl,
 } from "../utils/cloudinaryUrl.js";
+import createNotification from "../utils/createNotification.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 
@@ -78,19 +79,81 @@ const getMediaType = (mimeType) => {
   throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid media type");
 };
 
+const getParticipantId = (participant) =>
+  participant?._id?.toString?.() || participant?.toString?.() || "";
+
+const getConversationKey = (conversation) => {
+  if (!conversation) return "";
+  if (conversation.isGroup) return conversation._id.toString();
+
+  const participantIds = (conversation.participants || [])
+    .map(getParticipantId)
+    .filter(Boolean)
+    .sort();
+
+  return participantIds.length > 1
+    ? participantIds.join(":")
+    : conversation._id.toString();
+};
+
+const getConversationTime = (conversation) => {
+  const timestamp =
+    conversation?.lastMessage?.createdAt ||
+    conversation?.updatedAt ||
+    conversation?.createdAt;
+
+  return timestamp ? new Date(timestamp).getTime() || 0 : 0;
+};
+
+const shouldPreferConversation = (incoming, existing) => {
+  if (!existing) return true;
+  if (incoming?.lastMessage && !existing?.lastMessage) return true;
+  if (!incoming?.lastMessage && existing?.lastMessage) return false;
+
+  return getConversationTime(incoming) > getConversationTime(existing);
+};
+
+const dedupeConversations = (conversations = []) => {
+  const uniqueConversations = [];
+  const keyToIndex = new Map();
+
+  conversations.forEach((conversation) => {
+    const key = getConversationKey(conversation);
+
+    if (!key || !keyToIndex.has(key)) {
+      keyToIndex.set(key, uniqueConversations.length);
+      uniqueConversations.push(conversation);
+      return;
+    }
+
+    const existingIndex = keyToIndex.get(key);
+    const existingConversation = uniqueConversations[existingIndex];
+
+    if (shouldPreferConversation(conversation, existingConversation)) {
+      uniqueConversations[existingIndex] = conversation;
+    }
+  });
+
+  return uniqueConversations;
+};
+
 const findOrCreateConversation = async (currentUserId, receiverId) => {
-  let conversation = await Conversation.findOne({
+  const existingConversations = await Conversation.find({
     isGroup: false,
     participants: {
       $all: [currentUserId, receiverId],
       $size: 2,
     },
-  });
+  }).sort({ updatedAt: -1 });
+
+  let conversation =
+    existingConversations.find((item) => item.lastMessage) ||
+    existingConversations[0];
 
   if (!conversation) {
     const receiver = await User.findById(receiverId).select("followers privacySettings");
 
-    const isReceiverFollowingSender = receiver.followers.some(
+    const isReceiverFollowingSender = (receiver.followers || []).some(
       (followerId) => followerId.toString() === currentUserId.toString(),
     );
 
@@ -207,6 +270,13 @@ export const sendMessage = asyncHandler(async (req, res) => {
     io.to(receiverSocketId).emit("receive_message", populatedMessage);
   }
 
+  await createNotification({
+    sender: req.user._id,
+    receiver: receiverId,
+    type: "message",
+    message: message._id,
+  });
+
   return res
     .status(HTTP_STATUS.CREATED)
     .json(new ApiResponse(HTTP_STATUS.CREATED, populatedMessage, "Message sent successfully"));
@@ -232,7 +302,13 @@ export const getConversations = asyncHandler(async (req, res) => {
 
   return res
     .status(HTTP_STATUS.OK)
-    .json(new ApiResponse(HTTP_STATUS.OK, conversations, "Conversations fetched successfully"));
+    .json(
+      new ApiResponse(
+        HTTP_STATUS.OK,
+        dedupeConversations(conversations),
+        "Conversations fetched successfully",
+      ),
+    );
 });
 
 export const getMessages = asyncHandler(async (req, res) => {
@@ -621,6 +697,13 @@ export const forwardMessage = asyncHandler(async (req, res) => {
     getIO().to(receiverSocketId).emit("receive_message", populatedMessage);
   }
 
+  await createNotification({
+    sender: req.user._id,
+    receiver: receiverId,
+    type: "message",
+    message: forwardedMessage._id,
+  });
+
   return res
     .status(HTTP_STATUS.CREATED)
     .json(new ApiResponse(HTTP_STATUS.CREATED, populatedMessage, "Message forwarded successfully"));
@@ -649,7 +732,13 @@ export const getMessageRequests = asyncHandler(async (req, res) => {
 
   return res
     .status(HTTP_STATUS.OK)
-    .json(new ApiResponse(HTTP_STATUS.OK, conversations, "Message requests fetched successfully"));
+    .json(
+      new ApiResponse(
+        HTTP_STATUS.OK,
+        dedupeConversations(conversations),
+        "Message requests fetched successfully",
+      ),
+    );
 });
 
 export const acceptMessageRequest = asyncHandler(async (req, res) => {

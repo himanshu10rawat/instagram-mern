@@ -249,7 +249,7 @@ export const likeReel = asyncHandler(async (req, res) => {
     {
       new: true,
     },
-  );
+  ).populate("author", userPublicFields);
 
   if (!reel) {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Reel not found or already liked");
@@ -257,7 +257,7 @@ export const likeReel = asyncHandler(async (req, res) => {
 
   await createNotification({
     sender: req.user._id,
-    receiver: reel.author,
+    receiver: reel.author._id || reel.author,
     type: "reel_like",
     reel: reel._id,
   });
@@ -265,7 +265,7 @@ export const likeReel = asyncHandler(async (req, res) => {
   await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
   await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
 
-  res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Reel liked successfully"));
+  res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, reel, "Reel liked successfully"));
 });
 
 export const unlikeReel = asyncHandler(async (req, res) => {
@@ -273,7 +273,7 @@ export const unlikeReel = asyncHandler(async (req, res) => {
 
   validateObjectId(reelId, "Invalid reel id");
 
-  await Reel.findOneAndUpdate(
+  const reel = await Reel.findOneAndUpdate(
     {
       _id: reelId,
       isDeleted: false,
@@ -281,14 +281,21 @@ export const unlikeReel = asyncHandler(async (req, res) => {
     {
       $pull: { likes: req.user._id },
     },
-  );
+    {
+      new: true,
+    },
+  ).populate("author", userPublicFields);
+
+  if (!reel) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Reel not found");
+  }
 
   await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
   await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, null, "Reel unliked successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, reel, "Reel unliked successfully"));
 });
 
 export const saveReel = asyncHandler(async (req, res) => {
@@ -305,7 +312,7 @@ export const saveReel = asyncHandler(async (req, res) => {
       $addToSet: { savedBy: req.user._id },
     },
     { new: true },
-  );
+  ).populate("author", userPublicFields);
 
   if (!reel) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Reel not found");
@@ -314,7 +321,7 @@ export const saveReel = asyncHandler(async (req, res) => {
   await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
   await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
 
-  res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Reel saved successfully"));
+  res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, reel, "Reel saved successfully"));
 });
 
 export const unsaveReel = asyncHandler(async (req, res) => {
@@ -322,7 +329,7 @@ export const unsaveReel = asyncHandler(async (req, res) => {
 
   validateObjectId(reelId, "Invalid reel id");
 
-  await Reel.findOneAndUpdate(
+  const reel = await Reel.findOneAndUpdate(
     {
       _id: reelId,
       isDeleted: false,
@@ -330,14 +337,21 @@ export const unsaveReel = asyncHandler(async (req, res) => {
     {
       $pull: { savedBy: req.user._id },
     },
-  );
+    {
+      new: true,
+    },
+  ).populate("author", userPublicFields);
+
+  if (!reel) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Reel not found");
+  }
 
   await deleteCacheByPattern(`recommendations:*:${req.user._id}:*`);
   await deleteCacheByPattern(`recommendations:users:${req.user._id}`);
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, null, "Reel unsaved successfully"));
+    .json(new ApiResponse(HTTP_STATUS.Ok, reel, "Reel unsaved successfully"));
 });
 
 export const viewReel = asyncHandler(async (req, res) => {
