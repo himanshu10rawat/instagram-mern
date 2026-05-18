@@ -53,3 +53,18 @@ export const removeAccountApi = async (password) => {
 
   return response.data.data;
 };
+
+export const getUserPostsApi = async (userId) => {
+  const response = await api.get(`/posts/user/${userId}`);
+  return response.data.data;
+};
+
+export const getUserReelsApi = async (userId) => {
+  const response = await api.get(`/reels/user/${userId}`);
+  return response.data.data;
+};
+
+export const getMySavedProfilePostsApi = async () => {
+  const response = await api.get("/posts/saved");
+  return response.data.data;
+};

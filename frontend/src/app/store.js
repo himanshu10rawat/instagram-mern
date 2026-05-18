@@ -12,6 +12,10 @@ import reelReducer from "../features/reels/reelSlice";
 import searchReducer from "../features/search/searchSlice";
 import storyReducer from "../features/stories/storySlice";
 import themeReducer from "../features/theme/themeSlice";
+import highlightReducer from "../features/highlights/highlightSlice";
+import sessionReducer from "../features/sessions/sessionSlice";
+import twoFactorReducer from "../features/twoFactor/twoFactorSlice";
+import safetyReducer from "../features/safety/safetySlice";
 
 export const store = configureStore({
   reducer: {
@@ -27,5 +31,9 @@ export const store = configureStore({
     search: searchReducer,
     stories: storyReducer,
     theme: themeReducer,
+    highlights: highlightReducer,
+    sessions: sessionReducer,
+    twoFactor: twoFactorReducer,
+    safety: safetyReducer,
   },
 });

@@ -11,11 +11,14 @@ import { useState } from "react";
 
 import Avatar from "../../../components/common/Avatar";
 import ShareModal from "../../messages/components/ShareModal";
+import ReportModal from "../../safety/components/ReportModal";
 import { likePost, savePost } from "../postSlice";
 
 const getId = (value) => (typeof value === "string" ? value : value?._id);
 
 const PostCard = ({ post }) => {
+  const [showPostMenu, setShowPostMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.auth.user);
@@ -47,12 +50,31 @@ const PostCard = ({ post }) => {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="rounded-full p-2 text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
-        >
-          <MoreHorizontal size={20} />
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowPostMenu((prev) => !prev)}
+            className="rounded-full p-2 text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
+            aria-label="Post options"
+          >
+            <MoreHorizontal size={20} />
+          </button>
+
+          {showPostMenu ? (
+            <div className="absolute right-0 top-10 z-20 w-40 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPostMenu(false);
+                  setShowReportModal(true);
+                }}
+                className="w-full px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+              >
+                Report post
+              </button>
+            </div>
+          ) : null}
+        </div>
       </header>
 
       <div className="bg-slate-100 dark:bg-slate-900">
@@ -136,6 +158,13 @@ const PostCard = ({ post }) => {
           type: "post",
           postId: post._id,
         }}
+      />
+
+      <ReportModal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        targetId={post._id}
+        type="post"
       />
     </article>
   );

@@ -1,6 +1,14 @@
-import { Lock, Moon, Shield, Trash2 } from "lucide-react";
+import {
+  Lock,
+  Moon,
+  Shield,
+  Trash2,
+  MonitorSmartphone,
+  ShieldAlert,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
@@ -16,6 +24,7 @@ import {
   updatePrivacySettings,
 } from "../features/profile/profileSlice";
 import { setTheme } from "../features/theme/themeSlice";
+import TwoFactorSettings from "../features/twoFactor/components/TwoFactorSettings";
 
 const SettingsAlerts = ({
   error,
@@ -270,6 +279,27 @@ const PasswordSettingsForm = ({ authLoading }) => {
   );
 };
 
+<div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+  <div className="mb-4 flex items-center gap-3">
+    <MonitorSmartphone size={22} />
+
+    <h2 className="text-lg font-bold text-slate-950 dark:text-white">
+      Login Activity
+    </h2>
+  </div>
+
+  <p className="text-sm text-slate-500">
+    View active devices and logout sessions you do not recognize.
+  </p>
+
+  <Link
+    to="/sessions"
+    className="mt-4 inline-flex rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+  >
+    Manage Sessions
+  </Link>
+</div>;
+
 const ThemeSettings = ({ theme }) => {
   const dispatch = useDispatch();
   const themes = ["system", "light", "dark"];
@@ -439,6 +469,29 @@ const SettingsPage = () => {
       ) : null}
 
       <PasswordSettingsForm authLoading={authLoading} />
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+        <div className="mb-4 flex items-center gap-3">
+          <ShieldAlert size={22} />
+
+          <h2 className="text-lg font-bold text-slate-950 dark:text-white">
+            Safety
+          </h2>
+        </div>
+
+        <p className="text-sm text-slate-500">
+          Manage blocked users, muted users, and account safety controls.
+        </p>
+
+        <Link
+          to="/settings/safety"
+          className="mt-4 inline-flex rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+        >
+          Manage Safety
+        </Link>
+      </div>
+
+      {profile ? <TwoFactorSettings profile={profile} /> : null}
 
       <ThemeSettings theme={theme} />
 

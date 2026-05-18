@@ -2,6 +2,7 @@ import {
   Bookmark,
   Heart,
   MessageCircle,
+  MoreHorizontal,
   Send,
   Volume2,
   VolumeX,
@@ -11,6 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
 import ShareModal from "../../messages/components/ShareModal";
+import ReportModal from "../../safety/components/ReportModal";
 import { commentReel, likeReel, saveReel } from "../reelSlice";
 
 const ReelCard = ({ reel }) => {
@@ -23,6 +25,8 @@ const ReelCard = ({ reel }) => {
   const [commentText, setCommentText] = useState("");
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showReelMenu, setShowReelMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const isLiked = reel.likes?.some((like) => {
     if (typeof like === "string") return like === currentUser?._id;
@@ -153,6 +157,31 @@ const ReelCard = ({ reel }) => {
             <button type="button" onClick={handleMuteToggle}>
               {isMuted ? <VolumeX size={26} /> : <Volume2 size={26} />}
             </button>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowReelMenu((prev) => !prev)}
+                aria-label="Reel options"
+              >
+                <MoreHorizontal size={26} />
+              </button>
+
+              {showReelMenu ? (
+                <div className="absolute bottom-10 right-0 z-30 w-40 overflow-hidden rounded-xl bg-white text-slate-950 shadow-xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReelMenu(false);
+                      setShowReportModal(true);
+                    }}
+                    className="w-full px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
+                  >
+                    Report reel
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 
@@ -185,6 +214,13 @@ const ReelCard = ({ reel }) => {
           type: "reel",
           reelId: reel._id,
         }}
+      />
+
+      <ReportModal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        targetId={reel._id}
+        type="reel"
       />
     </article>
   );

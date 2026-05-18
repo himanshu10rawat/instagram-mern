@@ -8,6 +8,9 @@ import {
   updateCoverApi,
   updatePrivacySettingsApi,
   updateProfileApi,
+  getMySavedProfilePostsApi,
+  getUserPostsApi,
+  getUserReelsApi,
 } from "./profileService";
 
 export const fetchMyProfile = createAsyncThunk(
@@ -31,6 +34,45 @@ export const fetchUserProfile = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch profile",
+      );
+    }
+  },
+);
+
+export const fetchProfilePosts = createAsyncThunk(
+  "profile/fetchProfilePosts",
+  async (userId, { rejectWithValue }) => {
+    try {
+      return await getUserPostsApi(userId);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch profile posts",
+      );
+    }
+  },
+);
+
+export const fetchProfileReels = createAsyncThunk(
+  "profile/fetchProfileReels",
+  async (userId, { rejectWithValue }) => {
+    try {
+      return await getUserReelsApi(userId);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch profile reels",
+      );
+    }
+  },
+);
+
+export const fetchProfileSavedPosts = createAsyncThunk(
+  "profile/fetchProfileSavedPosts",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getMySavedProfilePostsApi();
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch saved posts",
       );
     }
   },
@@ -108,9 +150,15 @@ export const removeAccount = createAsyncThunk(
 
 const initialState = {
   profile: null,
+  profilePosts: [],
+  profileReels: [],
+  savedPosts: [],
+  activeTab: "posts",
   loading: false,
+  tabLoading: false,
   updating: false,
   error: null,
+  tabError: null,
   successMessage: "",
 };
 
@@ -120,13 +168,26 @@ const profileSlice = createSlice({
   reducers: {
     clearProfileStatus: (state) => {
       state.error = null;
+      state.tabError = null;
       state.successMessage = "";
     },
+
+    setProfileActiveTab: (state, action) => {
+      state.activeTab = action.payload;
+      state.tabError = null;
+    },
+
     resetProfile: (state) => {
       state.profile = null;
+      state.profilePosts = [];
+      state.profileReels = [];
+      state.savedPosts = [];
+      state.activeTab = "posts";
       state.loading = false;
+      state.tabLoading = false;
       state.updating = false;
       state.error = null;
+      state.tabError = null;
       state.successMessage = "";
     },
   },
@@ -228,10 +289,49 @@ const profileSlice = createSlice({
       .addCase(removeAccount.rejected, (state, action) => {
         state.updating = false;
         state.error = action.payload;
+      })
+      .addCase(fetchProfilePosts.pending, (state) => {
+        state.tabLoading = true;
+        state.tabError = null;
+      })
+      .addCase(fetchProfilePosts.fulfilled, (state, action) => {
+        state.tabLoading = false;
+        state.profilePosts = action.payload || [];
+      })
+      .addCase(fetchProfilePosts.rejected, (state, action) => {
+        state.tabLoading = false;
+        state.tabError = action.payload;
+      })
+
+      .addCase(fetchProfileReels.pending, (state) => {
+        state.tabLoading = true;
+        state.tabError = null;
+      })
+      .addCase(fetchProfileReels.fulfilled, (state, action) => {
+        state.tabLoading = false;
+        state.profileReels = action.payload || [];
+      })
+      .addCase(fetchProfileReels.rejected, (state, action) => {
+        state.tabLoading = false;
+        state.tabError = action.payload;
+      })
+
+      .addCase(fetchProfileSavedPosts.pending, (state) => {
+        state.tabLoading = true;
+        state.tabError = null;
+      })
+      .addCase(fetchProfileSavedPosts.fulfilled, (state, action) => {
+        state.tabLoading = false;
+        state.savedPosts = action.payload || [];
+      })
+      .addCase(fetchProfileSavedPosts.rejected, (state, action) => {
+        state.tabLoading = false;
+        state.tabError = action.payload;
       });
   },
 });
 
-export const { clearProfileStatus, resetProfile } = profileSlice.actions;
+export const { clearProfileStatus, resetProfile, setProfileActiveTab } =
+  profileSlice.actions;
 
 export default profileSlice.reducer;

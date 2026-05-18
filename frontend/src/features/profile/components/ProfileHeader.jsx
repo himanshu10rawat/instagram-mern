@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
 import ShareModal from "../../messages/components/ShareModal";
+import ProfileSafetyMenu from "../../safety/components/ProfileSafetyMenu";
 import { followUser, unfollowUser } from "../../follow/followSlice";
 import { fetchUserProfile } from "../profileSlice";
 import FollowListModal from "./FollowListModal";
@@ -136,6 +137,8 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
                 >
                   Message
                 </button>
+
+                <ProfileSafetyMenu profile={profile} />
               </>
             )}
           </div>
