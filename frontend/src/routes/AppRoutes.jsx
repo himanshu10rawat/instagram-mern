@@ -27,6 +27,8 @@ import SavedPostsPage from "../pages/SavedPostsPage";
 import StoryViewerPage from "../pages/StoryViewerPage";
 import SessionsPage from "../pages/SessionsPage";
 import SafetySettingsPage from "../pages/SafetySettingsPage";
+import CollectionsPage from "../pages/CollectionsPage";
+import CollectionDetailPage from "../pages/CollectionDetailPage";
 
 const AppRoutes = () => {
   return (
@@ -59,6 +61,11 @@ const AppRoutes = () => {
           <Route path="/stories/:storyId" element={<StoryViewerPage />} />
           <Route path="/sessions" element={<SessionsPage />} />
           <Route path="/settings/safety" element={<SafetySettingsPage />} />
+          <Route path="/collections" element={<CollectionsPage />} />
+          <Route
+            path="/collections/:collectionId"
+            element={<CollectionDetailPage />}
+          />
         </Route>
       </Route>
     </Routes>

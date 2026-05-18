@@ -16,6 +16,7 @@ import highlightReducer from "../features/highlights/highlightSlice";
 import sessionReducer from "../features/sessions/sessionSlice";
 import twoFactorReducer from "../features/twoFactor/twoFactorSlice";
 import safetyReducer from "../features/safety/safetySlice";
+import collectionReducer from "../features/collections/collectionSlice";
 
 export const store = configureStore({
   reducer: {
@@ -35,5 +36,6 @@ export const store = configureStore({
     sessions: sessionReducer,
     twoFactor: twoFactorReducer,
     safety: safetyReducer,
+    collections: collectionReducer,
   },
 });

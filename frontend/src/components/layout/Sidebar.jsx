@@ -12,6 +12,7 @@ import {
   UserPlus,
   Archive,
   Bookmark,
+  Folder,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -78,6 +79,11 @@ const navItems = [
     label: "Archive",
     path: "/archive",
     icon: Archive,
+  },
+  {
+    label: "Collections",
+    path: "/collections",
+    icon: Folder,
   },
 ];
 

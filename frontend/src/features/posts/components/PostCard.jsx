@@ -12,6 +12,7 @@ import { useState } from "react";
 import Avatar from "../../../components/common/Avatar";
 import ShareModal from "../../messages/components/ShareModal";
 import ReportModal from "../../safety/components/ReportModal";
+import SaveToCollectionModal from "../../collections/components/SaveToCollectionModal";
 import { likePost, savePost } from "../postSlice";
 
 const getId = (value) => (typeof value === "string" ? value : value?._id);
@@ -20,6 +21,7 @@ const PostCard = ({ post }) => {
   const [showPostMenu, setShowPostMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showCollectionModal, setShowCollectionModal] = useState(false);
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.auth.user);
 
@@ -122,12 +124,14 @@ const PostCard = ({ post }) => {
 
           <button
             type="button"
-            onClick={() => dispatch(savePost({ postId: post._id, isSaved }))}
-            className={
-              isSaved
-                ? "text-slate-950 dark:text-white"
-                : "text-slate-700 dark:text-slate-300"
-            }
+            onClick={async () => {
+              if (!isSaved) {
+                await dispatch(savePost({ postId: post._id, isSaved }));
+              }
+
+              setShowCollectionModal(true);
+            }}
+            className={isSaved ? "text-slate-950" : "text-slate-700"}
           >
             <Bookmark size={24} fill={isSaved ? "currentColor" : "none"} />
           </button>
@@ -165,6 +169,12 @@ const PostCard = ({ post }) => {
         onClose={() => setShowReportModal(false)}
         targetId={post._id}
         type="post"
+      />
+
+      <SaveToCollectionModal
+        open={showCollectionModal}
+        onClose={() => setShowCollectionModal(false)}
+        postId={post._id}
       />
     </article>
   );
