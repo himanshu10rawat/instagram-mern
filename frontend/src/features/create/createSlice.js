@@ -15,19 +15,6 @@ export const createPost = createAsyncThunk(
   },
 );
 
-export const createStory = createAsyncThunk(
-  "create/createStory",
-  async (formData, { rejectWithValue }) => {
-    try {
-      return await createStoryApi(formData);
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to create story",
-      );
-    }
-  },
-);
-
 export const createReel = createAsyncThunk(
   "create/createReel",
   async (formData, { rejectWithValue }) => {
@@ -41,10 +28,24 @@ export const createReel = createAsyncThunk(
   },
 );
 
+export const createStory = createAsyncThunk(
+  "create/createStory",
+  async (formData, { rejectWithValue }) => {
+    try {
+      return await createStoryApi(formData);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to create story",
+      );
+    }
+  },
+);
+
 const initialState = {
   loading: false,
   error: null,
   successMessage: "",
+  createdContent: null,
 };
 
 const createSliceState = createSlice({
@@ -54,6 +55,7 @@ const createSliceState = createSlice({
     clearCreateStatus: (state) => {
       state.error = null;
       state.successMessage = "";
+      state.createdContent = null;
     },
   },
   extraReducers: (builder) => {
@@ -63,25 +65,12 @@ const createSliceState = createSlice({
         state.error = null;
         state.successMessage = "";
       })
-      .addCase(createPost.fulfilled, (state) => {
+      .addCase(createPost.fulfilled, (state, action) => {
         state.loading = false;
+        state.createdContent = action.payload;
         state.successMessage = "Post created successfully";
       })
       .addCase(createPost.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      .addCase(createStory.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.successMessage = "";
-      })
-      .addCase(createStory.fulfilled, (state) => {
-        state.loading = false;
-        state.successMessage = "Story created successfully";
-      })
-      .addCase(createStory.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -91,11 +80,27 @@ const createSliceState = createSlice({
         state.error = null;
         state.successMessage = "";
       })
-      .addCase(createReel.fulfilled, (state) => {
+      .addCase(createReel.fulfilled, (state, action) => {
         state.loading = false;
+        state.createdContent = action.payload;
         state.successMessage = "Reel created successfully";
       })
       .addCase(createReel.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(createStory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.successMessage = "";
+      })
+      .addCase(createStory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.createdContent = action.payload;
+        state.successMessage = "Story created successfully";
+      })
+      .addCase(createStory.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

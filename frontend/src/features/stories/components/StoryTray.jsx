@@ -4,11 +4,14 @@ import { Link } from "react-router-dom";
 import Avatar from "../../../components/common/Avatar";
 
 const getGroupUser = (group) =>
-  group.user || group.author || group.stories?.[0]?.author;
+  group?.user || group?.author || group?.stories?.[0]?.author;
 
 const StoryTray = ({ storyGroups = [], currentUser }) => {
   const currentUserId = currentUser?._id;
-  const ownStoryGroup = storyGroups.find((group) => {
+  const safeStoryGroups = Array.isArray(storyGroups)
+    ? storyGroups.filter(Boolean)
+    : [];
+  const ownStoryGroup = safeStoryGroups.find((group) => {
     const user = getGroupUser(group);
     return user?._id === currentUserId;
   });
@@ -18,7 +21,7 @@ const StoryTray = ({ storyGroups = [], currentUser }) => {
     ? `/stories/${ownFirstStory._id}`
     : "/create?type=story";
   const ownAvatarUrl = currentUser?.avatar?.url || ownStoryUser?.avatar?.url;
-  const visibleStoryGroups = storyGroups.filter((group) => {
+  const visibleStoryGroups = safeStoryGroups.filter((group) => {
     if (!currentUserId) return true;
 
     const user = getGroupUser(group);
@@ -60,10 +63,10 @@ const StoryTray = ({ storyGroups = [], currentUser }) => {
         </div>
 
         {visibleStoryGroups.map((group) => {
-          const firstStory = group.stories?.[0];
+          const firstStory = group?.stories?.[0] || group;
           const user = getGroupUser(group);
 
-          if (!firstStory) return null;
+          if (!firstStory?._id) return null;
 
           return (
             <Link

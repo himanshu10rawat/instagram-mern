@@ -87,13 +87,23 @@ const replaceStoryById = (stories, updatedStory) =>
 const normalizeStoryGroups = (payload = []) => {
   if (!Array.isArray(payload)) return [];
 
-  const alreadyGrouped = payload.every((item) => Array.isArray(item?.stories));
+  const validItems = payload.filter(Boolean);
+  const alreadyGrouped = validItems.every((item) =>
+    Array.isArray(item?.stories),
+  );
 
-  if (alreadyGrouped) return payload;
+  if (alreadyGrouped) {
+    return validItems
+      .map((group) => ({
+        ...group,
+        stories: (group.stories || []).filter(Boolean),
+      }))
+      .filter((group) => group.stories.length > 0);
+  }
 
   const groupedStories = new Map();
 
-  payload.forEach((story) => {
+  validItems.forEach((story) => {
     const author = story.author || story.user;
     const authorId = author?._id || story.author;
 

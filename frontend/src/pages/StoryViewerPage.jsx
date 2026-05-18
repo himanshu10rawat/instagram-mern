@@ -1,9 +1,10 @@
-import { Heart, Send, X } from "lucide-react";
+import { Heart, Send, Share2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../components/common/Avatar";
+import ShareModal from "../features/messages/components/ShareModal";
 import {
   clearCurrentStory,
   clearStoryStatus,
@@ -15,6 +16,7 @@ import {
 const getId = (value) => (typeof value === "string" ? value : value?._id);
 
 const StoryViewerPage = () => {
+  const [showShareModal, setShowShareModal] = useState(false);
   const { storyId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -185,10 +187,27 @@ const StoryViewerPage = () => {
               >
                 <Send size={18} />
               </button>
+
+              <button
+                type="button"
+                onClick={() => setShowShareModal(true)}
+                className="rounded-full bg-white/20 p-3 text-white"
+                aria-label="Share story"
+              >
+                <Share2 size={18} />
+              </button>
             </form>
           )}
         </div>
       </article>
+      <ShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        sharePayload={{
+          type: "story",
+          storyId,
+        }}
+      />
     </section>
   );
 };

@@ -44,7 +44,9 @@ export const sendMessageApi = async ({ receiverId, text, replyTo, file }) => {
 };
 
 export const markConversationSeenApi = async (conversationId) => {
-  const response = await api.patch(`/messages/conversation/${conversationId}/seen`);
+  const response = await api.patch(
+    `/messages/conversation/${conversationId}/seen`,
+  );
   return response.data.data;
 };
 
@@ -95,5 +97,25 @@ export const rejectMessageRequestApi = async (conversationId) => {
 
 export const createOrGetConversationApi = async (receiverId) => {
   const response = await api.post(`/messages/conversations/${receiverId}`);
+  return response.data.data;
+};
+
+export const shareToMessageApi = async ({
+  receiverId,
+  postId,
+  reelId,
+  storyId,
+  profileId,
+  text,
+}) => {
+  const response = await api.post("/share/to-user", {
+    receiverId,
+    postId,
+    reelId,
+    storyId,
+    profileId,
+    text,
+  });
+
   return response.data.data;
 };

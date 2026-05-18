@@ -11,6 +11,7 @@ import {
   reactMessageApi,
   rejectMessageRequestApi,
   sendMessageApi,
+  shareToMessageApi,
 } from "./messageService";
 
 export const fetchConversations = createAsyncThunk(
@@ -140,6 +141,19 @@ export const startConversation = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to start conversation",
+      );
+    }
+  },
+);
+
+export const shareToMessage = createAsyncThunk(
+  "messages/shareToMessage",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await shareToMessageApi(payload);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to share content",
       );
     }
   },
@@ -497,6 +511,54 @@ const messageSlice = createSlice({
         state.activeConversation = conversation;
       })
       .addCase(startConversation.rejected, (state, action) => {
+        state.sending = false;
+        state.error = action.payload;
+      })
+      .addCase(shareToMessage.pending, (state) => {
+        state.sending = true;
+        state.error = null;
+      })
+      .addCase(shareToMessage.fulfilled, (state, action) => {
+        state.sending = false;
+
+        const message = action.payload;
+
+        if (
+          state.activeConversation?._id &&
+          message.conversation === state.activeConversation._id
+        ) {
+          state.messages = upsertMessage(state.messages, message);
+        }
+
+        const updatedConversation =
+          state.conversations.find(
+            (conversation) => conversation._id === message.conversation,
+          ) ||
+          (state.activeConversation?._id === message.conversation
+            ? { ...state.activeConversation, lastMessage: message }
+            : null);
+
+        if (updatedConversation) {
+          state.conversations = upsertConversation(
+            state.conversations,
+            {
+              ...updatedConversation,
+              lastMessage: message,
+            },
+            true,
+          );
+
+          if (state.activeConversation?._id === message.conversation) {
+            state.activeConversation = {
+              ...state.activeConversation,
+              lastMessage: message,
+            };
+          }
+        } else {
+          state.conversations = dedupeConversations(state.conversations);
+        }
+      })
+      .addCase(shareToMessage.rejected, (state, action) => {
         state.sending = false;
         state.error = action.payload;
       });

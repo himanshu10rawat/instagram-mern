@@ -7,13 +7,16 @@ import {
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 import Avatar from "../../../components/common/Avatar";
+import ShareModal from "../../messages/components/ShareModal";
 import { likePost, savePost } from "../postSlice";
 
 const getId = (value) => (typeof value === "string" ? value : value?._id);
 
 const PostCard = ({ post }) => {
+  const [showShareModal, setShowShareModal] = useState(false);
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.auth.user);
 
@@ -77,9 +80,7 @@ const PostCard = ({ post }) => {
               type="button"
               onClick={() => dispatch(likePost({ postId: post._id, isLiked }))}
               className={
-                isLiked
-                  ? "text-red-500"
-                  : "text-slate-900 dark:text-slate-100"
+                isLiked ? "text-red-500" : "text-slate-900 dark:text-slate-100"
               }
             >
               <Heart size={24} fill={isLiked ? "currentColor" : "none"} />
@@ -92,7 +93,7 @@ const PostCard = ({ post }) => {
               <MessageCircle size={24} />
             </Link>
 
-            <button type="button" className="text-slate-900 dark:text-slate-100">
+            <button type="button" onClick={() => setShowShareModal(true)}>
               <Send size={24} />
             </button>
           </div>
@@ -128,6 +129,14 @@ const PostCard = ({ post }) => {
           View all {post.commentsCount || post.comments?.length || 0} comments
         </Link>
       </div>
+      <ShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        sharePayload={{
+          type: "post",
+          postId: post._id,
+        }}
+      />
     </article>
   );
 };

@@ -14,6 +14,7 @@ import RegisterPage from "../pages/RegisterPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
 import SearchPage from "../pages/SearchPage";
 import SettingsPage from "../pages/SettingsPage";
+import SuggestionsPage from "../pages/SuggestionsPage";
 import VerifyEmailPage from "../pages/VerifyEmailPage";
 import VerifyTwoFactorPage from "../pages/VerifyTwoFactorPage";
 import ProtectedRoute from "./ProtectedRoute";
@@ -48,6 +49,7 @@ const AppRoutes = () => {
           <Route path="/profile/:username" element={<ProfilePage />} />
           <Route path="/profile/me/edit" element={<EditProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/suggestions" element={<SuggestionsPage />} />
           <Route path="/posts/:postId" element={<PostDetailPage />} />
           <Route path="/reels/:reelId" element={<ReelDetailPage />} />
           <Route path="/saved" element={<SavedPostsPage />} />

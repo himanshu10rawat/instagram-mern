@@ -1,14 +1,16 @@
-import { Calendar, Globe, Lock, Settings } from "lucide-react";
+import { Calendar, Globe, Lock, Settings, Share2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
+import ShareModal from "../../messages/components/ShareModal";
 import { followUser, unfollowUser } from "../../follow/followSlice";
 import { fetchUserProfile } from "../profileSlice";
 import FollowListModal from "./FollowListModal";
 
 const ProfileHeader = ({ profile, isMyProfile }) => {
+  const [showShareModal, setShowShareModal] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -210,6 +212,14 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
               Following
             </p>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setShowShareModal(true)}
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
+          >
+            <Share2 size={16} />
+          </button>
         </div>
       </div>
 
@@ -220,6 +230,15 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
           onClose={() => setFollowListType(null)}
         />
       ) : null}
+
+      <ShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        sharePayload={{
+          type: "profile",
+          profileId: profile._id,
+        }}
+      />
     </div>
   );
 };

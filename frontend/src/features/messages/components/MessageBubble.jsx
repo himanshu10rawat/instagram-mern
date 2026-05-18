@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
 
 import { editMessage, reactMessage } from "../messageSlice";
 
@@ -103,21 +104,39 @@ const MessageBubble = ({ message, isMine }) => {
             {message.text ? <p className="text-sm">{message.text}</p> : null}
 
             {message.shared?.post ? (
-              <p className="text-sm font-semibold">Shared a post</p>
+              <Link
+                to={`/posts/${message.shared.post._id}`}
+                className="mt-2 block rounded-xl bg-black/10 p-3 text-sm font-semibold"
+              >
+                Shared a post
+              </Link>
             ) : null}
 
             {message.shared?.reel ? (
-              <p className="text-sm font-semibold">Shared a reel</p>
+              <Link
+                to={`/reels/${message.shared.reel._id}`}
+                className="mt-2 block rounded-xl bg-black/10 p-3 text-sm font-semibold"
+              >
+                Shared a reel
+              </Link>
             ) : null}
 
             {message.shared?.story ? (
-              <p className="text-sm font-semibold">Shared a story</p>
+              <Link
+                to={`/stories/${message.shared.story._id}`}
+                className="mt-2 block rounded-xl bg-black/10 p-3 text-sm font-semibold"
+              >
+                Shared a story
+              </Link>
             ) : null}
 
             {message.shared?.profile ? (
-              <p className="text-sm font-semibold">
+              <Link
+                to={`/profile/${message.shared.profile.username}`}
+                className="mt-2 block rounded-xl bg-black/10 p-3 text-sm font-semibold"
+              >
                 Shared @{message.shared.profile.username}
-              </p>
+              </Link>
             ) : null}
           </>
         )}
@@ -155,9 +174,7 @@ const MessageBubble = ({ message, isMine }) => {
               type="button"
               onClick={() => setIsEditing(true)}
               className={`text-xs ${
-                isMine
-                  ? "text-white/80 dark:text-slate-600"
-                  : "text-slate-500"
+                isMine ? "text-white/80 dark:text-slate-600" : "text-slate-500"
               }`}
             >
               Edit

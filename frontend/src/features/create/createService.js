@@ -10,8 +10,8 @@ export const createPostApi = async (formData) => {
   return response.data.data;
 };
 
-export const createStoryApi = async (formData) => {
-  const response = await api.post("/stories", formData, {
+export const createReelApi = async (formData) => {
+  const response = await api.post("/reels", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -20,8 +20,8 @@ export const createStoryApi = async (formData) => {
   return response.data.data;
 };
 
-export const createReelApi = async (formData) => {
-  const response = await api.post("/reels", formData, {
+export const createStoryApi = async (formData) => {
+  const response = await api.post("/stories", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },

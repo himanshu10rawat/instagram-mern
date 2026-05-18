@@ -10,6 +10,7 @@ import { useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
+import ShareModal from "../../messages/components/ShareModal";
 import { commentReel, likeReel, saveReel } from "../reelSlice";
 
 const ReelCard = ({ reel }) => {
@@ -21,6 +22,7 @@ const ReelCard = ({ reel }) => {
   const [isMuted, setIsMuted] = useState(true);
   const [commentText, setCommentText] = useState("");
   const [showCommentBox, setShowCommentBox] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const isLiked = reel.likes?.some((like) => {
     if (typeof like === "string") return like === currentUser?._id;
@@ -137,7 +139,7 @@ const ReelCard = ({ reel }) => {
               </span>
             </button>
 
-            <button type="button">
+            <button type="button" onClick={() => setShowShareModal(true)}>
               <Send size={28} />
             </button>
 
@@ -175,6 +177,15 @@ const ReelCard = ({ reel }) => {
           </form>
         ) : null}
       </div>
+
+      <ShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        sharePayload={{
+          type: "reel",
+          reelId: reel._id,
+        }}
+      />
     </article>
   );
 };

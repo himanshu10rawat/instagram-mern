@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import PostCard from "../features/posts/components/PostCard";
 import { fetchFeedPosts } from "../features/posts/postSlice";
 import SuggestedUsers from "../features/profile/components/SuggestedUsers";
-import { fetchSuggestedUsers } from "../features/profile/recommendationSlice";
 import { fetchStoriesFeed } from "../features/stories/storySlice";
 import StoryTray from "../features/stories/components/StoryTray";
 
@@ -14,9 +13,6 @@ const HomePage = () => {
   const { posts, loading, error, page, hasMore } = useSelector(
     (state) => state.posts,
   );
-  const { users: suggestedUsers } = useSelector(
-    (state) => state.recommendations,
-  );
 
   const currentUser = useSelector((state) => state.auth.user);
   const { storyGroups } = useSelector((state) => state.stories);
@@ -24,7 +20,6 @@ const HomePage = () => {
   useEffect(() => {
     dispatch(fetchStoriesFeed());
     dispatch(fetchFeedPosts({ page: 1, limit: 10 }));
-    dispatch(fetchSuggestedUsers());
   }, [dispatch]);
 
   const handleLoadMore = () => {
@@ -94,7 +89,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      <SuggestedUsers users={suggestedUsers} />
+      <SuggestedUsers />
     </section>
   );
 };

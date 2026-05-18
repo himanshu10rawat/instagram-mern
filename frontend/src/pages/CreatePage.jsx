@@ -1,6 +1,7 @@
-import { Image, Video, PlusCircle } from "lucide-react";
+import { Image, Plus, Video, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
@@ -11,113 +12,132 @@ import {
   createStory,
 } from "../features/create/createSlice";
 
-const createTypes = [
+const contentTypes = [
   {
     label: "Post",
     value: "post",
     icon: Image,
   },
   {
-    label: "Story",
-    value: "story",
-    icon: PlusCircle,
-  },
-  {
     label: "Reel",
     value: "reel",
     icon: Video,
   },
+  {
+    label: "Story",
+    value: "story",
+    icon: Plus,
+  },
 ];
+
+const getInitialType = (type) => {
+  if (["post", "reel", "story"].includes(type)) {
+    return type;
+  }
+
+  return "post";
+};
 
 const CreatePage = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const typeFromQuery = searchParams.get("type");
 
   const { loading, error, successMessage } = useSelector(
     (state) => state.create,
   );
 
-  const [createType, setCreateType] = useState("post");
+  const [contentType, setContentType] = useState(() =>
+    getInitialType(typeFromQuery),
+  );
+  const [files, setFiles] = useState([]);
   const [caption, setCaption] = useState("");
   const [location, setLocation] = useState("");
-  const [visibility, setVisibility] = useState("public");
-  const [files, setFiles] = useState([]);
-  const [previewUrls, setPreviewUrls] = useState([]);
+  const [tags, setTags] = useState("");
+  const [storyText, setStoryText] = useState("");
+  const [isCloseFriends, setIsCloseFriends] = useState(false);
 
-  const isReel = createType === "reel";
-  const isStory = createType === "story";
-  const isPost = createType === "post";
-
-  const acceptType = useMemo(() => {
-    if (isReel) return "video/*";
-    if (isStory) return "image/*,video/*";
-    return "image/*,video/*";
-  }, [isReel, isStory]);
+  const previews = useMemo(() => {
+    return files.map((file) => ({
+      id: `${file.name}-${file.lastModified}`,
+      url: URL.createObjectURL(file),
+      type: file.type,
+      name: file.name,
+    }));
+  }, [files]);
 
   useEffect(() => {
     return () => {
-      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+      previews.forEach((preview) => {
+        URL.revokeObjectURL(preview.url);
+      });
     };
-  }, [previewUrls]);
+  }, [previews]);
+
+  useEffect(() => {
+    dispatch(clearCreateStatus());
+
+    return () => {
+      dispatch(clearCreateStatus());
+    };
+  }, [dispatch]);
 
   const resetForm = () => {
+    setFiles([]);
     setCaption("");
     setLocation("");
-    setVisibility("public");
-    setFiles([]);
-
-    previewUrls.forEach((url) => URL.revokeObjectURL(url));
-    setPreviewUrls([]);
+    setTags("");
+    setStoryText("");
+    setIsCloseFriends(false);
   };
 
-  const handleTypeChange = (type) => {
-    setCreateType(type);
+  const handleTypeChange = (value) => {
+    setContentType(value);
     resetForm();
     dispatch(clearCreateStatus());
   };
 
-  const handleFileChange = (event) => {
+  const handleFilesChange = (event) => {
     const selectedFiles = Array.from(event.target.files || []);
 
-    if (isReel && selectedFiles.length > 1) {
+    if (contentType === "post") {
+      setFiles(selectedFiles);
       return;
     }
 
-    if (isStory && selectedFiles.length > 1) {
-      return;
+    setFiles(selectedFiles.slice(0, 1));
+  };
+
+  const removeFile = (fileId) => {
+    setFiles((prev) =>
+      prev.filter((file) => `${file.name}-${file.lastModified}` !== fileId),
+    );
+  };
+
+  const appendCommonPostFields = (formData) => {
+    if (caption.trim()) {
+      formData.append("caption", caption.trim());
     }
 
-    setFiles(selectedFiles);
+    if (location.trim()) {
+      formData.append("location", location.trim());
+    }
 
-    previewUrls.forEach((url) => URL.revokeObjectURL(url));
-
-    const urls = selectedFiles.map((file) => URL.createObjectURL(file));
-    setPreviewUrls(urls);
-
-    dispatch(clearCreateStatus());
+    if (tags.trim()) {
+      formData.append("tags", tags.trim());
+    }
   };
 
   const buildPostFormData = () => {
     const formData = new FormData();
 
-    formData.append("caption", caption);
-    formData.append("location", location);
-
     files.forEach((file) => {
       formData.append("media", file);
     });
 
-    return formData;
-  };
-
-  const buildStoryFormData = () => {
-    const formData = new FormData();
-
-    formData.append("caption", caption);
-    formData.append("visibility", visibility);
-
-    if (files[0]) {
-      formData.append("media", files[0]);
-    }
+    appendCommonPostFields(formData);
 
     return formData;
   };
@@ -125,12 +145,27 @@ const CreatePage = () => {
   const buildReelFormData = () => {
     const formData = new FormData();
 
-    formData.append("caption", caption);
-    formData.append("location", location);
-
     if (files[0]) {
       formData.append("video", files[0]);
     }
+
+    appendCommonPostFields(formData);
+
+    return formData;
+  };
+
+  const buildStoryFormData = () => {
+    const formData = new FormData();
+
+    if (files[0]) {
+      formData.append("media", files[0]);
+    }
+
+    if (storyText.trim()) {
+      formData.append("text", storyText.trim());
+    }
+
+    formData.append("isCloseFriends", String(isCloseFriends));
 
     return formData;
   };
@@ -138,57 +173,80 @@ const CreatePage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (files.length === 0) {
+    if (!files.length) {
       return;
     }
 
     let result;
 
-    if (isPost) {
+    if (contentType === "post") {
       result = await dispatch(createPost(buildPostFormData()));
     }
 
-    if (isStory) {
-      result = await dispatch(createStory(buildStoryFormData()));
-    }
-
-    if (isReel) {
+    if (contentType === "reel") {
       result = await dispatch(createReel(buildReelFormData()));
     }
 
-    if (
+    if (contentType === "story") {
+      result = await dispatch(createStory(buildStoryFormData()));
+    }
+
+    const isSuccess =
       createPost.fulfilled.match(result) ||
-      createStory.fulfilled.match(result) ||
-      createReel.fulfilled.match(result)
-    ) {
+      createReel.fulfilled.match(result) ||
+      createStory.fulfilled.match(result);
+
+    if (isSuccess) {
       resetForm();
+
+      if (contentType === "post") {
+        navigate("/");
+      }
+
+      if (contentType === "reel") {
+        navigate("/reels");
+      }
+
+      if (contentType === "story") {
+        navigate("/");
+      }
     }
   };
 
+  const acceptType =
+    contentType === "reel"
+      ? "video/*"
+      : contentType === "story"
+        ? "image/*,video/*"
+        : "image/*,video/*";
+
   return (
-    <section className="mx-auto max-w-3xl">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+    <section className="mx-auto max-w-4xl">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
           Create
         </h1>
-        <p className="mt-2 text-slate-500 dark:text-slate-400">
-          Create post, reel or story.
-        </p>
 
-        <div className="mt-6 grid grid-cols-3 gap-3">
-          {createTypes.map((item) => {
+        <p className="mt-1 text-sm text-slate-500">
+          Upload a post, reel or story.
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {contentTypes.map((item) => {
             const Icon = item.icon;
-            const isActive = createType === item.value;
+            const isActive = contentType === item.value;
 
             return (
               <button
                 key={item.value}
                 type="button"
                 onClick={() => handleTypeChange(item.value)}
-                className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold ${
                   isActive
                     ? "border-slate-950 bg-slate-950 text-white dark:border-white dark:bg-white dark:text-slate-950"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    : "border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 }`}
               >
                 <Icon size={18} />
@@ -211,122 +269,136 @@ const CreatePage = () => {
         ) : null}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Upload {createType}
-            </label>
+          <label className="flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 p-6 text-center dark:border-slate-700">
+            <Plus size={32} className="text-slate-500" />
 
-            <label className="flex min-h-52 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800">
-              <input
-                type="file"
-                accept={acceptType}
-                multiple={isPost}
-                onChange={handleFileChange}
-                className="hidden"
-              />
+            <span className="mt-3 text-sm font-semibold text-slate-950 dark:text-white">
+              Select {contentType === "post" ? "media files" : "a media file"}
+            </span>
 
-              <PlusCircle
-                size={36}
-                className="text-slate-500 dark:text-slate-400"
-              />
+            <span className="mt-1 text-xs text-slate-500">
+              {contentType === "post"
+                ? "Images or videos. Multiple files allowed."
+                : contentType === "reel"
+                  ? "Video only."
+                  : "Image or video story."}
+            </span>
 
-              <p className="mt-3 text-sm font-medium text-slate-800 dark:text-white">
-                Click to upload
-              </p>
+            <input
+              type="file"
+              accept={acceptType}
+              multiple={contentType === "post"}
+              onChange={handleFilesChange}
+              className="hidden"
+            />
+          </label>
 
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                {isPost
-                  ? "Post supports multiple images/videos"
-                  : "Story and reel support single media"}
-              </p>
-            </label>
-          </div>
+          {previews.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {previews.map((preview) => (
+                <div
+                  key={preview.id}
+                  className="relative aspect-square overflow-hidden rounded-xl bg-slate-100"
+                >
+                  {preview.type.startsWith("video/") ? (
+                    <video
+                      src={preview.url}
+                      controls
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={preview.url}
+                      alt={preview.name}
+                      className="h-full w-full object-cover"
+                    />
+                  )}
 
-          {previewUrls.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {previewUrls.map((url, index) => {
-                const file = files[index];
-                const isVideo = file?.type?.startsWith("video/");
-
-                return (
-                  <div
-                    key={url}
-                    className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900"
+                  <button
+                    type="button"
+                    onClick={() => removeFile(preview.id)}
+                    className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white"
+                    aria-label="Remove file"
                   >
-                    {isVideo ? (
-                      <video
-                        src={url}
-                        controls
-                        className="h-72 w-full object-cover"
-                      />
-                    ) : (
-                      <img
-                        src={url}
-                        alt="Preview"
-                        className="h-72 w-full object-cover"
-                      />
-                    )}
-                  </div>
-                );
-              })}
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
             </div>
           ) : null}
 
-          <div>
-            <label
-              htmlFor="caption"
-              className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
-            >
-              Caption
-            </label>
+          {contentType !== "story" ? (
+            <>
+              <div>
+                <label
+                  htmlFor="caption"
+                  className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                >
+                  Caption
+                </label>
 
-            <textarea
-              id="caption"
-              value={caption}
-              onChange={(event) => {
-                setCaption(event.target.value);
-                dispatch(clearCreateStatus());
-              }}
-              placeholder="Write a caption..."
-              rows={4}
-              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white"
-            />
-          </div>
+                <textarea
+                  id="caption"
+                  value={caption}
+                  onChange={(event) => setCaption(event.target.value)}
+                  rows={4}
+                  placeholder="Write a caption..."
+                  className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                />
+              </div>
 
-          {!isStory ? (
-            <Input
-              label={"Location"}
-              name={"location"}
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              placeholder={"Add location"}
-            />
-          ) : null}
+              <Input
+                label="Location"
+                value={location}
+                onChange={(event) => setLocation(event.target.value)}
+                placeholder="Add location"
+              />
 
-          {isStory ? (
-            <div>
-              <label
-                htmlFor="visibility"
-                className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
-              >
-                Story visibility
+              <Input
+                label="Tags"
+                value={tags}
+                onChange={(event) => setTags(event.target.value)}
+                placeholder="nature, travel, coding"
+              />
+            </>
+          ) : (
+            <>
+              <Input
+                label="Story text"
+                value={storyText}
+                onChange={(event) => setStoryText(event.target.value)}
+                placeholder="Add text to story"
+              />
+
+              <label className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800">
+                <span>
+                  <span className="block text-sm font-semibold text-slate-950 dark:text-white">
+                    Close friends
+                  </span>
+
+                  <span className="text-xs text-slate-500">
+                    Show this story only to close friends.
+                  </span>
+                </span>
+
+                <input
+                  type="checkbox"
+                  checked={isCloseFriends}
+                  onChange={(event) => setIsCloseFriends(event.target.checked)}
+                  className="h-5 w-5"
+                />
               </label>
-
-              <select
-                id="visibility"
-                value={visibility}
-                onChange={(event) => setVisibility(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
-              >
-                <option value="public">Public</option>
-                <option value="followers">Followers</option>
-                <option value="close_friends">Close Friends</option>
-              </select>
-            </div>
-          ) : null}
+            </>
+          )}
 
           <Button type="submit" disabled={loading || files.length === 0}>
-            {loading ? "Publishing..." : `Publish ${createType}`}
+            {loading
+              ? "Publishing..."
+              : contentType === "post"
+                ? "Publish Post"
+                : contentType === "reel"
+                  ? "Publish Reel"
+                  : "Publish Story"}
           </Button>
         </form>
       </div>
