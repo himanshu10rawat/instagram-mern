@@ -9,9 +9,9 @@ const ModalShell = ({
   title,
 }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-0 pt-8 sm:items-center sm:px-4 sm:py-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-3 py-4 sm:px-4 sm:py-6">
       <section
-        className={`flex max-h-[calc(100dvh_-_2rem)] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl dark:bg-slate-950 sm:max-h-[calc(100dvh_-_3rem)] sm:rounded-2xl ${className}`}
+        className={`flex max-h-[calc(100dvh_-_2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-slate-950 sm:max-h-[calc(100dvh_-_3rem)] ${className}`}
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 p-4 dark:border-slate-800">
           <div className="min-w-0">

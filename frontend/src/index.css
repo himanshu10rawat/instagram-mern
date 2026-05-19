@@ -45,6 +45,7 @@ input,
 select,
 textarea {
   font-size: 16px !important;
+  font-family: inherit;
 }
 
 @media (min-width: 640px) {
@@ -52,6 +53,18 @@ textarea {
   select,
   textarea {
     font-size: 0.875rem !important;
+  }
+}
+
+/* Touch-friendly sizing for mobile */
+@media (max-width: 767px) {
+  button {
+    min-height: 2.75rem;
+    /* 44px minimum touch target */
+  }
+
+  a[role="button"] {
+    min-height: 2.75rem;
   }
 }
 

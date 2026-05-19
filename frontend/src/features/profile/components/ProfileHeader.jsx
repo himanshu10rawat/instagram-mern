@@ -164,8 +164,10 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
               <button
                 type="button"
                 onClick={handleFollowToggle}
-                disabled={actionLoading || hasRequested}
-                className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70 ${
+                disabled={actionLoading}
+                className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+                  actionLoading ? "cursor-not-allowed opacity-60" : ""
+                } ${
                   isFollowing || hasRequested
                     ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-900"
                     : "bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950"

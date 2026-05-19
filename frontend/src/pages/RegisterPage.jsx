@@ -21,6 +21,21 @@ const getAge = (date) => {
   return age;
 };
 
+const countryOptions = [
+  { code: "+1", country: "USA/Canada" },
+  { code: "+44", country: "UK" },
+  { code: "+91", country: "India" },
+  { code: "+86", country: "China" },
+  { code: "+81", country: "Japan" },
+  { code: "+33", country: "France" },
+  { code: "+49", country: "Germany" },
+  { code: "+39", country: "Italy" },
+  { code: "+34", country: "Spain" },
+  { code: "+61", country: "Australia" },
+  { code: "+55", country: "Brazil" },
+  { code: "+27", country: "South Africa" },
+];
+
 const RegisterPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -35,6 +50,7 @@ const RegisterPage = () => {
     username: "",
     fullName: "",
     email: "",
+    countryCode: "+91",
     phoneNumber: "",
     dateOfBirth: "",
     password: "",
@@ -118,7 +134,7 @@ const RegisterPage = () => {
     };
 
     if (formData.phoneNumber.trim()) {
-      payload.phoneNumber = formData.phoneNumber.trim();
+      payload.phoneNumber = `${formData.countryCode}${formData.phoneNumber.trim()}`;
     }
 
     const result = await dispatch(registerUser(payload));
@@ -143,14 +159,22 @@ const RegisterPage = () => {
         </p>
 
         {error ? (
-          <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
+          <div className="mt-6 flex items-start gap-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-300">
+            <div className="mt-0.5 shrink-0 text-lg">⚠️</div>
+            <div>
+              <p className="font-semibold">Registration failed</p>
+              <p className="mt-1 text-xs">{error}</p>
+            </div>
           </div>
         ) : null}
 
         {successMessage ? (
-          <div className="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-600">
-            {successMessage}
+          <div className="mt-6 flex items-start gap-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-300">
+            <div className="mt-0.5 shrink-0 text-lg">✓</div>
+            <div>
+              <p className="font-semibold">Success!</p>
+              <p className="mt-1 text-xs">{successMessage}</p>
+            </div>
           </div>
         ) : null}
 
@@ -186,14 +210,38 @@ const RegisterPage = () => {
             autoComplete="email"
           />
 
-          <Input
-            label="Phone number optional"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            placeholder="Enter phone number"
-            autoComplete="tel"
-          />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Phone number (optional)
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={formData.countryCode}
+                onChange={(e) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    countryCode: e.target.value,
+                  }));
+                }}
+                className="flex-shrink-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              >
+                {countryOptions.map((opt) => (
+                  <option key={opt.code} value={opt.code}>
+                    {opt.code} {opt.country}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                placeholder="Phone number"
+                autoComplete="tel"
+                className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm outline-none focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
+              />
+            </div>
+          </div>
 
           <Input
             label="Date of birth"

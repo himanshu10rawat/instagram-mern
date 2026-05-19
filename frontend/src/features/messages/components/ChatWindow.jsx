@@ -119,7 +119,7 @@ const ChatWindow = () => {
   const isTyping = Boolean(typingUsers[activeConversation._id]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+    <div className="flex h-[calc(100dvh_-_10.5rem)] min-h-0 flex-col overflow-hidden md:h-[calc(100dvh_-_3rem)] rounded-t-2xl md:rounded-2xl md:border md:border-slate-200 md:dark:border-slate-800 bg-white dark:bg-slate-950">
       <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 p-3 dark:border-slate-800 sm:p-4">
         <button
           type="button"

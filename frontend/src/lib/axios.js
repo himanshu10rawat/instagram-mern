@@ -42,18 +42,21 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem("refreshToken");
-        const refreshPayload =
-          refreshToken && refreshToken !== "undefined" && refreshToken !== "null"
-            ? { refreshToken }
-            : undefined;
 
-        const response = await api.post(
-          API_ROUTES.auth.refreshToken,
-          refreshPayload,
-        );
+        if (
+          !refreshToken ||
+          refreshToken === "undefined" ||
+          refreshToken === "null"
+        ) {
+          throw new Error("No refresh token available");
+        }
 
-        const newAccessToken = response.data?.data?.accessToken;
-        const newRefreshToken = response.data?.data?.refreshToken;
+        const response = await api.post(API_ROUTES.auth.refreshToken, {
+          refreshToken,
+        });
+
+        const newAccessToken = response?.data?.data?.accessToken;
+        const newRefreshToken = response?.data?.data?.refreshToken;
 
         if (newAccessToken) {
           localStorage.setItem("accessToken", newAccessToken);
