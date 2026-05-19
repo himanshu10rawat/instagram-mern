@@ -1,0 +1,21 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="igGradient" x1="8" y1="56" x2="56" y2="8" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FEDA75"></stop>
+      <stop offset="25%" stop-color="#FA7E1E"></stop>
+      <stop offset="50%" stop-color="#D62976"></stop>
+      <stop offset="75%" stop-color="#962FBF"></stop>
+      <stop offset="100%" stop-color="#4F5BD5"></stop>
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="16" fill="url(#igGradient)"></rect>
+
+  <path d="M21 20H26L28 15H36L38 20H43C47.4 20 51 23.6 51 28V43C51 47.4 47.4 51 43 51H21C16.6 51 13 47.4 13 43V28C13 23.6 16.6 20 21 20Z" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+
+  <circle cx="32" cy="36" r="9" stroke="white" stroke-width="4"></circle>
+
+  <path d="M30 31L38 36L30 41V31Z" fill="white"></path>
+
+  <circle cx="43" cy="27" r="2.8" fill="white"></circle>
+</svg>
