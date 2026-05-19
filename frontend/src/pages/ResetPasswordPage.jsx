@@ -3,11 +3,14 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import { API_ROUTES } from "../constants/apiRoutes";
+import useToast from "../hooks/useToast";
 import api from "../lib/axios";
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const { token } = useParams();
+  const toast = useToast();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,19 +42,23 @@ const ResetPasswordPage = () => {
     setLoading(true);
 
     try {
-      const response = await api.post(`/auth/reset-password/${token}`, {
+      const response = await api.post(API_ROUTES.auth.resetPassword(token), {
         password,
       });
 
-      setSuccessMessage(
-        response.data?.message || "Password reset successfully",
-      );
+      const message = response.data?.message || "Password reset successfully";
+
+      setSuccessMessage(message);
+      toast.success(message, { title: "Password reset" });
 
       setTimeout(() => {
         navigate("/login", { replace: true });
       }, 1200);
     } catch (err) {
-      setError(err.response?.data?.message || "Password reset failed");
+      const message = err.response?.data?.message || "Password reset failed";
+
+      setError(message);
+      toast.error(message, { title: "Reset failed" });
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import { StoryTraySkeleton } from "../../../components/ui/Skeleton";
 import {
   deleteHighlight,
   fetchArchivedStories,
@@ -51,11 +52,7 @@ const ProfileHighlights = ({ profile, isMyProfile }) => {
   };
 
   if (loading) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
-        <p className="text-sm text-slate-500">Loading highlights...</p>
-      </div>
-    );
+    return <StoryTraySkeleton count={5} />;
   }
 
   if (!isMyProfile && highlights.length === 0) {

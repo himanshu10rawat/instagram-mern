@@ -1,7 +1,9 @@
-import { Search, X } from "lucide-react";
+import { Hash, Search, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import EmptyState from "../components/ui/EmptyState";
+import { GridSkeleton, ListSkeleton } from "../components/ui/Skeleton";
 import HashtagSearchResult from "../features/search/components/HashtagSearchResult";
 import MediaGrid from "../features/search/components/MediaGrid";
 import UserSearchResult from "../features/search/components/UserSearchResult";
@@ -128,9 +130,13 @@ const SearchPage = () => {
 
             <div className="mt-4 flex flex-wrap gap-2">
               {recentSearches.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  No recent searches.
-                </p>
+                <EmptyState
+                  icon={Search}
+                  title="No recent searches"
+                  description="Your recent searches will appear here."
+                  variant="inline"
+                  size="sm"
+                />
               ) : (
                 recentSearches.map((item) => (
                   <button
@@ -167,9 +173,13 @@ const SearchPage = () => {
             </div>
 
             {loading ? (
-              <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
-                Searching...
-              </p>
+              <div className="mt-6">
+                {activeTab === "posts" || activeTab === "reels" ? (
+                  <GridSkeleton count={6} />
+                ) : (
+                  <ListSkeleton count={4} />
+                )}
+              </div>
             ) : null}
 
             {error ? (
@@ -179,12 +189,15 @@ const SearchPage = () => {
             ) : null}
 
             <div className="mt-6">
-              {activeTab === "users" ? (
+              {activeTab === "users" && !loading ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {users.length === 0 && !loading ? (
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      No users found.
-                    </p>
+                    <EmptyState
+                      icon={Users}
+                      title="No users found"
+                      description="Try a username, full name, or a different keyword."
+                      variant="subtle"
+                    />
                   ) : (
                     users.map((user) => (
                       <UserSearchResult key={user._id} user={user} />
@@ -193,20 +206,23 @@ const SearchPage = () => {
                 </div>
               ) : null}
 
-              {activeTab === "posts" ? (
+              {activeTab === "posts" && !loading ? (
                 <MediaGrid items={posts} type="post" />
               ) : null}
 
-              {activeTab === "reels" ? (
+              {activeTab === "reels" && !loading ? (
                 <MediaGrid items={reels} type="reel" />
               ) : null}
 
-              {activeTab === "hashtags" ? (
+              {activeTab === "hashtags" && !loading ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {hashtags.length === 0 && !loading ? (
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      No hashtags found.
-                    </p>
+                    <EmptyState
+                      icon={Hash}
+                      title="No hashtags found"
+                      description="Try a shorter tag or a different keyword."
+                      variant="subtle"
+                    />
                   ) : (
                     hashtags.map((hashtag) => (
                       <HashtagSearchResult

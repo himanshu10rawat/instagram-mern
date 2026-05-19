@@ -11,6 +11,7 @@ import {
   createReel,
   createStory,
 } from "../features/create/createSlice";
+import { FORM_DATA_FIELDS } from "../constants/apiRoutes";
 
 const contentTypes = [
   {
@@ -116,7 +117,7 @@ const CreatePage = () => {
     );
   };
 
-  const appendCommonPostFields = (formData) => {
+  const appendCommonPostFields = (formData, tagField = "tags") => {
     if (caption.trim()) {
       formData.append("caption", caption.trim());
     }
@@ -126,7 +127,7 @@ const CreatePage = () => {
     }
 
     if (tags.trim()) {
-      formData.append("tags", tags.trim());
+      formData.append(tagField, tags.trim());
     }
   };
 
@@ -134,7 +135,7 @@ const CreatePage = () => {
     const formData = new FormData();
 
     files.forEach((file) => {
-      formData.append("media", file);
+      formData.append(FORM_DATA_FIELDS.post.media, file);
     });
 
     appendCommonPostFields(formData);
@@ -146,10 +147,10 @@ const CreatePage = () => {
     const formData = new FormData();
 
     if (files[0]) {
-      formData.append("video", files[0]);
+      formData.append(FORM_DATA_FIELDS.reel.video, files[0]);
     }
 
-    appendCommonPostFields(formData);
+    appendCommonPostFields(formData, "hashtags");
 
     return formData;
   };
@@ -158,14 +159,17 @@ const CreatePage = () => {
     const formData = new FormData();
 
     if (files[0]) {
-      formData.append("media", files[0]);
+      formData.append(FORM_DATA_FIELDS.story.media, files[0]);
     }
 
     if (storyText.trim()) {
-      formData.append("text", storyText.trim());
+      formData.append("caption", storyText.trim());
     }
 
-    formData.append("isCloseFriends", String(isCloseFriends));
+    formData.append(
+      "visibility",
+      isCloseFriends ? "close_friends" : "public",
+    );
 
     return formData;
   };
@@ -364,10 +368,10 @@ const CreatePage = () => {
           ) : (
             <>
               <Input
-                label="Story text"
+                label="Story caption"
                 value={storyText}
                 onChange={(event) => setStoryText(event.target.value)}
-                placeholder="Add text to story"
+                placeholder="Add caption to story"
               />
 
               <label className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800">

@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import { env } from "../config/env";
+import { API_ROUTES } from "../constants/apiRoutes";
 
 const api = axios.create({
   baseURL: env.apiBaseUrl,
@@ -33,9 +34,9 @@ api.interceptors.response.use(
       originalRequest &&
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !requestUrl.includes("/auth/login") &&
-      !requestUrl.includes("/auth/register") &&
-      !requestUrl.includes("/auth/refresh-token")
+      !requestUrl.includes(API_ROUTES.auth.login) &&
+      !requestUrl.includes(API_ROUTES.auth.register) &&
+      !requestUrl.includes(API_ROUTES.auth.refreshToken)
     ) {
       originalRequest._retry = true;
 
@@ -46,7 +47,10 @@ api.interceptors.response.use(
             ? { refreshToken }
             : undefined;
 
-        const response = await api.post("/auth/refresh-token", refreshPayload);
+        const response = await api.post(
+          API_ROUTES.auth.refreshToken,
+          refreshPayload,
+        );
 
         const newAccessToken = response.data?.data?.accessToken;
         const newRefreshToken = response.data?.data?.refreshToken;

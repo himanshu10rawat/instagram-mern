@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import { Lock } from "lucide-react";
 
+import EmptyState from "../components/ui/EmptyState";
+import { ProfilePageSkeleton } from "../components/ui/Skeleton";
 import ProfileHeader from "../features/profile/components/ProfileHeader";
 import ProfilePostsGrid from "../features/profile/components/ProfilePostsGrid";
 import ProfileTabs from "../features/profile/components/ProfileTabs";
@@ -86,11 +89,7 @@ const ProfilePage = () => {
   });
 
   if (loading && !profile) {
-    return (
-      <p className="text-sm text-slate-500 dark:text-slate-400">
-        Loading profile...
-      </p>
-    );
+    return <ProfilePageSkeleton />;
   }
 
   if (error) {
@@ -115,15 +114,12 @@ const ProfilePage = () => {
       <ProfileHighlights profile={profile} isMyProfile={isMyProfile} />
 
       {isPrivateAndLocked ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-950">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
-            This account is private
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Follow this account to see their photos and videos.
-          </p>
-        </div>
+        <EmptyState
+          icon={Lock}
+          iconTone="slate"
+          title="This account is private"
+          description="Follow this account to see their photos and videos."
+        />
       ) : (
         <>
           <ProfileTabs

@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Clapperboard } from "lucide-react";
 
+import EmptyState from "../components/ui/EmptyState";
+import { ReelSkeleton } from "../components/ui/Skeleton";
 import ReelCard from "../features/reels/components/ReelCard";
 import { fetchReels, resetReels } from "../features/reels/reelSlice";
 
@@ -43,20 +46,18 @@ const ReelsPage = () => {
       ) : null}
 
       {loading && reels.length === 0 ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Loading reels...
-        </p>
+        <div className="space-y-6">
+          <ReelSkeleton />
+        </div>
       ) : null}
 
       {!loading && reels.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-950">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
-            No reels yet
-          </h2>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Create your first reel from Create page.
-          </p>
-        </div>
+        <EmptyState
+          icon={Clapperboard}
+          iconTone="blue"
+          title="No reels yet"
+          description="Create your first reel from Create page."
+        />
       ) : null}
 
       <div className="snap-y snap-mandatory space-y-6">

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 
+import { ListSkeleton } from "../components/ui/Skeleton";
 import ChatWindow from "../features/messages/components/ChatWindow";
 import ConversationList from "../features/messages/components/ConversationList";
 import MessageRequestsPanel from "../features/messages/components/MessageRequestsPanel";
@@ -112,7 +113,7 @@ const MessagesPage = () => {
   };
 
   return (
-    <section className="flex h-[calc(100dvh-3rem)] min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+    <section className="flex h-[calc(100dvh_-_7rem)] min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:h-[calc(100dvh_-_3rem)]">
       {error ? (
         <div className="shrink-0 border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}
@@ -161,9 +162,9 @@ const MessagesPage = () => {
             <div className="min-h-0 flex-1">
               {activeTab === "inbox" ? (
                 loading ? (
-                  <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
-                    Loading conversations...
-                  </p>
+                  <div className="p-4">
+                    <ListSkeleton count={6} />
+                  </div>
                 ) : (
                   <ConversationList
                     conversations={conversations}

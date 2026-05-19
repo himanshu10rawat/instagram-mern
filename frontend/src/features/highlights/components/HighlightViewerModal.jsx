@@ -32,8 +32,8 @@ const HighlightViewerModal = ({ highlight, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
-      <article className="relative h-[80vh] w-full max-w-md overflow-hidden rounded-2xl bg-black text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-3 py-3 sm:px-4 sm:py-6">
+      <article className="relative h-[calc(100dvh_-_1.5rem)] w-full max-w-md overflow-hidden rounded-2xl bg-black text-white sm:h-[80vh]">
         <div className="absolute left-0 right-0 top-0 z-20 p-4">
           <div className="flex gap-1">
             {stories.map((story, index) => (

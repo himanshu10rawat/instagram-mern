@@ -1,8 +1,10 @@
-import { Search, Send, X } from "lucide-react";
+import { Search, Send } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
+import EmptyState from "../../../components/ui/EmptyState";
+import ModalShell from "../../../components/ui/ModalShell";
 import { fetchConversations, shareToMessage } from "../messageSlice";
 
 const getOtherParticipant = (conversation, currentUserId) => {
@@ -70,23 +72,8 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-slate-950">
-        <div className="flex items-center justify-between border-b border-slate-200 p-4 dark:border-slate-800">
-          <h2 className="text-base font-bold text-slate-950 dark:text-white">
-            Share
-          </h2>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-2 hover:bg-slate-100 dark:hover:bg-slate-900"
-            aria-label="Close share modal"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
+    <ModalShell title="Share" onClose={onClose} className="max-w-md">
+      <>
         <div className="border-b border-slate-200 p-4 dark:border-slate-800">
           <div className="flex items-center gap-3 rounded-xl border border-slate-300 px-3 py-2 dark:border-slate-700">
             <Search size={18} className="text-slate-500" />
@@ -102,9 +89,13 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
 
         <div className="max-h-96 overflow-y-auto p-2">
           {filteredConversations.length === 0 ? (
-            <p className="p-4 text-center text-sm text-slate-500">
-              No conversations found.
-            </p>
+            <EmptyState
+              icon={Search}
+              title="No conversations found"
+              description="Try another name or start a chat from their profile."
+              variant="inline"
+              size="sm"
+            />
           ) : null}
 
           {filteredConversations.map((conversation) => {
@@ -143,8 +134,8 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
             );
           })}
         </div>
-      </div>
-    </div>
+      </>
+    </ModalShell>
   );
 };
 

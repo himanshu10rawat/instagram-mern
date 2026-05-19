@@ -1,13 +1,14 @@
 import api from "../../lib/axios";
+import { API_ROUTES } from "../../constants/apiRoutes";
 
 export const setupTwoFactorApi = async () => {
-  const response = await api.post("/2fa/setup");
+  const response = await api.post(API_ROUTES.twoFactor.setup);
 
   return response.data.data;
 };
 
 export const enableTwoFactorApi = async (token) => {
-  const response = await api.post("/2fa/enable", {
+  const response = await api.post(API_ROUTES.twoFactor.enable, {
     token,
   });
 
@@ -15,7 +16,7 @@ export const enableTwoFactorApi = async (token) => {
 };
 
 export const disableTwoFactorApi = async (token) => {
-  const response = await api.post("/2fa/disable", {
+  const response = await api.post(API_ROUTES.twoFactor.disable, {
     token,
   });
 
@@ -23,7 +24,7 @@ export const disableTwoFactorApi = async (token) => {
 };
 
 export const regenerateBackupCodesApi = async (token) => {
-  const response = await api.post("/2fa/backup-codes/regenerate", {
+  const response = await api.post(API_ROUTES.twoFactor.regenerateBackupCodes, {
     token,
   });
 

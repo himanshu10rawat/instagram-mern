@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { ImagePlus } from "lucide-react";
 
+import EmptyState from "../components/ui/EmptyState";
+import { FeedSkeleton } from "../components/ui/Skeleton";
 import PostCard from "../features/posts/components/PostCard";
 import { fetchFeedPosts } from "../features/posts/postSlice";
 import SuggestedUsers from "../features/profile/components/SuggestedUsers";
@@ -15,7 +19,9 @@ const HomePage = () => {
   );
 
   const currentUser = useSelector((state) => state.auth.user);
-  const { storyGroups } = useSelector((state) => state.stories);
+  const { loading: storyLoading, storyGroups } = useSelector(
+    (state) => state.stories,
+  );
 
   useEffect(() => {
     dispatch(fetchStoriesFeed());
@@ -45,7 +51,11 @@ const HomePage = () => {
     <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div>
         <section className="mx-auto max-w-2xl space-y-6">
-          <StoryTray storyGroups={storyGroups} currentUser={storyCurrentUser} />
+          <StoryTray
+            storyGroups={storyGroups}
+            currentUser={storyCurrentUser}
+            loading={storyLoading}
+          />
         </section>
 
         {error ? (
@@ -56,20 +66,23 @@ const HomePage = () => {
 
         <div className="mt-6 space-y-6">
           {loading && posts.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Loading feed...
-            </p>
+            <FeedSkeleton count={2} />
           ) : null}
 
           {!loading && posts.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center dark:border-slate-800 dark:bg-slate-950">
-              <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
-                No posts yet
-              </h2>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                Follow users or create your first post.
-              </p>
-            </div>
+            <EmptyState
+              icon={ImagePlus}
+              title="No posts yet"
+              description="Follow users or create your first post."
+              action={
+                <Link
+                  to="/create"
+                  className="inline-flex rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+                >
+                  Create post
+                </Link>
+              }
+            />
           ) : null}
 
           {posts.map((post) => (

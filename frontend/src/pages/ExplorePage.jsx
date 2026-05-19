@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Compass } from "lucide-react";
 
+import EmptyState from "../components/ui/EmptyState";
+import { GridSkeleton } from "../components/ui/Skeleton";
 import MediaGrid from "../features/search/components/MediaGrid";
 import { fetchTrendingContent } from "../features/search/searchSlice";
 
@@ -29,9 +32,7 @@ const ExplorePage = () => {
       </div>
 
       {trendingLoading ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Loading explore content...
-        </p>
+        <GridSkeleton count={9} />
       ) : null}
 
       {error ? (
@@ -40,18 +41,18 @@ const ExplorePage = () => {
         </div>
       ) : null}
 
-      {!trendingLoading && allTrending.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-950">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
-            No trending content yet
-          </h2>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Trending posts and reels will appear here.
-          </p>
-        </div>
-      ) : (
-        <MediaGrid items={allTrending} type="post" />
-      )}
+      {!trendingLoading ? (
+        allTrending.length === 0 ? (
+          <EmptyState
+            icon={Compass}
+            iconTone="blue"
+            title="No trending content yet"
+            description="Trending posts and reels will appear here."
+          />
+        ) : (
+          <MediaGrid items={allTrending} type="post" />
+        )
+      ) : null}
     </section>
   );
 };

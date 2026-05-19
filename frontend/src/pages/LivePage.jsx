@@ -2,6 +2,8 @@ import { Plus, Radio, RefreshCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import EmptyState from "../components/ui/EmptyState";
+import { GridSkeleton } from "../components/ui/Skeleton";
 import LiveCard from "../features/live/components/LiveCard";
 import { fetchActiveLives, startLive } from "../features/live/liveSlice";
 
@@ -100,28 +102,25 @@ const LivePage = () => {
       ) : null}
 
       {loading ? (
-        <p className="text-sm text-slate-500">Loading live sessions...</p>
+        <GridSkeleton count={3} />
       ) : null}
 
       {!loading && activeLives.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-950">
-          <Radio className="mx-auto text-slate-400" size={42} />
-
-          <h2 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">
-            No one is live right now
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-500">
-            Start your own live session.
-          </p>
-        </div>
+        <EmptyState
+          icon={Radio}
+          iconTone="red"
+          title="No one is live right now"
+          description="Start your own live session."
+        />
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {activeLives.map((live) => (
-          <LiveCard key={live._id} live={live} />
-        ))}
-      </div>
+      {!loading && activeLives.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {activeLives.map((live) => (
+            <LiveCard key={live._id} live={live} />
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 };

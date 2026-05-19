@@ -86,6 +86,49 @@ export const joinLive = asyncHandler(async (req, res) => {
     .json(new ApiResponse(HTTP_STATUS.OK, live, "Joined live successfully"));
 });
 
+export const leaveLive = asyncHandler(async (req, res) => {
+  const { liveId } = req.params;
+
+  let live = await LiveSession.findOneAndUpdate(
+    {
+      _id: liveId,
+      status: "live",
+      viewers: req.user._id,
+    },
+    {
+      $pull: {
+        viewers: req.user._id,
+      },
+      $inc: {
+        viewersCount: -1,
+      },
+    },
+    {
+      new: true,
+    },
+  ).populate("host", "username fullName avatar isVerified");
+
+  if (!live) {
+    live = await LiveSession.findOne({
+      _id: liveId,
+      status: "live",
+    }).populate("host", "username fullName avatar isVerified");
+
+    if (!live) {
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, "Live session not found");
+    }
+  }
+
+  if (live.viewersCount < 0) {
+    live.viewersCount = 0;
+    await live.save();
+  }
+
+  res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, live, "Left live successfully"));
+});
+
 export const endLive = asyncHandler(async (req, res) => {
   const { liveId } = req.params;
 

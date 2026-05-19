@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { API_ROUTES } from "../constants/apiRoutes";
+import useToast from "../hooks/useToast";
 import api from "../lib/axios";
 
 const VerifyEmailPage = () => {
   const { token } = useParams();
   const hasVerified = useRef(false);
+  const toast = useToast();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -18,20 +21,26 @@ const VerifyEmailPage = () => {
 
     const verifyEmail = async () => {
       try {
-        const response = await api.get(`/auth/verify-email/${token}`);
+        const response = await api.get(API_ROUTES.auth.verifyEmail(token));
 
-        setSuccessMessage(
-          response.data?.message || "Email verified successfully",
-        );
+        const message =
+          response.data?.message || "Email verified successfully";
+
+        setSuccessMessage(message);
+        toast.success(message, { title: "Email verified" });
       } catch (err) {
-        setError(err.response?.data?.message || "Email verification failed");
+        const message =
+          err.response?.data?.message || "Email verification failed";
+
+        setError(message);
+        toast.error(message, { title: "Verification failed" });
       } finally {
         setLoading(false);
       }
     };
 
     verifyEmail();
-  }, [token]);
+  }, [toast, token]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 dark:bg-slate-950">

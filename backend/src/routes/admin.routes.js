@@ -2,7 +2,11 @@ import { Router } from "express";
 
 import {
   blockUserByAdmin,
+  deleteReport,
+  getDashboardStats,
   getReports,
+  getUsers,
+  removeCommentByAdmin,
   removePostByAdmin,
   removeReelByAdmin,
   unblockUserByAdmin,
@@ -15,13 +19,18 @@ const router = Router();
 
 router.use(isAuthenticated, isAdmin);
 
+router.get("/dashboard", getDashboardStats);
+router.get("/users", getUsers);
+
 router.get("/reports", getReports);
 router.patch("/reports/:reportId/status", updateReportStatus);
+router.delete("/reports/:reportId", deleteReport);
 
 router.patch("/users/:userId/block", blockUserByAdmin);
 router.patch("/users/:userId/unblock", unblockUserByAdmin);
 
 router.delete("/posts/:postId", removePostByAdmin);
 router.delete("/reels/:reelId", removeReelByAdmin);
+router.delete("/comments/:commentId", removeCommentByAdmin);
 
 export default router;

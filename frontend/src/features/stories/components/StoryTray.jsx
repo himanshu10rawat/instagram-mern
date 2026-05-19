@@ -2,11 +2,16 @@ import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import Avatar from "../../../components/common/Avatar";
+import { StoryTraySkeleton } from "../../../components/ui/Skeleton";
 
 const getGroupUser = (group) =>
   group?.user || group?.author || group?.stories?.[0]?.author;
 
-const StoryTray = ({ storyGroups = [], currentUser }) => {
+const StoryTray = ({ storyGroups = [], currentUser, loading = false }) => {
+  if (loading) {
+    return <StoryTraySkeleton count={6} />;
+  }
+
   const currentUserId = currentUser?._id;
   const safeStoryGroups = Array.isArray(storyGroups)
     ? storyGroups.filter(Boolean)
@@ -50,7 +55,7 @@ const StoryTray = ({ storyGroups = [], currentUser }) => {
               className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-slate-950 text-white dark:border-slate-950"
               aria-label="Add another story"
             >
-                <Plus size={14} />
+              <Plus size={14} />
             </Link>
           </div>
 

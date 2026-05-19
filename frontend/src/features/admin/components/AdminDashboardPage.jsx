@@ -2,11 +2,9 @@ import { Flag, Image, Radio, RefreshCcw, Users, Video } from "lucide-react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import AdminStatCard from "../../features/admin/components/AdminStatCard";
-import {
-  fetchAdminDashboard,
-  resetAdmin,
-} from "../../features/admin/adminSlice";
+import { StatGridSkeleton } from "../../../components/ui/Skeleton";
+import { fetchAdminDashboard, resetAdmin } from "../adminSlice";
+import AdminStatCard from "./AdminStatCard";
 
 const AdminDashboardPage = () => {
   const dispatch = useDispatch();
@@ -56,41 +54,43 @@ const AdminDashboardPage = () => {
       ) : null}
 
       {loading && !dashboard ? (
-        <p className="text-sm text-slate-500">Loading dashboard...</p>
+        <StatGridSkeleton count={6} />
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <AdminStatCard
-          icon={Users}
-          label="Total Users"
-          value={dashboard?.totalUsers}
-        />
-        <AdminStatCard
-          icon={Image}
-          label="Total Posts"
-          value={dashboard?.totalPosts}
-        />
-        <AdminStatCard
-          icon={Video}
-          label="Total Reels"
-          value={dashboard?.totalReels}
-        />
-        <AdminStatCard
-          icon={Radio}
-          label="Live Sessions"
-          value={dashboard?.totalLives}
-        />
-        <AdminStatCard
-          icon={Flag}
-          label="Pending Reports"
-          value={dashboard?.pendingReports}
-        />
-        <AdminStatCard
-          icon={Users}
-          label="Blocked Users"
-          value={dashboard?.blockedUsers}
-        />
-      </div>
+      {!loading || dashboard ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <AdminStatCard
+            icon={Users}
+            label="Total Users"
+            value={dashboard?.totalUsers}
+          />
+          <AdminStatCard
+            icon={Image}
+            label="Total Posts"
+            value={dashboard?.totalPosts}
+          />
+          <AdminStatCard
+            icon={Video}
+            label="Total Reels"
+            value={dashboard?.totalReels}
+          />
+          <AdminStatCard
+            icon={Radio}
+            label="Live Sessions"
+            value={dashboard?.totalLives}
+          />
+          <AdminStatCard
+            icon={Flag}
+            label="Pending Reports"
+            value={dashboard?.pendingReports}
+          />
+          <AdminStatCard
+            icon={Users}
+            label="Blocked Users"
+            value={dashboard?.blockedUsers}
+          />
+        </div>
+      ) : null}
     </section>
   );
 };

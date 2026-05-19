@@ -1,8 +1,11 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { Users } from "lucide-react";
 
 import Avatar from "../../../components/common/Avatar";
+import EmptyState from "../../../components/ui/EmptyState";
+import { ListSkeleton } from "../../../components/ui/Skeleton";
 import { followUser, unfollowUser } from "../../follow/followSlice";
 import { fetchSuggestedUsers } from "../recommendationSlice";
 
@@ -85,59 +88,71 @@ const SuggestedUsers = ({ limit = 5, showHeader = true }) => {
       ) : null}
 
       {loading ? (
-        <p className="text-sm text-slate-500">Loading suggestions...</p>
+        <ListSkeleton count={limit || 5} withActions />
       ) : null}
 
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
       {!loading && visibleUsers.length === 0 ? (
-        <p className="text-sm text-slate-500">No suggestions available.</p>
+        <EmptyState
+          icon={Users}
+          title="No suggestions available"
+          description="New account suggestions will appear here."
+          variant="inline"
+          size="sm"
+        />
       ) : null}
 
       <div className="space-y-3">
-        {visibleUsers.map((user) => {
-          const { isFollowing, hasRequested } = getFollowStatus({
-            user,
-            currentUserId,
-          });
+        {!loading
+          ? visibleUsers.map((user) => {
+              const { isFollowing, hasRequested } = getFollowStatus({
+                user,
+                currentUserId,
+              });
 
-          return (
-            <div
-              key={user._id}
-              className="flex items-center justify-between gap-3"
-            >
-              <Link
-                to={`/profile/${user.username}`}
-                className="flex min-w-0 items-center gap-3"
-              >
-                <Avatar src={user.avatar?.url} alt={user.username} size="md" />
+              return (
+                <div
+                  key={user._id}
+                  className="flex items-center justify-between gap-3"
+                >
+                  <Link
+                    to={`/profile/${user.username}`}
+                    className="flex min-w-0 items-center gap-3"
+                  >
+                    <Avatar
+                      src={user.avatar?.url}
+                      alt={user.username}
+                      size="md"
+                    />
 
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
-                    {user.username}
-                  </p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                        {user.username}
+                      </p>
 
-                  <p className="truncate text-xs text-slate-500">
-                    {user.fullName || "Suggested for you"}
-                  </p>
+                      <p className="truncate text-xs text-slate-500">
+                        {user.fullName || "Suggested for you"}
+                      </p>
+                    </div>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => handleFollowToggle({ user, isFollowing })}
+                    disabled={hasRequested}
+                    className={`shrink-0 rounded-xl px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-70 ${
+                      isFollowing || hasRequested
+                        ? "border border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-300"
+                        : "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
+                    }`}
+                  >
+                    {getButtonText({ user, isFollowing, hasRequested })}
+                  </button>
                 </div>
-              </Link>
-
-              <button
-                type="button"
-                onClick={() => handleFollowToggle({ user, isFollowing })}
-                disabled={hasRequested}
-                className={`shrink-0 rounded-xl px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-70 ${
-                  isFollowing || hasRequested
-                    ? "border border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-300"
-                    : "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
-                }`}
-              >
-                {getButtonText({ user, isFollowing, hasRequested })}
-              </button>
-            </div>
-          );
-        })}
+              );
+            })
+          : null}
       </div>
     </aside>
   );

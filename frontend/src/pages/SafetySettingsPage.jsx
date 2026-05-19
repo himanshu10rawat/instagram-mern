@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../components/common/Avatar";
+import EmptyState from "../components/ui/EmptyState";
+import { ListSkeleton } from "../components/ui/Skeleton";
 import {
   fetchBlockedUsers,
   fetchMutedUsers,
@@ -94,14 +96,20 @@ const SafetySettingsPage = () => {
         </div>
 
         {loading ? (
-          <p className="text-sm text-slate-500">Loading blocked users...</p>
+          <ListSkeleton count={3} withActions />
         ) : null}
 
         {!loading && blockedUsers.length === 0 ? (
-          <p className="text-sm text-slate-500">No blocked users.</p>
+          <EmptyState
+            icon={Ban}
+            title="No blocked users"
+            description="Accounts you block will appear here."
+            variant="subtle"
+            size="sm"
+          />
         ) : null}
 
-        <div className="space-y-3">
+        <div className="mt-4 space-y-3">
           {blockedUsers.map((user) => (
             <SafetyUserRow
               key={user._id}
@@ -123,14 +131,20 @@ const SafetySettingsPage = () => {
         </div>
 
         {loading ? (
-          <p className="text-sm text-slate-500">Loading muted users...</p>
+          <ListSkeleton count={3} withActions />
         ) : null}
 
         {!loading && mutedUsers.length === 0 ? (
-          <p className="text-sm text-slate-500">No muted users.</p>
+          <EmptyState
+            icon={BellOff}
+            title="No muted users"
+            description="Muted accounts will appear here."
+            variant="subtle"
+            size="sm"
+          />
         ) : null}
 
-        <div className="space-y-3">
+        <div className="mt-4 space-y-3">
           {mutedUsers.map((user) => (
             <SafetyUserRow
               key={user._id}

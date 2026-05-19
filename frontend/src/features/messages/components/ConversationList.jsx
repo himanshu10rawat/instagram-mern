@@ -1,4 +1,7 @@
+import { MessageCircle } from "lucide-react";
+
 import Avatar from "../../../components/common/Avatar";
+import EmptyState from "../../../components/ui/EmptyState";
 
 const getOtherParticipant = (conversation, currentUserId) => {
   return conversation.participants?.find((participant) => {
@@ -25,9 +28,14 @@ const ConversationList = ({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {conversations.length === 0 ? (
-          <p className="p-4 text-sm text-slate-500 dark:text-slate-400">
-            No conversations yet.
-          </p>
+          <EmptyState
+            icon={MessageCircle}
+            title="No conversations yet"
+            description="Start a chat from any profile to see it here."
+            variant="inline"
+            size="sm"
+            className="m-4"
+          />
         ) : null}
 
         {conversations.map((conversation) => {

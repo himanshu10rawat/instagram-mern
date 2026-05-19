@@ -13,6 +13,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../components/common/Avatar";
+import { PostDetailSkeleton } from "../components/ui/Skeleton";
 import EditCaptionModal from "../features/posts/components/EditCaptionModal";
 import {
   clearCurrentPost,
@@ -73,11 +74,7 @@ const PostDetailPage = () => {
   };
 
   if (loading && !currentPost) {
-    return (
-      <p className="text-sm text-slate-500 dark:text-slate-400">
-        Loading post...
-      </p>
-    );
+    return <PostDetailSkeleton />;
   }
 
   if (error) {
@@ -100,7 +97,7 @@ const PostDetailPage = () => {
   return (
     <section className="mx-auto max-w-6xl">
       <article className="grid overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="flex min-h-130 items-center justify-center bg-black">
+        <div className="flex min-h-90 items-center justify-center bg-black sm:min-h-130">
           {firstMedia?.type === "video" ? (
             <video
               src={firstMedia.optimizedUrl || firstMedia.url}
@@ -116,7 +113,7 @@ const PostDetailPage = () => {
           )}
         </div>
 
-        <div className="flex min-h-130 flex-col">
+        <div className="flex min-h-0 flex-col sm:min-h-130">
           <header className="flex items-center justify-between border-b border-slate-200 p-4 dark:border-slate-800">
             <div className="flex items-center gap-3">
               <Avatar

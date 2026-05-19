@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Bell } from "lucide-react";
 
+import EmptyState from "../components/ui/EmptyState";
+import { ListSkeleton } from "../components/ui/Skeleton";
 import NotificationItem from "../features/notifications/components/NotificationItem";
 import {
   deleteNotification,
@@ -69,9 +72,9 @@ const NotificationsPage = () => {
         </div>
 
         {loading ? (
-          <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
-            Loading notifications...
-          </p>
+          <div className="mt-6">
+            <ListSkeleton count={5} />
+          </div>
         ) : null}
 
         {error ? (
@@ -81,25 +84,27 @@ const NotificationsPage = () => {
         ) : null}
 
         {!loading && notifications.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-slate-200 p-8 text-center dark:border-slate-800">
-            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
-              No notifications yet
-            </h2>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              Likes, comments, follows and mentions will appear here.
-            </p>
-          </div>
+          <EmptyState
+            icon={Bell}
+            iconTone="blue"
+            title="No notifications yet"
+            description="Likes, comments, follows and mentions will appear here."
+            className="mt-6"
+            variant="subtle"
+          />
         ) : null}
 
         <div className="mt-6 space-y-3">
-          {notifications.map((notification) => (
-            <NotificationItem
-              key={notification._id}
-              notification={notification}
-              onRead={handleMarkAsRead}
-              onDelete={handleDelete}
-            />
-          ))}
+          {!loading
+            ? notifications.map((notification) => (
+                <NotificationItem
+                  key={notification._id}
+                  notification={notification}
+                  onRead={handleMarkAsRead}
+                  onDelete={handleDelete}
+                />
+              ))
+            : null}
         </div>
       </div>
     </section>

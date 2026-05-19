@@ -1,12 +1,13 @@
 import api from "../../lib/axios";
+import { API_ROUTES } from "../../constants/apiRoutes";
 
 export const getAdminDashboardApi = async () => {
-  const response = await api.get("/admin/dashboard");
+  const response = await api.get(API_ROUTES.admin.dashboard);
   return response.data.data;
 };
 
 export const getAdminUsersApi = async (params = {}) => {
-  const response = await api.get("/admin/users", {
+  const response = await api.get(API_ROUTES.admin.users, {
     params,
   });
 
@@ -14,17 +15,17 @@ export const getAdminUsersApi = async (params = {}) => {
 };
 
 export const blockAdminUserApi = async (userId) => {
-  const response = await api.patch(`/admin/users/${userId}/block`);
+  const response = await api.patch(API_ROUTES.admin.blockUser(userId));
   return response.data.data;
 };
 
 export const unblockAdminUserApi = async (userId) => {
-  const response = await api.patch(`/admin/users/${userId}/unblock`);
+  const response = await api.patch(API_ROUTES.admin.unblockUser(userId));
   return response.data.data;
 };
 
 export const getAdminReportsApi = async (params = {}) => {
-  const response = await api.get("/admin/reports", {
+  const response = await api.get(API_ROUTES.admin.reports, {
     params,
   });
 
@@ -32,26 +33,28 @@ export const getAdminReportsApi = async (params = {}) => {
 };
 
 export const resolveReportApi = async (reportId) => {
-  const response = await api.patch(`/admin/reports/${reportId}/resolve`);
+  const response = await api.patch(API_ROUTES.admin.resolveReport(reportId), {
+    status: "resolved",
+  });
   return response.data.data;
 };
 
 export const deleteReportApi = async (reportId) => {
-  const response = await api.delete(`/admin/reports/${reportId}`);
+  const response = await api.delete(API_ROUTES.admin.deleteReport(reportId));
   return response.data.data;
 };
 
 export const deleteAdminPostApi = async (postId) => {
-  const response = await api.delete(`/admin/posts/${postId}`);
+  const response = await api.delete(API_ROUTES.admin.deletePost(postId));
   return response.data.data;
 };
 
 export const deleteAdminReelApi = async (reelId) => {
-  const response = await api.delete(`/admin/reels/${reelId}`);
+  const response = await api.delete(API_ROUTES.admin.deleteReel(reelId));
   return response.data.data;
 };
 
 export const deleteAdminCommentApi = async (commentId) => {
-  const response = await api.delete(`/admin/comments/${commentId}`);
+  const response = await api.delete(API_ROUTES.admin.deleteComment(commentId));
   return response.data.data;
 };

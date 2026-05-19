@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "../components/ui/Button";
+import EmptyState from "../components/ui/EmptyState";
 import Input from "../components/ui/Input";
+import { SkeletonBlock } from "../components/ui/Skeleton";
 import {
   clearProfileStatus,
   fetchMyProfile,
@@ -202,7 +204,14 @@ const EditProfilePage = () => {
   }, [dispatch]);
 
   if (loading && !profile) {
-    return <p className="text-sm text-slate-500">Loading profile...</p>;
+    return (
+      <div className="mx-auto max-w-3xl space-y-4">
+        <SkeletonBlock className="h-44 rounded-2xl" />
+        <SkeletonBlock className="h-24 w-24 rounded-full" />
+        <SkeletonBlock className="h-12 rounded-xl" />
+        <SkeletonBlock className="h-28 rounded-xl" />
+      </div>
+    );
   }
 
   return (
@@ -231,9 +240,13 @@ const EditProfilePage = () => {
             updating={updating}
           />
         ) : (
-          <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
-            Profile not found.
-          </p>
+          <EmptyState
+            icon={Camera}
+            title="Profile not found"
+            description="We could not load your editable profile details."
+            variant="subtle"
+            className="mt-6"
+          />
         )}
       </div>
     </section>

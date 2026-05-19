@@ -1,8 +1,10 @@
-import { Edit3, Trash2 } from "lucide-react";
+import { Edit3, Folder, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
+import EmptyState from "../components/ui/EmptyState";
+import { GridSkeleton, PageHeaderSkeleton } from "../components/ui/Skeleton";
 import CollectionFormModal from "../features/collections/components/CollectionFormModal";
 import {
   deleteCollection,
@@ -10,6 +12,16 @@ import {
   removePostFromCollection,
   resetCurrentCollection,
 } from "../features/collections/collectionSlice";
+
+const getCollectionPosts = (collection) => {
+  if (collection.posts?.length) {
+    return collection.posts;
+  }
+
+  return (collection.items || [])
+    .map((item) => item.post)
+    .filter(Boolean);
+};
 
 const getPostMedia = (post) => {
   const media = post.media?.[0];
@@ -61,7 +73,12 @@ const CollectionDetailPage = () => {
   };
 
   if (loading && !currentCollection) {
-    return <p className="text-sm text-slate-500">Loading collection...</p>;
+    return (
+      <section className="mx-auto max-w-5xl space-y-6">
+        <PageHeaderSkeleton actions />
+        <GridSkeleton count={9} />
+      </section>
+    );
   }
 
   if (error) {
@@ -76,7 +93,7 @@ const CollectionDetailPage = () => {
     return null;
   }
 
-  const posts = currentCollection.posts || [];
+  const posts = getCollectionPosts(currentCollection);
 
   return (
     <section className="mx-auto max-w-5xl space-y-6">
@@ -118,15 +135,12 @@ const CollectionDetailPage = () => {
       </div>
 
       {posts.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-950">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
-            No posts in this collection
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-500">
-            Save posts to this collection from the feed.
-          </p>
-        </div>
+        <EmptyState
+          icon={Folder}
+          iconTone="blue"
+          title="No posts in this collection"
+          description="Save posts to this collection from the feed."
+        />
       ) : null}
 
       <div className="grid grid-cols-3 gap-1 sm:gap-4">

@@ -1,4 +1,6 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
+import Comment from "../models/comment.model.js";
+import LiveSession from "../models/liveSession.model.js";
 import Post from "../models/post.model.js";
 import Reel from "../models/reel.model.js";
 import Report from "../models/report.model.js";
@@ -7,10 +9,89 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+export const getDashboardStats = asyncHandler(async (_req, res) => {
+  const [
+    totalUsers,
+    totalPosts,
+    totalReels,
+    totalLives,
+    pendingReports,
+    blockedUsers,
+  ] = await Promise.all([
+    User.countDocuments({ isDeleted: false }),
+    Post.countDocuments({ isDeleted: false }),
+    Reel.countDocuments({ isDeleted: false }),
+    LiveSession.countDocuments({ status: "live" }),
+    Report.countDocuments({ status: "pending" }),
+    User.countDocuments({ isDeleted: false, isBlockedByAdmin: true }),
+  ]);
+
+  res.status(HTTP_STATUS.OK).json(
+    new ApiResponse(
+      HTTP_STATUS.OK,
+      {
+        totalUsers,
+        totalPosts,
+        totalReels,
+        totalLives,
+        pendingReports,
+        blockedUsers,
+      },
+      "Admin dashboard fetched successfully",
+    ),
+  );
+});
+
+export const getUsers = asyncHandler(async (req, res) => {
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
+  const skip = (page - 1) * limit;
+  const search = req.query.search?.trim();
+  const filter = { isDeleted: false };
+
+  if (search) {
+    const searchRegex = new RegExp(escapeRegExp(search), "i");
+
+    filter.$or = [
+      { username: searchRegex },
+      { email: searchRegex },
+      { fullName: searchRegex },
+    ];
+  }
+
+  const [users, total] = await Promise.all([
+    User.find(filter)
+      .select("-password -refreshToken")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    User.countDocuments(filter),
+  ]);
+
+  res.status(HTTP_STATUS.OK).json(
+    new ApiResponse(
+      HTTP_STATUS.OK,
+      {
+        users,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+      "Users fetched successfully",
+    ),
+  );
+});
+
 export const getReports = asyncHandler(async (req, res) => {
   const status = req.query.status || "pending";
+  const filter = status === "all" ? {} : { status };
 
-  const reports = await Report.find({ status })
+  const reports = await Report.find(filter)
     .populate("reporter", "username fullName avatar")
     .populate("reportedUser", "username fullName avatar")
     .populate("post")
@@ -42,6 +123,20 @@ export const updateReportStatus = asyncHandler(async (req, res) => {
   res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, report, "Report status updated successfully"));
+});
+
+export const deleteReport = asyncHandler(async (req, res) => {
+  const { reportId } = req.params;
+
+  const report = await Report.findByIdAndDelete(reportId);
+
+  if (!report) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Report not found");
+  }
+
+  res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, null, "Report deleted successfully"));
 });
 
 export const blockUserByAdmin = asyncHandler(async (req, res) => {
@@ -106,4 +201,22 @@ export const removeReelByAdmin = asyncHandler(async (req, res) => {
   res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, null, "Reel removed by admin successfully"));
+});
+
+export const removeCommentByAdmin = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+
+  const comment = await Comment.findByIdAndUpdate(
+    commentId,
+    { isDeleted: true },
+    { new: true },
+  );
+
+  if (!comment) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Comment not found");
+  }
+
+  res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, null, "Comment removed by admin successfully"));
 });

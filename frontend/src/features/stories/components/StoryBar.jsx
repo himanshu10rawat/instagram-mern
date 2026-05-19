@@ -1,17 +1,16 @@
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { Plus } from "lucide-react";
 
 import Avatar from "../../../components/common/Avatar";
+import EmptyState from "../../../components/ui/EmptyState";
+import { StoryTraySkeleton } from "../../../components/ui/Skeleton";
 
 const StoryBar = () => {
   const { storyGroups, loading } = useSelector((state) => state.stories);
 
   if (loading) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
-        <p className="text-sm text-slate-500">Loading stories...</p>
-      </div>
-    );
+    return <StoryTraySkeleton count={5} />;
   }
 
   return (
@@ -20,7 +19,13 @@ const StoryBar = () => {
 
       <div className="mt-4 flex gap-4 overflow-x-auto pb-2">
         {storyGroups.length === 0 ? (
-          <p className="text-sm text-slate-500">No stories available.</p>
+          <EmptyState
+            icon={Plus}
+            title="No stories available"
+            description="Stories from people you follow will appear here."
+            variant="inline"
+            size="sm"
+          />
         ) : (
           storyGroups.map((storyGroup) => {
             const user = storyGroup.author || storyGroup.user || {};

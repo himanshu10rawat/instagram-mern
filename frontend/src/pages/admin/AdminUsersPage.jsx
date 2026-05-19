@@ -1,8 +1,10 @@
-import { Ban, Search, ShieldCheck } from "lucide-react";
+import { Ban, Search, ShieldCheck, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../components/common/Avatar";
+import EmptyState from "../../components/ui/EmptyState";
+import { TableRowsSkeleton } from "../../components/ui/Skeleton";
 import {
   blockAdminUser,
   fetchAdminUsers,
@@ -85,11 +87,17 @@ const AdminUsersPage = () => {
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
         {loading ? (
-          <p className="p-5 text-sm text-slate-500">Loading users...</p>
+          <TableRowsSkeleton count={5} />
         ) : null}
 
         {!loading && users.length === 0 ? (
-          <p className="p-5 text-sm text-slate-500">No users found.</p>
+          <EmptyState
+            icon={Users}
+            title="No users found"
+            description="Try another username, email, or full name."
+            variant="inline"
+            className="m-5"
+          />
         ) : null}
 
         <div className="divide-y divide-slate-200 dark:divide-slate-800">

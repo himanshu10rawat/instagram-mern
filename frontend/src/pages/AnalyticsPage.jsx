@@ -10,6 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import { StatGridSkeleton } from "../components/ui/Skeleton";
 import AnalyticsStatCard from "../features/analytics/components/AnalyticsStatCard";
 import ProfileVisitsChart from "../features/analytics/components/ProfileVisitsChart";
 import {
@@ -88,60 +89,62 @@ const AnalyticsPage = () => {
       ) : null}
 
       {loading && !dashboardStats ? (
-        <p className="text-sm text-slate-500">Loading analytics...</p>
+        <StatGridSkeleton count={8} />
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <AnalyticsStatCard
-          icon={UserRound}
-          label="Profile Visits"
-          value={dashboardStats?.profileVisits}
-          helper={`Last ${dashboardStats?.days || days} days`}
-        />
+      {!loading || dashboardStats ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <AnalyticsStatCard
+            icon={UserRound}
+            label="Profile Visits"
+            value={dashboardStats?.profileVisits}
+            helper={`Last ${dashboardStats?.days || days} days`}
+          />
 
-        <AnalyticsStatCard
-          icon={Eye}
-          label="Total Impressions"
-          value={dashboardStats?.totalImpressions}
-          helper="Posts + reels + stories"
-        />
+          <AnalyticsStatCard
+            icon={Eye}
+            label="Total Impressions"
+            value={dashboardStats?.totalImpressions}
+            helper="Posts + reels + stories"
+          />
 
-        <AnalyticsStatCard
-          icon={Image}
-          label="Post Impressions"
-          value={dashboardStats?.postImpressions}
-        />
+          <AnalyticsStatCard
+            icon={Image}
+            label="Post Impressions"
+            value={dashboardStats?.postImpressions}
+          />
 
-        <AnalyticsStatCard
-          icon={Film}
-          label="Reel Impressions"
-          value={dashboardStats?.reelImpressions}
-        />
+          <AnalyticsStatCard
+            icon={Film}
+            label="Reel Impressions"
+            value={dashboardStats?.reelImpressions}
+          />
 
-        <AnalyticsStatCard
-          icon={BarChart3}
-          label="Story Impressions"
-          value={dashboardStats?.storyImpressions}
-        />
+          <AnalyticsStatCard
+            icon={BarChart3}
+            label="Story Impressions"
+            value={dashboardStats?.storyImpressions}
+          />
 
-        <AnalyticsStatCard
-          icon={Image}
-          label="Total Posts"
-          value={dashboardStats?.totalPosts}
-        />
+          <AnalyticsStatCard
+            icon={Image}
+            label="Total Posts"
+            value={dashboardStats?.totalPosts}
+          />
 
-        <AnalyticsStatCard
-          icon={Film}
-          label="Total Reels"
-          value={dashboardStats?.totalReels}
-        />
+          <AnalyticsStatCard
+            icon={Film}
+            label="Total Reels"
+            value={dashboardStats?.totalReels}
+          />
 
-        <AnalyticsStatCard
-          icon={LineChart}
-          label="Total Stories"
-          value={dashboardStats?.totalStories}
-        />
-      </div>
+          <AnalyticsStatCard
+            icon={LineChart}
+            label="Total Stories"
+            value={dashboardStats?.totalStories}
+          />
+        </div>
+      ) : null}
 
       <ProfileVisitsChart visits={profileVisits} />
     </section>

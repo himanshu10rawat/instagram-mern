@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Archive } from "lucide-react";
 
+import EmptyState from "../components/ui/EmptyState";
+import { GridSkeleton } from "../components/ui/Skeleton";
 import MediaGrid from "../features/search/components/MediaGrid";
 import {
   clearArchivedPosts,
@@ -32,9 +35,7 @@ const ArchivedPostsPage = () => {
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Loading archived posts...
-        </p>
+        <GridSkeleton count={9} />
       ) : null}
 
       {error ? (
@@ -43,18 +44,18 @@ const ArchivedPostsPage = () => {
         </div>
       ) : null}
 
-      {!loading && archivedPosts.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-950">
-          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
-            No archived posts
-          </h2>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Archived posts will appear here.
-          </p>
-        </div>
-      ) : (
-        <MediaGrid items={archivedPosts} type="post" />
-      )}
+      {!loading ? (
+        archivedPosts.length === 0 ? (
+          <EmptyState
+            icon={Archive}
+            iconTone="blue"
+            title="No archived posts"
+            description="Archived posts will appear here."
+          />
+        ) : (
+          <MediaGrid items={archivedPosts} type="post" />
+        )
+      ) : null}
     </section>
   );
 };

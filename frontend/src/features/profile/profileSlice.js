@@ -12,6 +12,7 @@ import {
   getUserPostsApi,
   getUserReelsApi,
 } from "./profileService";
+import { FORM_DATA_FIELDS } from "../../constants/apiRoutes";
 
 export const fetchMyProfile = createAsyncThunk(
   "profile/fetchMyProfile",
@@ -96,7 +97,7 @@ export const updateAvatar = createAsyncThunk(
   async (file, { rejectWithValue }) => {
     try {
       const formData = new FormData();
-      formData.append("avatar", file);
+      formData.append(FORM_DATA_FIELDS.profile.avatar, file);
       return await updateAvatarApi(formData);
     } catch (error) {
       return rejectWithValue(
@@ -111,7 +112,7 @@ export const updateCover = createAsyncThunk(
   async (file, { rejectWithValue }) => {
     try {
       const formData = new FormData();
-      formData.append("coverImage", file);
+      formData.append(FORM_DATA_FIELDS.profile.coverImage, file);
 
       return await updateCoverApi(formData);
     } catch (error) {

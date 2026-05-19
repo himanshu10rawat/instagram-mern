@@ -1,8 +1,10 @@
-import { Check, X } from "lucide-react";
+import { Check, UserPlus, X } from "lucide-react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../components/common/Avatar";
+import EmptyState from "../components/ui/EmptyState";
+import { ListSkeleton } from "../components/ui/Skeleton";
 import {
   acceptFollowRequest,
   fetchFollowRequests,
@@ -26,9 +28,9 @@ const FollowRequestsPage = () => {
         </h1>
 
         {loading ? (
-          <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
-            Loading requests...
-          </p>
+          <div className="mt-6">
+            <ListSkeleton count={4} />
+          </div>
         ) : null}
 
         {error ? (
@@ -38,55 +40,65 @@ const FollowRequestsPage = () => {
         ) : null}
 
         {!loading && requests.length === 0 ? (
-          <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
-            No follow requests.
-          </p>
+          <EmptyState
+            icon={UserPlus}
+            title="No follow requests"
+            description="New follow requests will appear here."
+            className="mt-6"
+          />
         ) : null}
 
         <div className="mt-6 space-y-4">
-          {requests.map((request) => {
-            const user = request.sender || request.requestedBy || request.user;
+          {!loading
+            ? requests.map((request) => {
+                const user =
+                  request.sender || request.requestedBy || request.user;
 
-            return (
-              <div
-                key={request._id}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 p-4 dark:border-slate-800"
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar src={user?.avatar?.url} alt={user?.username} />
+                return (
+                  <div
+                    key={request._id}
+                    className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 p-4 dark:border-slate-800"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar src={user?.avatar?.url} alt={user?.username} />
 
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950 dark:text-white">
-                      {user?.username || "Unknown user"}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {user?.fullName || "Wants to follow you"}
-                    </p>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                          {user?.username || "Unknown user"}
+                        </p>
+                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                          {user?.fullName || "Wants to follow you"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          dispatch(acceptFollowRequest(request._id))
+                        }
+                        className="rounded-xl bg-slate-950 p-2 text-white dark:bg-white dark:text-slate-950"
+                        aria-label="Accept request"
+                      >
+                        <Check size={18} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          dispatch(rejectFollowRequest(request._id))
+                        }
+                        className="rounded-xl border border-slate-300 p-2 text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                        aria-label="Reject request"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => dispatch(acceptFollowRequest(request._id))}
-                    className="rounded-xl bg-slate-950 p-2 text-white dark:bg-white dark:text-slate-950"
-                    aria-label="Accept request"
-                  >
-                    <Check size={18} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => dispatch(rejectFollowRequest(request._id))}
-                    className="rounded-xl border border-slate-300 p-2 text-slate-700 dark:border-slate-700 dark:text-slate-200"
-                    aria-label="Reject request"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })
+            : null}
         </div>
       </div>
     </section>

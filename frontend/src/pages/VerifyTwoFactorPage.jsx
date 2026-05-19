@@ -4,12 +4,15 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import { API_ROUTES } from "../constants/apiRoutes";
 import { setCredentials } from "../features/auth/authSlice";
+import useToast from "../hooks/useToast";
 import api from "../lib/axios";
 
 const VerifyTwoFactorPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const { requiresTwoFactor, twoFactorUserId, isAuthenticated } = useSelector(
     (state) => state.auth,
@@ -58,14 +61,24 @@ const VerifyTwoFactorPage = () => {
         payload.token = code;
       }
 
-      const response = await api.post("/auth/verify-2fa-login", payload);
+      const response = await api.post(
+        API_ROUTES.auth.verifyTwoFactorLogin,
+        payload,
+      );
       const data = response.data.data;
 
       dispatch(setCredentials(data));
+      toast.success("Two-factor verification completed.", {
+        title: "Signed in",
+      });
 
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || "2FA verification failed");
+      const message =
+        err.response?.data?.message || "2FA verification failed";
+
+      setError(message);
+      toast.error(message, { title: "Verification failed" });
     } finally {
       setLoading(false);
     }

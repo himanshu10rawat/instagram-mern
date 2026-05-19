@@ -5,9 +5,11 @@ import {
   MessageCircle,
   Send,
   TrendingUp,
-  X,
 } from "lucide-react";
 
+import ModalShell from "../../../components/ui/ModalShell";
+import EmptyState from "../../../components/ui/EmptyState";
+import { StatGridSkeleton } from "../../../components/ui/Skeleton";
 import AnalyticsStatCard from "./AnalyticsStatCard";
 
 const getValue = (analytics, keys) => {
@@ -45,32 +47,16 @@ const InsightsModal = ({
   const shares = getValue(analytics, ["shares", "sharesCount", "totalShares"]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <article className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-slate-950">
-        <div className="flex items-center justify-between border-b border-slate-200 p-4 dark:border-slate-800">
-          <div>
-            <h2 className="text-lg font-bold text-slate-950 dark:text-white">
-              {title}
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Performance overview for this {type}.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-2 hover:bg-slate-100 dark:hover:bg-slate-900"
-            aria-label="Close insights modal"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
+    <ModalShell
+      title={title}
+      description={`Performance overview for this ${type}.`}
+      onClose={onClose}
+      className="max-w-3xl"
+    >
+      <article>
         <div className="p-5">
           {loading ? (
-            <p className="text-sm text-slate-500">Loading insights...</p>
+            <StatGridSkeleton count={6} />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <AnalyticsStatCard
@@ -100,13 +86,17 @@ const InsightsModal = ({
           )}
 
           {!loading && !analytics ? (
-            <div className="mt-4 rounded-xl border border-slate-200 p-4 text-sm text-slate-500 dark:border-slate-800">
-              No insights available yet.
-            </div>
+            <EmptyState
+              icon={TrendingUp}
+              title="No insights available yet"
+              description="Insights will appear after this content gets activity."
+              variant="subtle"
+              className="mt-4"
+            />
           ) : null}
         </div>
       </article>
-    </div>
+    </ModalShell>
   );
 };
 

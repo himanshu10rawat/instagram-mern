@@ -1,41 +1,42 @@
 import api from "../../lib/axios";
+import { API_ROUTES } from "../../constants/apiRoutes";
 
 export const searchUsersApi = async (query) => {
-  const response = await api.get(
-    `/explore/search/users?q=${encodeURIComponent(query)}`,
-  );
+  const response = await api.get(API_ROUTES.search.users, {
+    params: { q: query },
+  });
 
   return response.data.data;
 };
 
 export const searchPostsApi = async (query) => {
-  const response = await api.get(
-    `/explore/search/posts?q=${encodeURIComponent(query)}`,
-  );
+  const response = await api.get(API_ROUTES.search.posts, {
+    params: { q: query },
+  });
 
   return response.data.data;
 };
 
 export const searchReelsApi = async (query) => {
-  const response = await api.get(
-    `/explore/search/reels?q=${encodeURIComponent(query)}`,
-  );
+  const response = await api.get(API_ROUTES.search.reels, {
+    params: { q: query },
+  });
 
   return response.data.data;
 };
 
 export const searchHashtagsApi = async (query) => {
-  const response = await api.get(
-    `/explore/search/hashtags?q=${encodeURIComponent(query)}`,
-  );
+  const response = await api.get(API_ROUTES.search.hashtags, {
+    params: { q: query },
+  });
 
   return response.data.data;
 };
 
 export const getTrendingContentApi = async () => {
   const [feedResponse, reelsResponse] = await Promise.all([
-    api.get("/explore/feed"),
-    api.get("/explore/trending/reels"),
+    api.get(API_ROUTES.search.explore),
+    api.get(API_ROUTES.search.trendingReels),
   ]);
 
   return {

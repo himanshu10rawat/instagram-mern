@@ -1,8 +1,11 @@
-import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Users } from "lucide-react";
 
 import Avatar from "../../../components/common/Avatar";
+import EmptyState from "../../../components/ui/EmptyState";
+import ModalShell from "../../../components/ui/ModalShell";
+import { ListSkeleton } from "../../../components/ui/Skeleton";
 import {
   getFollowersApi,
   getFollowingApi,
@@ -55,64 +58,49 @@ const FollowListModal = ({ profileId, type, onClose }) => {
   }, [profileId, type]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
-          <h2 className="text-lg font-bold text-slate-950 dark:text-white">
-            {titles[type]}
-          </h2>
+    <ModalShell title={titles[type]} onClose={onClose} className="max-w-md">
+      <div className="max-h-96 overflow-y-auto p-3">
+        {loading ? (
+          <ListSkeleton count={5} />
+        ) : null}
 
-          <button
-            type="button"
+        {error ? (
+          <div className="m-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        ) : null}
+
+        {!loading && !error && users.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title={`No ${titles[type].toLowerCase()} yet`}
+            description="This list will update as the profile grows."
+            variant="inline"
+            size="sm"
+          />
+        ) : null}
+
+        {users.map((user) => (
+          <Link
+            key={user._id}
+            to={`/profile/${user.username}`}
             onClick={onClose}
-            className="rounded-full p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
-            aria-label="Close"
+            className="flex items-center gap-3 rounded-xl px-2 py-3 transition hover:bg-slate-50 dark:hover:bg-slate-900"
           >
-            <X size={18} />
-          </button>
-        </div>
+            <Avatar src={user.avatar?.url} alt={user.username} />
 
-        <div className="max-h-96 overflow-y-auto p-3">
-          {loading ? (
-            <p className="px-2 py-4 text-sm text-slate-500 dark:text-slate-400">
-              Loading {titles[type].toLowerCase()}...
-            </p>
-          ) : null}
-
-          {error ? (
-            <div className="m-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                {user.username}
+              </p>
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                {user.fullName || "Instagram user"}
+              </p>
             </div>
-          ) : null}
-
-          {!loading && !error && users.length === 0 ? (
-            <p className="px-2 py-4 text-sm text-slate-500 dark:text-slate-400">
-              No {titles[type].toLowerCase()} yet.
-            </p>
-          ) : null}
-
-          {users.map((user) => (
-            <Link
-              key={user._id}
-              to={`/profile/${user.username}`}
-              onClick={onClose}
-              className="flex items-center gap-3 rounded-xl px-2 py-3 transition hover:bg-slate-50 dark:hover:bg-slate-900"
-            >
-              <Avatar src={user.avatar?.url} alt={user.username} />
-
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
-                  {user.username}
-                </p>
-                <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                  {user.fullName || "Instagram user"}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
+          </Link>
+        ))}
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

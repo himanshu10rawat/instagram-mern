@@ -114,6 +114,15 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
                 >
                   <Settings size={20} />
                 </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setShowShareModal(true)}
+                  className="rounded-xl border border-slate-300 p-2 text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
+                  aria-label="Share profile"
+                >
+                  <Share2 size={20} />
+                </button>
               </>
             ) : (
               <>
@@ -139,6 +148,15 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
                 </button>
 
                 <ProfileSafetyMenu profile={profile} />
+
+                <button
+                  type="button"
+                  onClick={() => setShowShareModal(true)}
+                  className="rounded-xl border border-slate-300 p-2 text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
+                  aria-label="Share profile"
+                >
+                  <Share2 size={20} />
+                </button>
               </>
             )}
           </div>
@@ -214,14 +232,6 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Following
             </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowShareModal(true)}
-            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
-          >
-            <Share2 size={16} />
           </button>
         </div>
       </div>

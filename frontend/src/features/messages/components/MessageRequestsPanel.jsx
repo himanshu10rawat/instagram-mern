@@ -1,8 +1,9 @@
-import { Check, X } from "lucide-react";
+import { Check, MessageCircle, X } from "lucide-react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
+import EmptyState from "../../../components/ui/EmptyState";
 import {
   acceptMessageRequest,
   fetchConversations,
@@ -42,16 +43,6 @@ const MessageRequestsPanel = () => {
     await dispatch(rejectMessageRequest(conversationId));
   };
 
-  if (!requests.length) {
-    return (
-      <div className="p-4">
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          No message requests.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full overflow-y-auto">
       <div className="border-b border-slate-200 p-4 dark:border-slate-800">
@@ -62,6 +53,17 @@ const MessageRequestsPanel = () => {
           Accept request to start chatting.
         </p>
       </div>
+
+      {!requests.length ? (
+        <EmptyState
+          icon={MessageCircle}
+          title="No message requests"
+          description="Requests from people you do not follow will appear here."
+          variant="inline"
+          size="sm"
+          className="m-4"
+        />
+      ) : null}
 
       <div className="divide-y divide-slate-100 dark:divide-slate-800">
         {requests.map((conversation) => {

@@ -1,13 +1,17 @@
+import { ImageOff } from "lucide-react";
 import { Link } from "react-router-dom";
+
+import EmptyState from "../../../components/ui/EmptyState";
 
 const MediaGrid = ({ items = [], type = "post" }) => {
   if (!items.length) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-950">
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          No {type}s found.
-        </p>
-      </div>
+      <EmptyState
+        icon={ImageOff}
+        title={`No ${type}s found`}
+        description="Try a different search or check back later."
+        variant="subtle"
+      />
     );
   }
 

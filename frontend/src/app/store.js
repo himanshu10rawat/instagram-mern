@@ -20,6 +20,8 @@ import collectionReducer from "../features/collections/collectionSlice";
 import analyticsReducer from "../features/analytics/analyticsSlice";
 import liveReducer from "../features/live/liveSlice";
 import adminReducer from "../features/admin/adminSlice";
+import toastReducer from "../features/toasts/toastSlice";
+import { toastMiddleware } from "./toastMiddleware";
 
 export const store = configureStore({
   reducer: {
@@ -43,5 +45,8 @@ export const store = configureStore({
     collections: collectionReducer,
     live: liveReducer,
     admin: adminReducer,
+    toasts: toastReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(toastMiddleware),
 });

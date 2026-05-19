@@ -1,7 +1,9 @@
-import { CheckCircle2, RefreshCcw, Trash2 } from "lucide-react";
+import { CheckCircle2, Flag, RefreshCcw, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import EmptyState from "../../components/ui/EmptyState";
+import { CardListSkeleton } from "../../components/ui/Skeleton";
 import {
   deleteAdminComment,
   deleteAdminPost,
@@ -13,7 +15,7 @@ import {
 } from "../../features/admin/adminSlice";
 
 const getTargetTitle = (report) => {
-  if (report.targetUser?.username) return `@${report.targetUser.username}`;
+  if (report.reportedUser?.username) return `@${report.reportedUser.username}`;
   if (report.post?._id) return `Post: ${report.post._id}`;
   if (report.reel?._id) return `Reel: ${report.reel._id}`;
   if (report.comment?._id) return `Comment: ${report.comment._id}`;
@@ -111,13 +113,15 @@ const AdminReportsPage = () => {
 
       <div className="space-y-4">
         {loading ? (
-          <p className="text-sm text-slate-500">Loading reports...</p>
+          <CardListSkeleton count={4} />
         ) : null}
 
         {!loading && reports.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-950">
-            <p className="text-sm text-slate-500">No reports found.</p>
-          </div>
+          <EmptyState
+            icon={Flag}
+            title="No reports found"
+            description="Reports matching this filter will appear here."
+          />
         ) : null}
 
         {reports.map((report) => (
@@ -146,7 +150,7 @@ const AdminReportsPage = () => {
                 </p>
 
                 <p className="mt-2 text-xs text-slate-400">
-                  Reported by: @{report.reportedBy?.username || "unknown"}
+                  Reported by: @{report.reporter?.username || "unknown"}
                 </p>
               </div>
 

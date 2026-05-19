@@ -3,14 +3,26 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
+import EmptyState from "../components/ui/EmptyState";
+import { GridSkeleton } from "../components/ui/Skeleton";
 import CollectionFormModal from "../features/collections/components/CollectionFormModal";
 import {
   fetchCollections,
   resetCollections,
 } from "../features/collections/collectionSlice";
 
+const getCollectionPosts = (collection) => {
+  if (collection.posts?.length) {
+    return collection.posts;
+  }
+
+  return (collection.items || [])
+    .map((item) => item.post)
+    .filter(Boolean);
+};
+
 const getCollectionCover = (collection) => {
-  const firstPost = collection.posts?.[0];
+  const firstPost = getCollectionPosts(collection)[0];
   const firstMedia = firstPost?.media?.[0];
 
   return (
@@ -68,60 +80,58 @@ const CollectionsPage = () => {
       ) : null}
 
       {loading ? (
-        <p className="text-sm text-slate-500">Loading collections...</p>
+        <GridSkeleton count={6} />
       ) : null}
 
       {!loading && collections.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-950">
-          <Folder className="mx-auto text-slate-400" size={40} />
-
-          <h2 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">
-            No collections yet
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-500">
-            Create collections to organize saved posts.
-          </p>
-        </div>
+        <EmptyState
+          icon={Folder}
+          iconTone="blue"
+          title="No collections yet"
+          description="Create collections to organize saved posts."
+        />
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {collections.map((collection) => {
-          const cover = getCollectionCover(collection);
+      {!loading && collections.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {collections.map((collection) => {
+            const cover = getCollectionCover(collection);
+            const postsCount = getCollectionPosts(collection).length;
 
-          return (
-            <Link
-              key={collection._id}
-              to={`/collections/${collection._id}`}
-              className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
-            >
-              <div className="aspect-square bg-slate-100 dark:bg-slate-900">
-                {cover ? (
-                  <img
-                    src={cover}
-                    alt={collection.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center">
-                    <Folder className="text-slate-400" size={42} />
-                  </div>
-                )}
-              </div>
+            return (
+              <Link
+                key={collection._id}
+                to={`/collections/${collection._id}`}
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
+              >
+                <div className="aspect-square bg-slate-100 dark:bg-slate-900">
+                  {cover ? (
+                    <img
+                      src={cover}
+                      alt={collection.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <Folder className="text-slate-400" size={42} />
+                    </div>
+                  )}
+                </div>
 
-              <div className="p-4">
-                <h2 className="truncate text-sm font-bold text-slate-950 dark:text-white">
-                  {collection.name}
-                </h2>
+                <div className="p-4">
+                  <h2 className="truncate text-sm font-bold text-slate-950 dark:text-white">
+                    {collection.name}
+                  </h2>
 
-                <p className="mt-1 text-xs text-slate-500">
-                  {collection.posts?.length || 0} posts
-                </p>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {postsCount} posts
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
 
       <CollectionFormModal
         open={showCreateModal}

@@ -3,9 +3,13 @@ import { Link } from "react-router-dom";
 
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import { API_ROUTES } from "../constants/apiRoutes";
+import useToast from "../hooks/useToast";
 import api from "../lib/axios";
 
 const ForgotPasswordPage = () => {
+  const toast = useToast();
+
   const [identifier, setIdentifier] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -25,15 +29,21 @@ const ForgotPasswordPage = () => {
     setLoading(true);
 
     try {
-      const response = await api.post("/auth/forgot-password", {
+      const response = await api.post(API_ROUTES.auth.forgotPassword, {
         identifier: identifier.trim(),
       });
 
-      setSuccessMessage(
-        response.data?.message || "Password reset link sent successfully",
-      );
+      const message =
+        response.data?.message || "Password reset link sent successfully";
+
+      setSuccessMessage(message);
+      toast.success(message, { title: "Reset link sent" });
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to send reset link");
+      const message =
+        err.response?.data?.message || "Failed to send reset link";
+
+      setError(message);
+      toast.error(message, { title: "Reset link failed" });
     } finally {
       setLoading(false);
     }

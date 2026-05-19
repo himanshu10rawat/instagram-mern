@@ -1,3 +1,7 @@
+import { BarChart3 } from "lucide-react";
+
+import EmptyState from "../../../components/ui/EmptyState";
+
 const getMaxVisits = (items) => {
   return Math.max(...items.map((item) => item.visits || 0), 1);
 };
@@ -21,9 +25,14 @@ const ProfileVisitsChart = ({ visits = [] }) => {
           Profile Visits
         </h2>
 
-        <p className="mt-4 text-sm text-slate-500">
-          No profile visit data available yet.
-        </p>
+        <EmptyState
+          icon={BarChart3}
+          title="No profile visit data yet"
+          description="Profile visit trends will appear after people view your profile."
+          variant="inline"
+          size="sm"
+          className="mt-4"
+        />
       </div>
     );
   }

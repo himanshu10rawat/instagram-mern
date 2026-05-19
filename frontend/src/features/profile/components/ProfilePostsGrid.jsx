@@ -1,6 +1,9 @@
 import { Clapperboard, Images } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import EmptyState from "../../../components/ui/EmptyState";
+import { GridSkeleton } from "../../../components/ui/Skeleton";
+
 const getMedia = (item, type) => {
   if (type === "reels") {
     return {
@@ -49,26 +52,19 @@ const getEmptyContent = (type) => {
 
 const ProfilePostsGrid = ({ items = [], type = "posts", loading = false }) => {
   if (loading) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-950">
-        <p className="text-sm text-slate-500 dark:text-slate-400">Loading...</p>
-      </div>
-    );
+    return <GridSkeleton count={9} />;
   }
 
   if (!items.length) {
     const emptyContent = getEmptyContent(type);
 
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-950">
-        <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
-          {emptyContent.title}
-        </h2>
-
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          {emptyContent.description}
-        </p>
-      </div>
+      <EmptyState
+        icon={type === "reels" ? Clapperboard : Images}
+        title={emptyContent.title}
+        description={emptyContent.description}
+        iconTone={type === "saved" ? "blue" : "slate"}
+      />
     );
   }
 

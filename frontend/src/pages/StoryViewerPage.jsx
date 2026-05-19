@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../components/common/Avatar";
+import { SkeletonBlock } from "../components/ui/Skeleton";
 import ShareModal from "../features/messages/components/ShareModal";
 import {
   clearCurrentStory,
@@ -65,8 +66,8 @@ const StoryViewerPage = () => {
 
   if (loading && !currentStory) {
     return (
-      <section className="flex min-h-[calc(100vh-48px)] items-center justify-center">
-        <p className="text-sm text-slate-500">Loading story...</p>
+      <section className="mx-auto flex min-h-[calc(100dvh_-_7rem)] max-w-md items-center justify-center">
+        <SkeletonBlock className="h-[calc(100dvh_-_7rem)] w-full rounded-2xl" />
       </section>
     );
   }
@@ -86,8 +87,8 @@ const StoryViewerPage = () => {
   }
 
   return (
-    <section className="mx-auto flex min-h-[calc(100vh-48px)] max-w-md items-center justify-center">
-      <article className="relative h-[calc(100vh-96px)] max-h-205 min-h-155 w-full overflow-hidden rounded-2xl bg-black text-white">
+    <section className="mx-auto flex min-h-[calc(100dvh_-_7rem)] max-w-md items-center justify-center sm:min-h-[calc(100dvh_-_3rem)]">
+      <article className="relative h-[calc(100dvh_-_7rem)] max-h-205 w-full overflow-hidden rounded-2xl bg-black text-white sm:h-[calc(100dvh_-_6rem)] sm:min-h-155">
         <div className="absolute left-0 right-0 top-0 z-30 p-4">
           <div className="h-1 overflow-hidden rounded-full bg-white/30">
             <div className="h-full w-full bg-white" />

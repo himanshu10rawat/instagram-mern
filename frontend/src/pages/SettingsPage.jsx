@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import { PageHeaderSkeleton, SkeletonBlock } from "../components/ui/Skeleton";
 import {
   changePassword,
   clearAuthStatus,
@@ -436,9 +437,29 @@ const SettingsPage = () => {
 
   if (loading && !profile) {
     return (
-      <p className="text-sm text-slate-500 dark:text-slate-400">
-        Loading settings...
-      </p>
+      <section className="mx-auto max-w-4xl space-y-6">
+        <PageHeaderSkeleton />
+
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950"
+            >
+              <div className="mb-5 flex items-center gap-3">
+                <SkeletonBlock className="h-10 w-10 rounded-full" />
+                <SkeletonBlock className="h-5 w-40" />
+              </div>
+
+              <div className="space-y-3">
+                <SkeletonBlock className="h-12 rounded-xl" />
+                <SkeletonBlock className="h-12 rounded-xl" />
+                <SkeletonBlock className="h-10 w-36 rounded-xl" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     );
   }
 

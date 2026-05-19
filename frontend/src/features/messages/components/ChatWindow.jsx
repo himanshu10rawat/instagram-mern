@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
+import { SkeletonBlock } from "../../../components/ui/Skeleton";
 import { getSocket } from "../../../lib/socket";
 import {
   fetchMessages,
@@ -145,18 +146,22 @@ const ChatWindow = () => {
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
         {messagesLoading ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Loading messages...
-          </p>
+          <div className="space-y-3">
+            <SkeletonBlock className="h-10 w-2/3 rounded-2xl" />
+            <SkeletonBlock className="ml-auto h-10 w-1/2 rounded-2xl" />
+            <SkeletonBlock className="h-10 w-3/5 rounded-2xl" />
+          </div>
         ) : null}
 
-        {messages.map((message) => (
-          <MessageBubble
-            key={message._id}
-            message={message}
-            isMine={message.sender?._id === currentUser?._id}
-          />
-        ))}
+        {!messagesLoading
+          ? messages.map((message) => (
+              <MessageBubble
+                key={message._id}
+                message={message}
+                isMine={message.sender?._id === currentUser?._id}
+              />
+            ))
+          : null}
 
         <div ref={bottomRef} />
       </div>

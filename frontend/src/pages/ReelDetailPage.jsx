@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
+import { ReelSkeleton } from "../components/ui/Skeleton";
 import ReelCard from "../features/reels/components/ReelCard";
 import { fetchSingleReel } from "../features/reels/reelSlice";
 
@@ -16,7 +17,7 @@ const ReelDetailPage = () => {
   }, [dispatch, reelId]);
 
   if (loading && !currentReel) {
-    return <p className="text-sm text-slate-500">Loading reel...</p>;
+    return <ReelSkeleton />;
   }
 
   if (error) {
