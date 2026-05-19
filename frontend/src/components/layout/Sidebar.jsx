@@ -1,23 +1,26 @@
 import {
+  Archive,
+  BarChart3,
   Bell,
+  Bookmark,
   Clapperboard,
   Compass,
+  Flag,
+  Folder,
   Home,
   LogOut,
   MessageCircle,
   PlusSquare,
+  Radio,
   Search,
   Settings,
+  Shield,
   User,
   UserPlus,
-  Archive,
-  Bookmark,
-  Folder,
-  BarChart3,
-  Radio,
+  Users,
 } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import { logoutUser } from "../../features/auth/authSlice";
 
@@ -63,16 +66,6 @@ const navItems = [
     icon: User,
   },
   {
-    label: "Analytics",
-    path: "/analytics",
-    icon: BarChart3,
-  },
-  {
-    label: "Settings",
-    path: "/settings",
-    icon: Settings,
-  },
-  {
     label: "Requests",
     path: "/follow-requests",
     icon: UserPlus,
@@ -97,15 +90,47 @@ const navItems = [
     path: "/live",
     icon: Radio,
   },
+  {
+    label: "Analytics",
+    path: "/analytics",
+    icon: BarChart3,
+  },
+  {
+    label: "Settings",
+    path: "/settings",
+    icon: Settings,
+  },
+];
+
+const adminNavItems = [
+  {
+    label: "Admin",
+    path: "/admin",
+    icon: Shield,
+  },
+  {
+    label: "Admin Users",
+    path: "/admin/users",
+    icon: Users,
+  },
+  {
+    label: "Reports",
+    path: "/admin/reports",
+    icon: Flag,
+  },
 ];
 
 const Sidebar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const currentUser = useSelector((state) => state.auth.user);
   const unreadNotifications = useSelector(
     (state) => state.notifications.unreadCount,
   );
+
+  const isAdmin = currentUser?.role === "admin" || currentUser?.isAdmin;
+  const finalNavItems = isAdmin ? [...navItems, ...adminNavItems] : navItems;
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -119,8 +144,10 @@ const Sidebar = () => {
       </h1>
 
       <nav className="mt-8 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
-        {navItems.map((item) => {
+        {finalNavItems.map((item) => {
           const Icon = item.icon;
+          const showNotificationBadge =
+            item.path === "/notifications" && unreadNotifications > 0;
 
           return (
             <NavLink
@@ -135,10 +162,11 @@ const Sidebar = () => {
               }
             >
               <Icon size={22} />
+
               <span className="flex flex-1 items-center justify-between">
                 <span>{item.label}</span>
 
-                {item.label === "Notifications" && unreadNotifications > 0 ? (
+                {showNotificationBadge ? (
                   <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
                     {unreadNotifications > 99 ? "99+" : unreadNotifications}
                   </span>

@@ -32,6 +32,10 @@ import CollectionDetailPage from "../pages/CollectionDetailPage";
 import AnalyticsPage from "../pages/AnalyticsPage";
 import LivePage from "../pages/LivePage";
 import LiveRoomPage from "../pages/LiveRoomPage";
+import AdminRoute from "./AdminRoute";
+import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
+import AdminReportsPage from "../pages/admin/AdminReportsPage";
+import AdminUsersPage from "../pages/admin/AdminUsersPage";
 
 const AppRoutes = () => {
   return (
@@ -72,6 +76,11 @@ const AppRoutes = () => {
           />
           <Route path="/live" element={<LivePage />} />
           <Route path="/live/:liveId" element={<LiveRoomPage />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/reports" element={<AdminReportsPage />} />
+          </Route>
         </Route>
       </Route>
     </Routes>
