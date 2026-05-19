@@ -17,9 +17,11 @@ import sessionReducer from "../features/sessions/sessionSlice";
 import twoFactorReducer from "../features/twoFactor/twoFactorSlice";
 import safetyReducer from "../features/safety/safetySlice";
 import collectionReducer from "../features/collections/collectionSlice";
+import analyticsReducer from "../features/analytics/analyticsSlice";
 
 export const store = configureStore({
   reducer: {
+    analytics: analyticsReducer,
     auth: authReducer,
     create: createReducer,
     follow: followReducer,

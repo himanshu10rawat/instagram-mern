@@ -4,16 +4,22 @@ import {
   MessageCircle,
   MoreHorizontal,
   Send,
+  BarChart3,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
+import InsightsModal from "../../analytics/components/InsightsModal";
 import Avatar from "../../../components/common/Avatar";
 import ShareModal from "../../messages/components/ShareModal";
 import ReportModal from "../../safety/components/ReportModal";
 import SaveToCollectionModal from "../../collections/components/SaveToCollectionModal";
 import { likePost, savePost } from "../postSlice";
+import {
+  fetchPostAnalytics,
+  resetAnalyticsDetails,
+} from "../../analytics/analyticsSlice";
 
 const getId = (value) => (typeof value === "string" ? value : value?._id);
 
@@ -22,14 +28,28 @@ const PostCard = ({ post }) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [showInsightsModal, setShowInsightsModal] = useState(false);
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.auth.user);
+  const { detailLoading, postAnalytics } = useSelector(
+    (state) => state.analytics,
+  );
 
+  const isOwnPost = post.author?._id === currentUser?._id;
   const currentUserId = currentUser?._id;
   const isLiked = post.likes?.some((id) => getId(id) === currentUserId);
   const isSaved = post.savedBy?.some((id) => getId(id) === currentUserId);
 
   const firstMedia = post.media?.[0];
+
+  const handleViewInsights = () => {
+    if (!post?._id) return;
+
+    dispatch(resetAnalyticsDetails());
+    dispatch(fetchPostAnalytics(post._id));
+    setShowPostMenu(false);
+    setShowInsightsModal(true);
+  };
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
@@ -63,17 +83,30 @@ const PostCard = ({ post }) => {
           </button>
 
           {showPostMenu ? (
-            <div className="absolute right-0 top-10 z-20 w-40 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPostMenu(false);
-                  setShowReportModal(true);
-                }}
-                className="w-full px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-              >
-                Report post
-              </button>
+            <div className="absolute right-0 top-10 z-20 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
+              {isOwnPost ? (
+                <button
+                  type="button"
+                  onClick={handleViewInsights}
+                  className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-900"
+                >
+                  <BarChart3 size={16} />
+                  View insights
+                </button>
+              ) : null}
+
+              {!isOwnPost ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPostMenu(false);
+                    setShowReportModal(true);
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                >
+                  Report post
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -175,6 +208,14 @@ const PostCard = ({ post }) => {
         open={showCollectionModal}
         onClose={() => setShowCollectionModal(false)}
         postId={post._id}
+      />
+
+      <InsightsModal
+        analytics={postAnalytics}
+        loading={detailLoading}
+        onClose={() => setShowInsightsModal(false)}
+        open={showInsightsModal}
+        type="post"
       />
     </article>
   );

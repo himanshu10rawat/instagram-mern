@@ -5,6 +5,7 @@ import {
   Trash2,
   MonitorSmartphone,
   ShieldAlert,
+  BarChart3,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -488,6 +489,27 @@ const SettingsPage = () => {
           className="mt-4 inline-flex rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
         >
           Manage Safety
+        </Link>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+        <div className="mb-4 flex items-center gap-3">
+          <BarChart3 size={22} />
+
+          <h2 className="text-lg font-bold text-slate-950 dark:text-white">
+            Analytics
+          </h2>
+        </div>
+
+        <p className="text-sm text-slate-500">
+          View profile visits, impressions, and content performance.
+        </p>
+
+        <Link
+          to="/analytics"
+          className="mt-4 inline-flex rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+        >
+          View Analytics
         </Link>
       </div>
 

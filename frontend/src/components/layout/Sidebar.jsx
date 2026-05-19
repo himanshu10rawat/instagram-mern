@@ -13,6 +13,7 @@ import {
   Archive,
   Bookmark,
   Folder,
+  BarChart3,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -59,6 +60,11 @@ const navItems = [
     label: "Profile",
     path: "/profile/me",
     icon: User,
+  },
+  {
+    label: "Analytics",
+    path: "/analytics",
+    icon: BarChart3,
   },
   {
     label: "Settings",

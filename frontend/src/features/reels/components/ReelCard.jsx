@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Bookmark,
   Heart,
   MessageCircle,
@@ -14,19 +15,30 @@ import Avatar from "../../../components/common/Avatar";
 import ShareModal from "../../messages/components/ShareModal";
 import ReportModal from "../../safety/components/ReportModal";
 import { commentReel, likeReel, saveReel } from "../reelSlice";
+import InsightsModal from "../../analytics/components/InsightsModal";
+import {
+  fetchReelAnalytics,
+  resetAnalyticsDetails,
+} from "../../analytics/analyticsSlice";
 
 const ReelCard = ({ reel }) => {
   const dispatch = useDispatch();
   const videoRef = useRef(null);
 
   const currentUser = useSelector((state) => state.auth.user);
+  const { detailLoading, reelAnalytics } = useSelector(
+    (state) => state.analytics,
+  );
 
+  const [showInsightsModal, setShowInsightsModal] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [commentText, setCommentText] = useState("");
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showReelMenu, setShowReelMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+
+  const isOwnReel = reel.author?._id === currentUser?._id;
 
   const isLiked = reel.likes?.some((like) => {
     if (typeof like === "string") return like === currentUser?._id;
@@ -75,6 +87,15 @@ const ReelCard = ({ reel }) => {
     if (commentReel.fulfilled.match(result)) {
       setCommentText("");
     }
+  };
+
+  const handleViewInsights = () => {
+    if (!reel?._id) return;
+
+    dispatch(resetAnalyticsDetails());
+    dispatch(fetchReelAnalytics(reel._id));
+    setShowReelMenu(false);
+    setShowInsightsModal(true);
   };
 
   return (
@@ -168,17 +189,30 @@ const ReelCard = ({ reel }) => {
               </button>
 
               {showReelMenu ? (
-                <div className="absolute bottom-10 right-0 z-30 w-40 overflow-hidden rounded-xl bg-white text-slate-950 shadow-xl">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowReelMenu(false);
-                      setShowReportModal(true);
-                    }}
-                    className="w-full px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
-                  >
-                    Report reel
-                  </button>
+                <div className="absolute bottom-10 right-0 z-30 w-44 overflow-hidden rounded-xl bg-white text-slate-950 shadow-xl">
+                  {isOwnReel ? (
+                    <button
+                      type="button"
+                      onClick={handleViewInsights}
+                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      <BarChart3 size={16} />
+                      View insights
+                    </button>
+                  ) : null}
+
+                  {!isOwnReel ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowReelMenu(false);
+                        setShowReportModal(true);
+                      }}
+                      className="w-full px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
+                    >
+                      Report reel
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -220,6 +254,14 @@ const ReelCard = ({ reel }) => {
         open={showReportModal}
         onClose={() => setShowReportModal(false)}
         targetId={reel._id}
+        type="reel"
+      />
+
+      <InsightsModal
+        analytics={reelAnalytics}
+        loading={detailLoading}
+        onClose={() => setShowInsightsModal(false)}
+        open={showInsightsModal}
         type="reel"
       />
     </article>

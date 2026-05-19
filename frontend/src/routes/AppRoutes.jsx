@@ -29,6 +29,7 @@ import SessionsPage from "../pages/SessionsPage";
 import SafetySettingsPage from "../pages/SafetySettingsPage";
 import CollectionsPage from "../pages/CollectionsPage";
 import CollectionDetailPage from "../pages/CollectionDetailPage";
+import AnalyticsPage from "../pages/AnalyticsPage";
 
 const AppRoutes = () => {
   return (
@@ -53,6 +54,7 @@ const AppRoutes = () => {
           <Route path="/profile/:username" element={<ProfilePage />} />
           <Route path="/profile/me/edit" element={<EditProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/suggestions" element={<SuggestionsPage />} />
           <Route path="/posts/:postId" element={<PostDetailPage />} />
           <Route path="/reels/:reelId" element={<ReelDetailPage />} />
