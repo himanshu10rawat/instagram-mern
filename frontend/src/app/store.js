@@ -18,6 +18,7 @@ import twoFactorReducer from "../features/twoFactor/twoFactorSlice";
 import safetyReducer from "../features/safety/safetySlice";
 import collectionReducer from "../features/collections/collectionSlice";
 import analyticsReducer from "../features/analytics/analyticsSlice";
+import liveReducer from "../features/live/liveSlice";
 
 export const store = configureStore({
   reducer: {
@@ -39,5 +40,6 @@ export const store = configureStore({
     twoFactor: twoFactorReducer,
     safety: safetyReducer,
     collections: collectionReducer,
+    live: liveReducer,
   },
 });

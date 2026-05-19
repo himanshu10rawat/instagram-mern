@@ -30,6 +30,8 @@ import SafetySettingsPage from "../pages/SafetySettingsPage";
 import CollectionsPage from "../pages/CollectionsPage";
 import CollectionDetailPage from "../pages/CollectionDetailPage";
 import AnalyticsPage from "../pages/AnalyticsPage";
+import LivePage from "../pages/LivePage";
+import LiveRoomPage from "../pages/LiveRoomPage";
 
 const AppRoutes = () => {
   return (
@@ -68,6 +70,8 @@ const AppRoutes = () => {
             path="/collections/:collectionId"
             element={<CollectionDetailPage />}
           />
+          <Route path="/live" element={<LivePage />} />
+          <Route path="/live/:liveId" element={<LiveRoomPage />} />
         </Route>
       </Route>
     </Routes>

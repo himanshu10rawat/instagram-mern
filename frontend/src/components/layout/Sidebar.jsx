@@ -14,6 +14,7 @@ import {
   Bookmark,
   Folder,
   BarChart3,
+  Radio,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -90,6 +91,11 @@ const navItems = [
     label: "Collections",
     path: "/collections",
     icon: Folder,
+  },
+  {
+    label: "Live",
+    path: "/live",
+    icon: Radio,
   },
 ];
 
