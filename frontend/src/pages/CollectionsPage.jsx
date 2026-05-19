@@ -51,7 +51,7 @@ const CollectionsPage = () => {
   }, [dispatch]);
 
   return (
-    <section className="mx-auto max-w-5xl space-y-6">
+    <section className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
@@ -66,7 +66,7 @@ const CollectionsPage = () => {
         <button
           type="button"
           onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950 sm:w-auto"
         >
           <Plus size={18} />
           New Collection
@@ -93,7 +93,7 @@ const CollectionsPage = () => {
       ) : null}
 
       {!loading && collections.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {collections.map((collection) => {
             const cover = getCollectionCover(collection);
             const postsCount = getCollectionPosts(collection).length;
@@ -102,7 +102,7 @@ const CollectionsPage = () => {
               <Link
                 key={collection._id}
                 to={`/collections/${collection._id}`}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
+                className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl"
               >
                 <div className="aspect-square bg-slate-100 dark:bg-slate-900">
                   {cover ? (

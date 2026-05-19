@@ -42,6 +42,7 @@ const ConversationList = ({
           const user = getOtherParticipant(conversation, currentUserId);
           const isActive = activeConversationId === conversation._id;
           const isOnline = onlineUsers.includes(user?._id);
+          const unreadCount = Number(conversation.unreadCount) || 0;
 
           return (
             <button
@@ -63,11 +64,25 @@ const ConversationList = ({
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
-                  {user?.username || "Unknown user"}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                    {user?.username || "Unknown user"}
+                  </p>
 
-                <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                  {unreadCount > 0 ? (
+                    <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  ) : null}
+                </div>
+
+                <p
+                  className={`truncate text-xs ${
+                    unreadCount > 0
+                      ? "font-semibold text-slate-900 dark:text-white"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
                   {conversation.lastMessage?.text ||
                     conversation.lastMessage?.messageType ||
                     "Start conversation"}

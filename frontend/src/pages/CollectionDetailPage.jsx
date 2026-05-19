@@ -96,7 +96,7 @@ const CollectionDetailPage = () => {
   const posts = getCollectionPosts(currentCollection);
 
   return (
-    <section className="mx-auto max-w-5xl space-y-6">
+    <section className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
@@ -112,11 +112,11 @@ const CollectionDetailPage = () => {
           <p className="mt-1 text-xs text-slate-500">{posts.length} posts</p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
           <button
             type="button"
             onClick={() => setShowEditModal(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-300"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-300"
           >
             <Edit3 size={16} />
             Edit
@@ -126,7 +126,7 @@ const CollectionDetailPage = () => {
             type="button"
             onClick={handleDeleteCollection}
             disabled={actionLoading}
-            className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
           >
             <Trash2 size={16} />
             Delete
@@ -143,7 +143,7 @@ const CollectionDetailPage = () => {
         />
       ) : null}
 
-      <div className="grid grid-cols-3 gap-1 sm:gap-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
         {posts.map((post) => {
           const media = getPostMedia(post);
 
@@ -173,7 +173,7 @@ const CollectionDetailPage = () => {
                 type="button"
                 onClick={() => handleRemovePost(post._id)}
                 disabled={actionLoading}
-                className="absolute right-2 top-2 hidden rounded-full bg-red-600 p-2 text-white group-hover:block disabled:opacity-60"
+                className="absolute right-2 top-2 block rounded-full bg-red-600 p-2 text-white disabled:opacity-60 sm:hidden sm:group-hover:block"
                 aria-label="Remove post from collection"
               >
                 <Trash2 size={16} />

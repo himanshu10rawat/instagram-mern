@@ -64,7 +64,7 @@ const AdminReportsPage = () => {
   };
 
   return (
-    <section className="mx-auto max-w-6xl space-y-6">
+    <section className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
@@ -76,11 +76,11 @@ const AdminReportsPage = () => {
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
           <select
             value={status}
             onChange={(event) => setStatus(event.target.value)}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+            className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold dark:border-slate-700 dark:bg-slate-950 dark:text-white"
           >
             <option value="pending">Pending</option>
             <option value="resolved">Resolved</option>
@@ -91,7 +91,7 @@ const AdminReportsPage = () => {
             type="button"
             onClick={handleRefresh}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold disabled:opacity-60 dark:border-slate-700"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold disabled:opacity-60 dark:border-slate-700"
           >
             <RefreshCcw size={16} />
             Refresh
@@ -127,7 +127,7 @@ const AdminReportsPage = () => {
         {reports.map((report) => (
           <article
             key={report._id}
-            className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950"
+            className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-5"
           >
             <div className="flex flex-col justify-between gap-4 sm:flex-row">
               <div>
@@ -154,12 +154,12 @@ const AdminReportsPage = () => {
                 </p>
               </div>
 
-              <div className="flex shrink-0 flex-wrap gap-3">
+              <div className="grid shrink-0 gap-2 sm:flex sm:flex-wrap sm:gap-3">
                 <button
                   type="button"
                   onClick={() => dispatch(resolveAdminReport(report._id))}
                   disabled={actionLoading}
-                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-600 disabled:opacity-60"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-600 disabled:opacity-60"
                 >
                   <CheckCircle2 size={16} />
                   Resolve
@@ -170,7 +170,7 @@ const AdminReportsPage = () => {
                     type="button"
                     onClick={() => handleDeleteTarget(report)}
                     disabled={actionLoading}
-                    className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                   >
                     <Trash2 size={16} />
                     Remove Content
@@ -181,7 +181,7 @@ const AdminReportsPage = () => {
                   type="button"
                   onClick={() => dispatch(deleteAdminReport(report._id))}
                   disabled={actionLoading}
-                  className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 disabled:opacity-60"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 disabled:opacity-60"
                 >
                   <Trash2 size={16} />
                   Delete Report

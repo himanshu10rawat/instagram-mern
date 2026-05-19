@@ -12,6 +12,7 @@ import {
   getPostComments,
   getUserPosts,
   likePost,
+  removeTagFromPost,
   savePost,
   unarchivePost,
   unlikePost,
@@ -25,7 +26,6 @@ import { commentSchema, createPostSchema, updatePostSchema } from "../validators
 import { rateLimiter } from "../middlewares/rateLimiter.middleware.js";
 import { moderateBodyText } from "../middlewares/moderation.middleware.js";
 import { blockDuplicateContent } from "../middlewares/duplicateContent.middleware.js";
-import { removeTagFromPost } from "../controllers/post.controller.js";
 
 const router = Router();
 

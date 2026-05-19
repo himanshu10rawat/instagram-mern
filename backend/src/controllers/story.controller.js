@@ -11,14 +11,34 @@ import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import createNotification from "../utils/createNotification.js";
 import { addMediaJob } from "../queues/media.queue.js";
 import trackAnalytics from "../utils/trackAnalytics.js";
+import { getUserSocket } from "../socket/onlineUsers.js";
+import { getIO } from "../socket/socket.js";
+import Conversation from "../models/conversation.model.js";
+import Message from "../models/message.model.js";
 import {
   getOptimizedImageUrl,
   getOptimizedVideoUrl,
   getVideoThumbnailUrl,
 } from "../utils/cloudinaryUrl.js";
 import { extractMentions } from "../utils/socialParser.js";
+import { buildRealtimeMessagePayload } from "../utils/messageRealtime.js";
 
 const userPublicFields = "username fullName avatar isVerified isPrivate followers closeFriends";
+const messageUserPublicFields = "username fullName avatar isVerified";
+
+const messagePopulate = [
+  {
+    path: "sender",
+    select: messageUserPublicFields,
+  },
+  {
+    path: "shared.story",
+    populate: {
+      path: "author",
+      select: messageUserPublicFields,
+    },
+  },
+];
 
 const validateObjectId = (id, message = "Invalid id") => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -61,6 +81,40 @@ const canViewStory = (story, storyAuthor, currentUserId) => {
   }
 
   return canViewAuthorStories(storyAuthor, currentUserId);
+};
+
+const findOrCreateConversation = async (currentUserId, receiverId) => {
+  const existingConversations = await Conversation.find({
+    isGroup: false,
+    participants: {
+      $all: [currentUserId, receiverId],
+      $size: 2,
+    },
+  }).sort({ updatedAt: -1 });
+
+  let conversation =
+    existingConversations.find((item) => item.lastMessage) || existingConversations[0];
+
+  if (!conversation) {
+    const receiver = await User.findById(receiverId).select("followers privacySettings");
+
+    const isReceiverFollowingSender = (receiver.followers || []).some(
+      (followerId) => followerId.toString() === currentUserId.toString(),
+    );
+
+    const allowMessagesFrom = receiver.privacySettings?.allowMessagesFrom || "everyone";
+    const shouldRequest =
+      allowMessagesFrom === "none" ||
+      (allowMessagesFrom === "followers" && !isReceiverFollowingSender);
+
+    conversation = await Conversation.create({
+      participants: [currentUserId, receiverId],
+      status: shouldRequest ? "requested" : "accepted",
+      requestedBy: shouldRequest ? currentUserId : null,
+    });
+  }
+
+  return conversation;
 };
 
 export const createStory = asyncHandler(async (req, res) => {
@@ -388,16 +442,44 @@ export const replyToStory = asyncHandler(async (req, res) => {
 
   await story.save();
 
-  await createNotification({
+  const conversation = await findOrCreateConversation(req.user._id, story.author._id);
+
+  const message = await Message.create({
+    conversation: conversation._id,
     sender: req.user._id,
-    receiver: story.author._id,
-    type: "story_reply",
-    story: story._id,
+    text,
+    messageType: "shared_story",
+    shared: {
+      story: story._id,
+    },
+    seenBy: [
+      {
+        user: req.user._id,
+        seenAt: new Date(),
+      },
+    ],
   });
+
+  conversation.lastMessage = message._id;
+  conversation.deletedFor = [];
+  await conversation.save();
+
+  const populatedMessage = await Message.findById(message._id).populate(messagePopulate);
+  const receiverSocketId = await getUserSocket(story.author._id);
+
+  if (receiverSocketId) {
+    const realtimeMessage = await buildRealtimeMessagePayload(
+      populatedMessage,
+      conversation._id,
+      1,
+    );
+
+    getIO().to(receiverSocketId).emit("receive_message", realtimeMessage);
+  }
 
   res
     .status(HTTP_STATUS.CREATED)
-    .json(new ApiResponse(HTTP_STATUS.CREATED, null, "Story reply sent successfully"));
+    .json(new ApiResponse(HTTP_STATUS.CREATED, populatedMessage, "Story reply sent successfully"));
 });
 
 export const getStoryReplies = asyncHandler(async (req, res) => {

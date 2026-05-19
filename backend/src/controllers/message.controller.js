@@ -15,7 +15,7 @@ import {
   getOptimizedVideoUrl,
   getVideoThumbnailUrl,
 } from "../utils/cloudinaryUrl.js";
-import createNotification from "../utils/createNotification.js";
+import { buildRealtimeMessagePayload } from "../utils/messageRealtime.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 
@@ -135,6 +135,41 @@ const dedupeConversations = (conversations = []) => {
   });
 
   return uniqueConversations;
+};
+
+const addUnreadCounts = async (conversations = [], currentUserId) => {
+  const conversationIds = conversations.map((conversation) => conversation._id);
+
+  if (conversationIds.length === 0) {
+    return [];
+  }
+
+  const unreadCounts = await Message.aggregate([
+    {
+      $match: {
+        conversation: { $in: conversationIds },
+        sender: { $ne: currentUserId },
+        "seenBy.user": { $ne: currentUserId },
+        deletedFor: { $ne: currentUserId },
+        isDeletedForEveryone: false,
+      },
+    },
+    {
+      $group: {
+        _id: "$conversation",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const countByConversationId = new Map(
+    unreadCounts.map((item) => [item._id.toString(), item.count]),
+  );
+
+  return conversations.map((conversation) => ({
+    ...(conversation.toObject ? conversation.toObject() : conversation),
+    unreadCount: countByConversationId.get(conversation._id.toString()) || 0,
+  }));
 };
 
 const findOrCreateConversation = async (currentUserId, receiverId) => {
@@ -267,15 +302,14 @@ export const sendMessage = asyncHandler(async (req, res) => {
   const receiverSocketId = await getUserSocket(receiverId);
 
   if (receiverSocketId) {
-    io.to(receiverSocketId).emit("receive_message", populatedMessage);
-  }
+    const realtimeMessage = await buildRealtimeMessagePayload(
+      populatedMessage,
+      conversation._id,
+      1,
+    );
 
-  await createNotification({
-    sender: req.user._id,
-    receiver: receiverId,
-    type: "message",
-    message: message._id,
-  });
+    io.to(receiverSocketId).emit("receive_message", realtimeMessage);
+  }
 
   return res
     .status(HTTP_STATUS.CREATED)
@@ -300,12 +334,17 @@ export const getConversations = asyncHandler(async (req, res) => {
     })
     .sort({ updatedAt: -1 });
 
+  const conversationsWithUnreadCounts = await addUnreadCounts(
+    dedupeConversations(conversations),
+    req.user._id,
+  );
+
   return res
     .status(HTTP_STATUS.OK)
     .json(
       new ApiResponse(
         HTTP_STATUS.OK,
-        dedupeConversations(conversations),
+        conversationsWithUnreadCounts,
         "Conversations fetched successfully",
       ),
     );
@@ -694,15 +733,14 @@ export const forwardMessage = asyncHandler(async (req, res) => {
   const receiverSocketId = await getUserSocket(receiverId);
 
   if (receiverSocketId) {
-    getIO().to(receiverSocketId).emit("receive_message", populatedMessage);
-  }
+    const realtimeMessage = await buildRealtimeMessagePayload(
+      populatedMessage,
+      conversation._id,
+      1,
+    );
 
-  await createNotification({
-    sender: req.user._id,
-    receiver: receiverId,
-    type: "message",
-    message: forwardedMessage._id,
-  });
+    getIO().to(receiverSocketId).emit("receive_message", realtimeMessage);
+  }
 
   return res
     .status(HTTP_STATUS.CREATED)
@@ -730,12 +768,17 @@ export const getMessageRequests = asyncHandler(async (req, res) => {
     })
     .sort({ updatedAt: -1 });
 
+  const requestsWithUnreadCounts = await addUnreadCounts(
+    dedupeConversations(conversations),
+    req.user._id,
+  );
+
   return res
     .status(HTTP_STATUS.OK)
     .json(
       new ApiResponse(
         HTTP_STATUS.OK,
-        dedupeConversations(conversations),
+        requestsWithUnreadCounts,
         "Message requests fetched successfully",
       ),
     );

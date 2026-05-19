@@ -8,6 +8,7 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -38,6 +39,30 @@ textarea {
 
 button {
   cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font-size: 16px !important;
+}
+
+@media (min-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 0.875rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .mobile-edge {
+    border-left-width: 0;
+    border-radius: 0;
+    border-right-width: 0;
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+  }
 }
 
 @keyframes skeleton-shimmer {

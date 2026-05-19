@@ -99,7 +99,7 @@ const ReelCard = ({ reel }) => {
   };
 
   return (
-    <article className="relative mx-auto flex h-[calc(100dvh_-_7rem)] max-h-205 w-full max-w-md snap-start overflow-hidden rounded-2xl bg-black text-white sm:h-[calc(100dvh_-_6rem)] sm:min-h-155">
+    <article className="relative mx-auto flex h-[calc(100dvh_-_10.5rem)] min-h-120 w-full max-w-md snap-start overflow-hidden rounded-xl bg-black text-white md:h-[calc(100dvh_-_3rem)] md:max-h-205 md:min-h-155 md:rounded-2xl">
       <button
         type="button"
         onClick={handleVideoClick}

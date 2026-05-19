@@ -15,7 +15,7 @@ export const FeedSkeleton = ({ count = 2 }) => {
       {getItems(count).map((_, index) => (
         <article
           key={index}
-          className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950"
+          className="mobile-edge overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl"
         >
           <div className="flex items-center gap-3 p-4">
             <SkeletonBlock className="h-11 w-11 rounded-full" />
@@ -43,7 +43,7 @@ export const FeedSkeleton = ({ count = 2 }) => {
 
 export const GridSkeleton = ({ count = 9, className = "" }) => {
   return (
-    <div className={`grid grid-cols-3 gap-1 sm:gap-4 ${className}`}>
+    <div className={`grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 ${className}`}>
       {getItems(count).map((_, index) => (
         <SkeletonBlock key={index} className="aspect-square rounded-lg" />
       ))}
@@ -72,7 +72,7 @@ export const ListSkeleton = ({ count = 5, withActions = false }) => {
 
 export const StoryTraySkeleton = ({ count = 6 }) => {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="mobile-edge overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl">
       <div className="flex gap-4">
         {getItems(count).map((_, index) => (
           <div key={index} className="flex shrink-0 flex-col items-center gap-2">
@@ -109,7 +109,7 @@ export const StatGridSkeleton = ({ count = 6 }) => {
       {getItems(count).map((_, index) => (
         <div
           key={index}
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950"
+          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-5"
         >
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-3">
@@ -130,7 +130,7 @@ export const CardListSkeleton = ({ count = 4 }) => {
       {getItems(count).map((_, index) => (
         <div
           key={index}
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950"
+          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-5"
         >
           <div className="flex flex-col justify-between gap-4 sm:flex-row">
             <div className="min-w-0 flex-1 space-y-3">
@@ -183,25 +183,24 @@ export const TableRowsSkeleton = ({ count = 5 }) => {
 export const ProfilePageSkeleton = () => {
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <SkeletonBlock className="h-40 rounded-none sm:h-56" />
-        <div className="p-5">
-          <div className="-mt-16 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex items-end gap-4">
-              <SkeletonBlock className="h-28 w-28 rounded-full border-4 border-white dark:border-slate-950" />
-              <div className="mb-2 space-y-2">
-                <SkeletonBlock className="h-6 w-40" />
-                <SkeletonBlock className="h-4 w-28" />
-              </div>
-            </div>
-            <SkeletonBlock className="h-10 w-32 rounded-xl" />
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+          <SkeletonBlock className="h-16 w-16 rounded-full" />
+
+          <div className="w-full flex-1 space-y-3">
+            <SkeletonBlock className="mx-auto h-6 w-40 sm:mx-0" />
+            <SkeletonBlock className="mx-auto h-4 w-28 sm:mx-0" />
+            <SkeletonBlock className="h-4 w-full" />
+            <SkeletonBlock className="h-4 w-2/3" />
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <SkeletonBlock className="h-12 rounded-xl" />
-            <SkeletonBlock className="h-12 rounded-xl" />
-            <SkeletonBlock className="h-12 rounded-xl" />
-          </div>
+          <SkeletonBlock className="h-11 w-full rounded-xl sm:w-32" />
+        </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          <SkeletonBlock className="h-12 rounded-xl" />
+          <SkeletonBlock className="h-12 rounded-xl" />
+          <SkeletonBlock className="h-12 rounded-xl" />
         </div>
       </section>
 

@@ -159,26 +159,50 @@ export const shareToMessage = createAsyncThunk(
   },
 );
 
+const normalizeId = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (value._id) return normalizeId(value._id);
+  if (value.$oid) return String(value.$oid);
+
+  if (
+    typeof value.toString === "function" &&
+    value.toString !== Object.prototype.toString
+  ) {
+    return value.toString();
+  }
+
+  return "";
+};
+
+const sameId = (first, second) => {
+  const firstId = normalizeId(first);
+  const secondId = normalizeId(second);
+
+  return Boolean(firstId && secondId && firstId === secondId);
+};
+
 const upsertMessage = (messages, incomingMessage) => {
   const exists = messages.some(
-    (message) => message._id === incomingMessage._id,
+    (message) => sameId(message._id, incomingMessage._id),
   );
 
   if (exists) {
     return messages.map((message) =>
-      message._id === incomingMessage._id ? incomingMessage : message,
+      sameId(message._id, incomingMessage._id) ? incomingMessage : message,
     );
   }
 
   return [...messages, incomingMessage];
 };
 
-const getId = (value) => (typeof value === "string" ? value : value?._id);
+const getId = normalizeId;
 
 const getConversationKey = (conversation) => {
   if (!conversation) return "";
 
-  if (conversation.isGroup) return conversation._id || "";
+  if (conversation.isGroup) return normalizeId(conversation._id);
 
   const participantIds = (conversation.participants || [])
     .map(getId)
@@ -187,7 +211,7 @@ const getConversationKey = (conversation) => {
 
   return participantIds.length > 1
     ? participantIds.join(":")
-    : conversation._id || "";
+    : normalizeId(conversation._id);
 };
 
 const getConversationTime = (conversation) => {
@@ -215,6 +239,24 @@ const mergeConversations = (base, incoming) => ({
     : base?.participants,
   lastMessage: incoming?.lastMessage || base?.lastMessage || null,
 });
+
+const getUnreadCount = (conversation) =>
+  Math.max(Number(conversation?.unreadCount) || 0, 0);
+
+const getConversationIdFromMessage = (message) =>
+  normalizeId(message?.conversation) || normalizeId(message?.conversationDetails);
+
+const recalculateUnreadCounts = (state) => {
+  state.unreadInboxCount = state.conversations.reduce(
+    (total, conversation) => total + getUnreadCount(conversation),
+    0,
+  );
+  state.unreadRequestCount = state.requests.reduce(
+    (total, conversation) => total + getUnreadCount(conversation),
+    0,
+  );
+  state.unreadCount = state.unreadInboxCount + state.unreadRequestCount;
+};
 
 const dedupeConversations = (conversations = []) => {
   const uniqueConversations = [];
@@ -248,14 +290,14 @@ const upsertConversation = (
   incomingConversation,
   moveToTop = false,
 ) => {
-  if (!incomingConversation?._id) {
+  if (!normalizeId(incomingConversation?._id)) {
     return dedupeConversations(conversations);
   }
 
   const incomingKey = getConversationKey(incomingConversation);
   const existingIndex = conversations.findIndex(
     (conversation) =>
-      conversation?._id === incomingConversation._id ||
+      sameId(conversation?._id, incomingConversation._id) ||
       (incomingKey && getConversationKey(conversation) === incomingKey),
   );
 
@@ -289,6 +331,9 @@ const initialState = {
   requests: [],
   onlineUsers: [],
   typingUsers: {},
+  unreadCount: 0,
+  unreadInboxCount: 0,
+  unreadRequestCount: 0,
   page: 1,
   hasMore: true,
   loading: false,
@@ -302,7 +347,7 @@ const messageSlice = createSlice({
   initialState,
   reducers: {
     setActiveConversation: (state, action) => {
-      if (state.activeConversation?._id === action.payload?._id) {
+      if (sameId(state.activeConversation?._id, action.payload?._id)) {
         state.activeConversation = action.payload;
         state.error = null;
         return;
@@ -317,38 +362,73 @@ const messageSlice = createSlice({
 
     addRealtimeMessage: (state, action) => {
       const message = action.payload;
-
-      if (
-        state.activeConversation?._id &&
-        message.conversation === state.activeConversation._id
-      ) {
-        state.messages = upsertMessage(state.messages, message);
-      }
-
-      state.conversations = state.conversations.map((conversation) =>
-        conversation._id === message.conversation
-          ? { ...conversation, lastMessage: message }
-          : conversation,
+      const conversationId = getConversationIdFromMessage(message);
+      const isActiveConversation = sameId(
+        conversationId,
+        state.activeConversation?._id,
       );
-
-      const updatedConversation =
+      const existingConversation =
         state.conversations.find(
-          (conversation) => conversation._id === message.conversation,
+          (conversation) => sameId(conversation._id, conversationId),
         ) ||
-        (state.activeConversation?._id === message.conversation
+        state.requests.find((conversation) =>
+          sameId(conversation._id, conversationId),
+        );
+      const incomingConversation = message.conversationDetails ||
+        existingConversation ||
+        (isActiveConversation
           ? { ...state.activeConversation, lastMessage: message }
           : null);
 
-      state.conversations = updatedConversation
-        ? upsertConversation(state.conversations, updatedConversation, true)
-        : dedupeConversations(state.conversations);
+      if (isActiveConversation) {
+        state.messages = upsertMessage(state.messages, message);
+      }
+
+      if (incomingConversation) {
+        const existingUnreadCount = getUnreadCount(existingConversation);
+        const incomingUnreadCount = getUnreadCount(incomingConversation);
+        const nextUnreadCount = isActiveConversation
+          ? 0
+          : Math.max(incomingUnreadCount, existingUnreadCount + 1);
+        const updatedConversation = {
+          ...incomingConversation,
+          lastMessage: message,
+          unreadCount: nextUnreadCount,
+        };
+
+        if (updatedConversation.status === "requested") {
+          state.requests = upsertConversation(
+            state.requests,
+            updatedConversation,
+            true,
+          );
+        } else {
+          state.conversations = upsertConversation(
+            state.conversations,
+            updatedConversation,
+            true,
+          );
+        }
+
+        if (isActiveConversation) {
+          state.activeConversation = {
+            ...state.activeConversation,
+            lastMessage: message,
+            unreadCount: 0,
+          };
+        }
+      } else {
+        state.conversations = dedupeConversations(state.conversations);
+      }
+
+      recalculateUnreadCounts(state);
     },
 
     updateRealtimeMessage: (state, action) => {
       const updatedMessage = action.payload;
 
       state.messages = state.messages.map((message) =>
-        message._id === updatedMessage._id ? updatedMessage : message,
+        sameId(message._id, updatedMessage._id) ? updatedMessage : message,
       );
     },
 
@@ -382,6 +462,7 @@ const messageSlice = createSlice({
       .addCase(fetchConversations.fulfilled, (state, action) => {
         state.loading = false;
         state.conversations = dedupeConversations(action.payload || []);
+        recalculateUnreadCounts(state);
       })
       .addCase(fetchConversations.rejected, (state, action) => {
         state.loading = false;
@@ -419,12 +500,13 @@ const messageSlice = createSlice({
       .addCase(sendMessage.fulfilled, (state, action) => {
         state.sending = false;
         state.messages = upsertMessage(state.messages, action.payload);
+        const conversationId = getConversationIdFromMessage(action.payload);
 
         const updatedConversation =
           state.conversations.find(
-            (conversation) => conversation._id === action.payload.conversation,
+            (conversation) => sameId(conversation._id, conversationId),
           ) ||
-          (state.activeConversation?._id === action.payload.conversation
+          (sameId(state.activeConversation?._id, conversationId)
             ? { ...state.activeConversation, lastMessage: action.payload }
             : null);
 
@@ -434,59 +516,91 @@ const messageSlice = createSlice({
             {
               ...updatedConversation,
               lastMessage: action.payload,
+              unreadCount: 0,
             },
             true,
           );
 
-          if (state.activeConversation?._id === action.payload.conversation) {
+          if (sameId(state.activeConversation?._id, conversationId)) {
             state.activeConversation = {
               ...state.activeConversation,
               lastMessage: action.payload,
+              unreadCount: 0,
             };
           }
         } else {
           state.conversations = dedupeConversations(state.conversations);
         }
+
+        recalculateUnreadCounts(state);
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.sending = false;
         state.error = action.payload;
       })
 
+      .addCase(markConversationSeen.fulfilled, (state, action) => {
+        const conversationId = action.payload;
+
+        state.conversations = state.conversations.map((conversation) =>
+          sameId(conversation._id, conversationId)
+            ? { ...conversation, unreadCount: 0 }
+            : conversation,
+        );
+        state.requests = state.requests.map((conversation) =>
+          sameId(conversation._id, conversationId)
+            ? { ...conversation, unreadCount: 0 }
+            : conversation,
+        );
+
+        if (sameId(state.activeConversation?._id, conversationId)) {
+          state.activeConversation = {
+            ...state.activeConversation,
+            unreadCount: 0,
+          };
+        }
+
+        recalculateUnreadCounts(state);
+      })
+
       .addCase(reactMessage.fulfilled, (state, action) => {
         state.messages = state.messages.map((message) =>
-          message._id === action.payload._id ? action.payload : message,
+          sameId(message._id, action.payload._id) ? action.payload : message,
         );
       })
 
       .addCase(editMessage.fulfilled, (state, action) => {
         state.messages = state.messages.map((message) =>
-          message._id === action.payload._id ? action.payload : message,
+          sameId(message._id, action.payload._id) ? action.payload : message,
         );
       })
 
       .addCase(fetchMessageRequests.fulfilled, (state, action) => {
         state.requests = action.payload || [];
+        recalculateUnreadCounts(state);
       })
 
       .addCase(acceptMessageRequest.fulfilled, (state, action) => {
         const acceptedConversation = action.payload;
 
         state.requests = state.requests.filter(
-          (request) => request._id !== acceptedConversation._id,
+          (request) => !sameId(request._id, acceptedConversation._id),
         );
 
         state.conversations = upsertConversation(
           state.conversations,
-          acceptedConversation,
+          { ...acceptedConversation, unreadCount: 0 },
           true,
         );
+
+        recalculateUnreadCounts(state);
       })
 
       .addCase(rejectMessageRequest.fulfilled, (state, action) => {
         state.requests = state.requests.filter(
-          (request) => request._id !== action.payload,
+          (request) => !sameId(request._id, action.payload),
         );
+        recalculateUnreadCounts(state);
       })
 
       .addCase(startConversation.pending, (state) => {
@@ -501,14 +615,15 @@ const messageSlice = createSlice({
         if (conversation.status === "accepted") {
           state.conversations = upsertConversation(
             state.conversations,
-            conversation,
+            { ...conversation, unreadCount: 0 },
             true,
           );
         } else {
           state.conversations = dedupeConversations(state.conversations);
         }
 
-        state.activeConversation = conversation;
+        state.activeConversation = { ...conversation, unreadCount: 0 };
+        recalculateUnreadCounts(state);
       })
       .addCase(startConversation.rejected, (state, action) => {
         state.sending = false;
@@ -522,19 +637,20 @@ const messageSlice = createSlice({
         state.sending = false;
 
         const message = action.payload;
+        const conversationId = getConversationIdFromMessage(message);
 
         if (
           state.activeConversation?._id &&
-          message.conversation === state.activeConversation._id
+          sameId(conversationId, state.activeConversation._id)
         ) {
           state.messages = upsertMessage(state.messages, message);
         }
 
         const updatedConversation =
           state.conversations.find(
-            (conversation) => conversation._id === message.conversation,
+            (conversation) => sameId(conversation._id, conversationId),
           ) ||
-          (state.activeConversation?._id === message.conversation
+          (sameId(state.activeConversation?._id, conversationId)
             ? { ...state.activeConversation, lastMessage: message }
             : null);
 
@@ -544,19 +660,23 @@ const messageSlice = createSlice({
             {
               ...updatedConversation,
               lastMessage: message,
+              unreadCount: 0,
             },
             true,
           );
 
-          if (state.activeConversation?._id === message.conversation) {
+          if (sameId(state.activeConversation?._id, conversationId)) {
             state.activeConversation = {
               ...state.activeConversation,
               lastMessage: message,
+              unreadCount: 0,
             };
           }
         } else {
           state.conversations = dedupeConversations(state.conversations);
         }
+
+        recalculateUnreadCounts(state);
       })
       .addCase(shareToMessage.rejected, (state, action) => {
         state.sending = false;

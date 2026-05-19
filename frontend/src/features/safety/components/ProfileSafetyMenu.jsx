@@ -65,7 +65,7 @@ const ProfileSafetyMenu = ({ profile }) => {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="rounded-xl border border-slate-300 p-2 text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
+        className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-slate-300 p-2 text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900 sm:w-auto"
         aria-label="Profile safety actions"
       >
         <MoreHorizontal size={20} />

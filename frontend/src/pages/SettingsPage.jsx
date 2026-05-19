@@ -96,7 +96,7 @@ const PrivacySettingsForm = ({ initialPrivacyForm, updating }) => {
   return (
     <form
       onSubmit={handlePrivacySubmit}
-      className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950"
+      className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6"
     >
       <div className="mb-5 flex items-center gap-3">
         <Shield size={22} />
@@ -223,7 +223,7 @@ const PasswordSettingsForm = ({ authLoading }) => {
   return (
     <form
       onSubmit={handlePasswordSubmit}
-      className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950"
+      className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6"
     >
       <div className="mb-5 flex items-center gap-3">
         <Lock size={22} />
@@ -281,7 +281,7 @@ const PasswordSettingsForm = ({ authLoading }) => {
   );
 };
 
-<div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+<div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
   <div className="mb-4 flex items-center gap-3">
     <MonitorSmartphone size={22} />
 
@@ -307,7 +307,7 @@ const ThemeSettings = ({ theme }) => {
   const themes = ["system", "light", "dark"];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
       <div className="mb-5 flex items-center gap-3">
         <Moon size={22} />
         <h2 className="text-lg font-bold text-slate-950 dark:text-white">
@@ -351,7 +351,7 @@ const DangerZone = ({ updating }) => {
   };
 
   return (
-    <div className="rounded-2xl border border-red-200 bg-white p-6 dark:bg-slate-950">
+    <div className="rounded-xl border border-red-200 bg-white p-4 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
       <div className="mb-5 flex items-center gap-3 text-red-600">
         <Trash2 size={22} />
         <h2 className="text-lg font-bold">Danger Zone</h2>
@@ -391,7 +391,7 @@ const DangerZone = ({ updating }) => {
           type="button"
           onClick={handleRemove}
           disabled={confirmText !== "DELETE" || !password || updating}
-          className="flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50 sm:w-auto"
         >
           <Trash2 size={18} />
           Delete Account
@@ -444,7 +444,7 @@ const SettingsPage = () => {
           {Array.from({ length: 4 }).map((_, index) => (
             <div
               key={index}
-              className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950"
+              className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6"
             >
               <div className="mb-5 flex items-center gap-3">
                 <SkeletonBlock className="h-10 w-10 rounded-full" />
@@ -492,7 +492,7 @@ const SettingsPage = () => {
 
       <PasswordSettingsForm authLoading={authLoading} />
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
         <div className="mb-4 flex items-center gap-3">
           <ShieldAlert size={22} />
 
@@ -507,13 +507,13 @@ const SettingsPage = () => {
 
         <Link
           to="/settings/safety"
-          className="mt-4 inline-flex rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+          className="mt-4 inline-flex min-h-12 items-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
         >
           Manage Safety
         </Link>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
         <div className="mb-4 flex items-center gap-3">
           <BarChart3 size={22} />
 
@@ -528,7 +528,7 @@ const SettingsPage = () => {
 
         <Link
           to="/analytics"
-          className="mt-4 inline-flex rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+          className="mt-4 inline-flex min-h-12 items-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
         >
           View Analytics
         </Link>

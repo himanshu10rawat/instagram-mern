@@ -20,7 +20,7 @@ const ProfileVisitsChart = ({ visits = [] }) => {
 
   if (!visits.length) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+      <div className="mobile-edge rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
         <h2 className="text-lg font-bold text-slate-950 dark:text-white">
           Profile Visits
         </h2>
@@ -38,12 +38,12 @@ const ProfileVisitsChart = ({ visits = [] }) => {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+    <div className="mobile-edge rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
       <h2 className="text-lg font-bold text-slate-950 dark:text-white">
         Profile Visits
       </h2>
 
-      <div className="mt-6 flex h-64 items-end gap-2 overflow-x-auto">
+      <div className="mt-6 flex h-56 items-end gap-2 overflow-x-auto sm:h-64">
         {visits.map((item) => {
           const height = Math.max((item.visits / maxVisits) * 100, 8);
 

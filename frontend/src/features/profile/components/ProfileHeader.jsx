@@ -75,20 +75,10 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-      <div className="h-48 bg-slate-100 dark:bg-slate-900">
-        {profile?.coverImage?.url || profile?.cover?.url ? (
-          <img
-            src={profile.coverImage?.url || profile.cover?.url}
-            alt="Cover"
-            className="h-full w-full object-cover"
-          />
-        ) : null}
-      </div>
-
-      <div className="px-6 pb-6">
-        <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="-mt-14">
+    <div className="mobile-edge rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
+          <div className="shrink-0">
             <Avatar
               src={profile?.avatar?.url}
               alt={profile?.username}
@@ -97,143 +87,145 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
             />
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            {isMyProfile ? (
-              <>
-                <Link
-                  to="/profile/me/edit"
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
-                >
-                  Edit Profile
-                </Link>
+          <div className="min-w-0 flex-1">
+            <h1 className="break-words text-xl font-bold text-slate-950 dark:text-white sm:text-2xl">
+              {profile?.fullName || "User"}
+            </h1>
 
-                <Link
-                  to="/settings"
-                  className="rounded-xl border border-slate-300 p-2 text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
-                  aria-label="Settings"
-                >
-                  <Settings size={20} />
-                </Link>
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400 sm:justify-start">
+              <span>@{profile?.username}</span>
 
-                <button
-                  type="button"
-                  onClick={() => setShowShareModal(true)}
-                  className="rounded-xl border border-slate-300 p-2 text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
-                  aria-label="Share profile"
-                >
-                  <Share2 size={20} />
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={handleFollowToggle}
-                  disabled={actionLoading || hasRequested}
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70 ${
-                    isFollowing || hasRequested
-                      ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-900"
-                      : "bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950"
-                  }`}
-                >
-                  {getFollowButtonText()}
-                </button>
+              {profile?.isPrivate ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                  <Lock size={12} />
+                  Private
+                </span>
+              ) : null}
+            </div>
 
-                <button
-                  type="button"
-                  onClick={handleMessage}
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
-                >
-                  Message
-                </button>
+            {profile?.bio ? (
+              <p className="mt-3 max-w-2xl break-words text-sm text-slate-700 dark:text-slate-300">
+                {profile.bio}
+              </p>
+            ) : null}
 
-                <ProfileSafetyMenu profile={profile} />
-
-                <button
-                  type="button"
-                  onClick={() => setShowShareModal(true)}
-                  className="rounded-xl border border-slate-300 p-2 text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
-                  aria-label="Share profile"
+            <div className="mt-4 flex flex-col items-center gap-2 text-sm text-slate-600 dark:text-slate-400 sm:flex-row sm:flex-wrap sm:items-start sm:gap-4">
+              {profile?.website ? (
+                <a
+                  href={profile.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex min-w-0 max-w-full items-center gap-1 break-all font-medium text-blue-600"
                 >
-                  <Share2 size={20} />
-                </button>
-              </>
-            )}
+                  <Globe size={16} />
+                  {profile.website}
+                </a>
+              ) : null}
+
+              {profile?.createdAt ? (
+                <span className="flex items-center gap-1">
+                  <Calendar size={16} />
+                  Joined {new Date(profile.createdAt).toLocaleDateString()}
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
 
-        <div className="mt-4">
-          <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
-            {profile?.fullName || "User"}
-          </h1>
-
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-            <span>@{profile?.username}</span>
-
-            {profile?.isPrivate ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                <Lock size={12} />
-                Private
-              </span>
-            ) : null}
-          </div>
-
-          {profile?.bio ? (
-            <p className="mt-3 max-w-2xl text-sm text-slate-700 dark:text-slate-300">
-              {profile.bio}
-            </p>
-          ) : null}
-
-          <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-600 dark:text-slate-400">
-            {profile?.website ? (
-              <a
-                href={profile.website}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1 font-medium text-blue-600"
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:justify-end">
+          {isMyProfile ? (
+            <>
+              <Link
+                to="/profile/me/edit"
+                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
               >
-                <Globe size={16} />
-                {profile.website}
-              </a>
-            ) : null}
+                Edit Profile
+              </Link>
 
-            {profile?.createdAt ? (
-              <span className="flex items-center gap-1">
-                <Calendar size={16} />
-                Joined {new Date(profile.createdAt).toLocaleDateString()}
-              </span>
-            ) : null}
-          </div>
+              <Link
+                to="/settings"
+                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 p-2 text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
+                aria-label="Settings"
+              >
+                <Settings size={20} />
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setShowShareModal(true)}
+                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 p-2 text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
+                aria-label="Share profile"
+              >
+                <Share2 size={20} />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleFollowToggle}
+                disabled={actionLoading || hasRequested}
+                className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70 ${
+                  isFollowing || hasRequested
+                    ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-900"
+                    : "bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950"
+                }`}
+              >
+                {getFollowButtonText()}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleMessage}
+                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
+              >
+                Message
+              </button>
+
+              <ProfileSafetyMenu profile={profile} />
+
+              <button
+                type="button"
+                onClick={() => setShowShareModal(true)}
+                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 p-2 text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
+                aria-label="Share profile"
+              >
+                <Share2 size={20} />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-3 overflow-hidden rounded-xl border border-slate-200 text-center dark:border-slate-800">
+        <div className="p-3 sm:p-4">
+          <p className="font-bold">{postsCount}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+            Posts
+          </p>
         </div>
 
-        <div className="mt-6 grid grid-cols-3 overflow-hidden rounded-2xl border border-slate-200 text-center dark:border-slate-800">
-          <div className="p-4">
-            <p className="font-bold">{postsCount}</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Posts</p>
-          </div>
+        <button
+          type="button"
+          onClick={() => setFollowListType("followers")}
+          className="border-x border-slate-200 p-3 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 sm:p-4"
+        >
+          <p className="font-bold">{followersCount}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+            Followers
+          </p>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => setFollowListType("followers")}
-            className="border-x border-slate-200 p-4 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900"
-          >
-            <p className="font-bold">{followersCount}</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Followers
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFollowListType("following")}
-            className="p-4 transition hover:bg-slate-50 dark:hover:bg-slate-900"
-          >
-            <p className="font-bold">{followingCount}</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Following
-            </p>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setFollowListType("following")}
+          className="p-3 transition hover:bg-slate-50 dark:hover:bg-slate-900 sm:p-4"
+        >
+          <p className="font-bold">{followingCount}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+            Following
+          </p>
+        </button>
       </div>
 
       {followListType ? (

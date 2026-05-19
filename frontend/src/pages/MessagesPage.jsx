@@ -12,6 +12,7 @@ import {
   setActiveConversation,
   startConversation,
 } from "../features/messages/messageSlice";
+import useMediaQuery from "../hooks/useMediaQuery";
 
 const getOtherParticipant = (conversation, currentUserId) => {
   return conversation?.participants?.find((participant) => {
@@ -26,6 +27,7 @@ const getOtherParticipant = (conversation, currentUserId) => {
 const MessagesPage = () => {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
+  const isSplitView = useMediaQuery("(min-width: 768px)");
 
   const receiverIdFromQuery = searchParams.get("user");
 
@@ -42,12 +44,35 @@ const MessagesPage = () => {
     loading,
     error,
     sending,
+    unreadInboxCount,
+    unreadRequestCount,
   } = useSelector((state) => state.messages);
 
   useEffect(() => {
     dispatch(fetchConversations());
     dispatch(fetchMessageRequests());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (
+      !isSplitView ||
+      activeConversation ||
+      activeTab !== "inbox" ||
+      receiverIdFromQuery ||
+      conversations.length === 0
+    ) {
+      return;
+    }
+
+    dispatch(setActiveConversation(conversations[0]));
+  }, [
+    activeConversation,
+    activeTab,
+    conversations,
+    dispatch,
+    isSplitView,
+    receiverIdFromQuery,
+  ]);
 
   const existingConversationFromQuery = useMemo(() => {
     if (!receiverIdFromQuery || !currentUserId) {
@@ -113,7 +138,7 @@ const MessagesPage = () => {
   };
 
   return (
-    <section className="flex h-[calc(100dvh_-_7rem)] min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:h-[calc(100dvh_-_3rem)]">
+    <section className="mobile-edge flex h-[calc(100dvh_-_10.5rem)] min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 md:h-[calc(100dvh_-_3rem)] md:rounded-2xl">
       {error ? (
         <div className="shrink-0 border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}
@@ -143,7 +168,14 @@ const MessagesPage = () => {
                     : "text-slate-500 dark:text-slate-400"
                 }`}
               >
-                Inbox
+                <span className="inline-flex items-center gap-2">
+                  Inbox
+                  {unreadInboxCount > 0 ? (
+                    <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                      {unreadInboxCount > 99 ? "99+" : unreadInboxCount}
+                    </span>
+                  ) : null}
+                </span>
               </button>
 
               <button
@@ -155,7 +187,14 @@ const MessagesPage = () => {
                     : "text-slate-500 dark:text-slate-400"
                 }`}
               >
-                Requests
+                <span className="inline-flex items-center gap-2">
+                  Requests
+                  {unreadRequestCount > 0 ? (
+                    <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                      {unreadRequestCount > 99 ? "99+" : unreadRequestCount}
+                    </span>
+                  ) : null}
+                </span>
               </button>
             </div>
 

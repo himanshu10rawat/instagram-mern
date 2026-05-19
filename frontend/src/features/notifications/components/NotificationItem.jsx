@@ -39,7 +39,7 @@ const getNotificationLink = (notification) => {
 const NotificationItem = ({ notification, onRead, onDelete }) => {
   return (
     <div
-      className={`flex items-center justify-between gap-4 rounded-2xl border p-4 ${
+      className={`flex items-start justify-between gap-3 rounded-xl border p-3 sm:items-center sm:gap-4 sm:rounded-2xl sm:p-4 ${
         notification.isRead
           ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
           : "border-blue-100 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-950/30"
@@ -52,7 +52,7 @@ const NotificationItem = ({ notification, onRead, onDelete }) => {
             onRead(notification._id);
           }
         }}
-        className="flex flex-1 items-center gap-3"
+        className="flex min-w-0 flex-1 items-center gap-3"
       >
         <Avatar
           src={notification.sender?.avatar?.url}
@@ -60,7 +60,7 @@ const NotificationItem = ({ notification, onRead, onDelete }) => {
           size="md"
         />
 
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-medium text-slate-900 dark:text-white">
             {getNotificationText(notification)}
           </p>
@@ -76,7 +76,7 @@ const NotificationItem = ({ notification, onRead, onDelete }) => {
       <button
         type="button"
         onClick={() => onDelete(notification._id)}
-        className="rounded-xl p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-950/30 dark:hover:text-red-300"
+        className="min-h-11 min-w-11 rounded-xl p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-950/30 dark:hover:text-red-300"
         aria-label="Delete notification"
       >
         <Trash2 size={18} />

@@ -12,7 +12,7 @@ import { getIO } from "../socket/socket.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import createNotification from "../utils/createNotification.js";
+import { buildRealtimeMessagePayload } from "../utils/messageRealtime.js";
 
 const userPublicFields = "username fullName avatar isVerified";
 
@@ -221,15 +221,14 @@ export const shareToUser = asyncHandler(async (req, res) => {
   const receiverSocketId = await getUserSocket(receiverId);
 
   if (receiverSocketId) {
-    getIO().to(receiverSocketId).emit("receive_message", populatedMessage);
-  }
+    const realtimeMessage = await buildRealtimeMessagePayload(
+      populatedMessage,
+      conversation._id,
+      1,
+    );
 
-  await createNotification({
-    sender: req.user._id,
-    receiver: receiverId,
-    type: "message",
-    message: message._id,
-  });
+    getIO().to(receiverSocketId).emit("receive_message", realtimeMessage);
+  }
 
   return res
     .status(HTTP_STATUS.CREATED)

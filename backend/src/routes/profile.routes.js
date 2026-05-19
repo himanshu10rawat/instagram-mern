@@ -5,11 +5,10 @@ import {
   getPublicProfile,
   softDeleteAccount,
   updateAvatar,
-  updateCoverImage,
   updatePrivacySettings,
   updateProfile,
 } from "../controllers/profile.controller.js";
-import { isAuthenticated } from "../middlewares/auth.middleware.js";
+import { isAuthenticated, optionalAuth } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import {
   softDeleteAccountSchema,
@@ -17,7 +16,6 @@ import {
   updateProfileSchema,
 } from "../validators/profile.validator.js";
 import { upload } from "../middlewares/upload.middleware.js";
-import { optionalAuth } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -35,6 +33,5 @@ router.patch(
 router.delete("/me", isAuthenticated, validate(softDeleteAccountSchema), softDeleteAccount);
 
 router.patch("/me/avatar", isAuthenticated, upload.single("avatar"), updateAvatar);
-router.patch("/me/cover", isAuthenticated, upload.single("coverImage"), updateCoverImage);
 
 export default router;

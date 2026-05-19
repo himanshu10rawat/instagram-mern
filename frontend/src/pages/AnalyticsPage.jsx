@@ -45,7 +45,7 @@ const AnalyticsPage = () => {
   };
 
   return (
-    <section className="mx-auto max-w-6xl space-y-6">
+    <section className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
@@ -57,11 +57,11 @@ const AnalyticsPage = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
           <select
             value={days}
             onChange={(event) => setDays(Number(event.target.value))}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+            className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
           >
             {dayOptions.map((option) => (
               <option key={option} value={option}>
@@ -74,7 +74,7 @@ const AnalyticsPage = () => {
             type="button"
             onClick={handleRefresh}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300"
           >
             <RefreshCcw size={16} />
             Refresh
@@ -93,7 +93,7 @@ const AnalyticsPage = () => {
       ) : null}
 
       {!loading || dashboardStats ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <AnalyticsStatCard
             icon={UserRound}
             label="Profile Visits"

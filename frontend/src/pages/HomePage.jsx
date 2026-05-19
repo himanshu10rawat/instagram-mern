@@ -48,9 +48,9 @@ const HomePage = () => {
     : currentUserFromFeed;
 
   return (
-    <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <div>
-        <section className="mx-auto max-w-2xl space-y-6">
+    <section className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="min-w-0">
+        <section className="mx-auto max-w-2xl space-y-4 sm:space-y-6">
           <StoryTray
             storyGroups={storyGroups}
             currentUser={storyCurrentUser}
@@ -58,13 +58,17 @@ const HomePage = () => {
           />
         </section>
 
+        <div className="mt-4 xl:hidden">
+          <SuggestedUsers limit={3} />
+        </div>
+
         {error ? (
           <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
           </div>
         ) : null}
 
-        <div className="mt-6 space-y-6">
+        <div className="mt-4 space-y-4 sm:mt-6 sm:space-y-6">
           {loading && posts.length === 0 ? (
             <FeedSkeleton count={2} />
           ) : null}
@@ -102,7 +106,9 @@ const HomePage = () => {
         </div>
       </div>
 
-      <SuggestedUsers />
+      <div className="hidden xl:block">
+        <SuggestedUsers />
+      </div>
     </section>
   );
 };

@@ -16,7 +16,7 @@ const MediaGrid = ({ items = [], type = "post" }) => {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-1 sm:gap-4">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 2xl:grid-cols-5">
       {items.map((item) => {
         const isReel = type === "reel" || Boolean(item.video);
         const media = isReel

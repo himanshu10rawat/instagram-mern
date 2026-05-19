@@ -8,7 +8,10 @@ import {
   logout,
   refreshAccessToken,
   register,
+  resendEmailVerification,
   resetPassword,
+  verifyEmail,
+  verifyLoginTwoFactor,
 } from "../controllers/auth.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import {
@@ -17,12 +20,10 @@ import {
   loginSchema,
   registerSchema,
   resetPasswordSchema,
+  verifyLoginTwoFactorSchema,
 } from "../validators/auth.validator.js";
 import { isAuthenticated } from "../middlewares/auth.middleware.js";
 import { rateLimiter } from "../middlewares/rateLimiter.middleware.js";
-import { resendEmailVerification, verifyEmail } from "../controllers/auth.controller.js";
-import { verifyLoginTwoFactor } from "../controllers/auth.controller.js";
-import { verifyLoginTwoFactorSchema } from "../validators/auth.validator.js";
 
 const router = Router();
 

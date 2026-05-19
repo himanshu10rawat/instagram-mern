@@ -11,11 +11,6 @@ import {
   leaveLive,
   resetCurrentLive,
 } from "../features/live/liveSlice";
-import {
-  createAgoraClient,
-  createLocalTracks,
-  stopAndCloseTracks,
-} from "../lib/agora";
 
 const getAgoraConfig = (tokenData) => {
   return {
@@ -24,6 +19,15 @@ const getAgoraConfig = (tokenData) => {
     token: tokenData?.token,
     uid: tokenData?.uid,
   };
+};
+
+const stopAndCloseTracks = (tracks = []) => {
+  tracks.forEach((track) => {
+    if (track) {
+      track.stop();
+      track.close();
+    }
+  });
 };
 
 const LiveRoomPage = () => {
@@ -83,6 +87,9 @@ const LiveRoomPage = () => {
         if (fetchAgoraRtcToken.rejected.match(tokenResult)) return;
 
         const agoraConfig = getAgoraConfig(tokenResult.payload);
+        const { createAgoraClient, createLocalTracks } = await import(
+          "../lib/agora"
+        );
         const client = createAgoraClient();
 
         clientRef.current = client;

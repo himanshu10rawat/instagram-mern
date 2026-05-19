@@ -10,7 +10,6 @@ import {
   clearProfileStatus,
   fetchMyProfile,
   updateAvatar,
-  updateCover,
   updateProfile,
 } from "../features/profile/profileSlice";
 
@@ -44,15 +43,6 @@ const EditProfileForm = ({ profile, updating }) => {
     }
   };
 
-  const handleCoverChange = async (event) => {
-    const file = event.target.files?.[0];
-
-    if (file) {
-      await dispatch(updateCover(file));
-      event.target.value = "";
-    }
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -68,40 +58,9 @@ const EditProfileForm = ({ profile, updating }) => {
 
   return (
     <>
-      <div className="mt-6 space-y-6">
-        <div>
-          <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-            Cover photo
-          </p>
-
-          <label className="relative flex h-44 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-900">
-            {profile?.coverImage?.url || profile?.cover?.url ? (
-              <img
-                src={profile.coverImage?.url || profile.cover?.url}
-                alt="Cover"
-                className="h-full w-full object-cover"
-              />
-            ) : null}
-
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-white">
-              <Camera size={24} />
-            </div>
-
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleCoverChange}
-              className="hidden"
-            />
-          </label>
-        </div>
-
-        <div>
-          <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-            Avatar
-          </p>
-
-          <label className="relative block h-24 w-24 cursor-pointer overflow-hidden rounded-full bg-slate-100 dark:bg-slate-900">
+      <div className="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-800 sm:rounded-2xl">
+        <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+          <label className="relative block h-24 w-24 shrink-0 cursor-pointer overflow-hidden rounded-full bg-slate-100 dark:bg-slate-900">
             {profile?.avatar?.url ? (
               <img
                 src={profile.avatar.url}
@@ -121,6 +80,15 @@ const EditProfileForm = ({ profile, updating }) => {
               className="hidden"
             />
           </label>
+
+          <div>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+              Profile photo
+            </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Click the photo to upload a new avatar.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -149,7 +117,7 @@ const EditProfileForm = ({ profile, updating }) => {
             rows={4}
             maxLength={150}
             placeholder="Write your bio"
-            className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
+            className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white sm:text-sm"
           />
 
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -206,7 +174,6 @@ const EditProfilePage = () => {
   if (loading && !profile) {
     return (
       <div className="mx-auto max-w-3xl space-y-4">
-        <SkeletonBlock className="h-44 rounded-2xl" />
         <SkeletonBlock className="h-24 w-24 rounded-full" />
         <SkeletonBlock className="h-12 rounded-xl" />
         <SkeletonBlock className="h-28 rounded-xl" />
@@ -216,7 +183,7 @@ const EditProfilePage = () => {
 
   return (
     <section className="mx-auto max-w-3xl">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+      <div className="mobile-edge rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
         <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
           Edit Profile
         </h1>

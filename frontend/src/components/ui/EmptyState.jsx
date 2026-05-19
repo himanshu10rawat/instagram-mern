@@ -1,8 +1,8 @@
 const variantClasses = {
   panel:
-    "rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950",
+    "rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-8",
   subtle:
-    "rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-6 dark:border-slate-800 dark:bg-slate-900/40",
+    "rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/40 sm:rounded-2xl sm:p-6",
   inline: "rounded-xl p-4",
 };
 

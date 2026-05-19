@@ -51,6 +51,12 @@ const ChatWindow = () => {
   }, [activeConversation?._id, dispatch]);
 
   useEffect(() => {
+    if (activeConversation?._id && messages.length > 0) {
+      dispatch(markConversationSeen(activeConversation._id));
+    }
+  }, [activeConversation?._id, dispatch, messages.length]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
@@ -114,7 +120,7 @@ const ChatWindow = () => {
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 p-4 dark:border-slate-800">
+      <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 p-3 dark:border-slate-800 sm:p-4">
         <button
           type="button"
           onClick={() => dispatch(setActiveConversation(null))}
@@ -144,7 +150,7 @@ const ChatWindow = () => {
         </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:p-4">
         {messagesLoading ? (
           <div className="space-y-3">
             <SkeletonBlock className="h-10 w-2/3 rounded-2xl" />
@@ -181,9 +187,9 @@ const ChatWindow = () => {
 
       <form
         onSubmit={handleSend}
-        className="flex shrink-0 items-center gap-3 border-t border-slate-200 p-4 dark:border-slate-800"
+        className="flex shrink-0 items-center gap-2 border-t border-slate-200 p-3 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))] dark:border-slate-800 sm:gap-3 sm:p-4"
       >
-        <label className="cursor-pointer rounded-xl p-2 text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900">
+        <label className="shrink-0 cursor-pointer rounded-xl p-2 text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900">
           <Image size={22} />
 
           <input
@@ -201,13 +207,13 @@ const ChatWindow = () => {
             handleTyping();
           }}
           placeholder="Message..."
-          className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
+          className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
         />
 
         <button
           type="submit"
           disabled={sending}
-          className="rounded-xl bg-slate-950 p-3 text-white disabled:opacity-60"
+          className="shrink-0 rounded-xl bg-slate-950 p-3 text-white disabled:opacity-60"
         >
           <Send size={18} />
         </button>

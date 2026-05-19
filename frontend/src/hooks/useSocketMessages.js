@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 
 import {
   addRealtimeMessage,
+  fetchConversations,
+  fetchMessageRequests,
   removeTypingUser,
   setOnlineUsers,
   setTypingUser,
@@ -21,6 +23,11 @@ const useSocketMessages = () => {
 
     const handleReceiveMessage = (message) => {
       dispatch(addRealtimeMessage(message));
+
+      if (!message?.conversationDetails) {
+        dispatch(fetchConversations());
+        dispatch(fetchMessageRequests());
+      }
     };
 
     const handleOnlineUsers = (users) => {

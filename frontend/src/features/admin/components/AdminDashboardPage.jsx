@@ -24,7 +24,7 @@ const AdminDashboardPage = () => {
   };
 
   return (
-    <section className="mx-auto max-w-6xl space-y-6">
+    <section className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
@@ -40,7 +40,7 @@ const AdminDashboardPage = () => {
           type="button"
           onClick={handleRefresh}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold disabled:opacity-60 dark:border-slate-700"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold disabled:opacity-60 dark:border-slate-700"
         >
           <RefreshCcw size={16} />
           Refresh
@@ -58,7 +58,7 @@ const AdminDashboardPage = () => {
       ) : null}
 
       {!loading || dashboard ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           <AdminStatCard
             icon={Users}
             label="Total Users"

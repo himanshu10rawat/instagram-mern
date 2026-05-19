@@ -52,8 +52,8 @@ const PostCard = ({ post }) => {
   };
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-      <header className="flex items-center justify-between p-4">
+    <article className="mobile-edge overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl">
+      <header className="flex items-center justify-between p-3 sm:p-4">
         <div className="flex items-center gap-3">
           <Avatar
             src={post.author?.avatar?.url}
@@ -76,7 +76,7 @@ const PostCard = ({ post }) => {
           <button
             type="button"
             onClick={() => setShowPostMenu((prev) => !prev)}
-            className="rounded-full p-2 text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
+            className="min-h-11 min-w-11 rounded-full p-2 text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
             aria-label="Post options"
           >
             <MoreHorizontal size={20} />
@@ -130,14 +130,16 @@ const PostCard = ({ post }) => {
         )}
       </div>
 
-      <div className="p-4">
+      <div className="p-3 sm:p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => dispatch(likePost({ postId: post._id, isLiked }))}
               className={
-                isLiked ? "text-red-500" : "text-slate-900 dark:text-slate-100"
+                isLiked
+                  ? "flex min-h-11 min-w-11 items-center justify-center text-red-500"
+                  : "flex min-h-11 min-w-11 items-center justify-center text-slate-900 dark:text-slate-100"
               }
             >
               <Heart size={24} fill={isLiked ? "currentColor" : "none"} />
@@ -145,12 +147,16 @@ const PostCard = ({ post }) => {
 
             <Link
               to={`/posts/${post._id}`}
-              className="text-slate-900 dark:text-slate-100"
+              className="flex min-h-11 min-w-11 items-center justify-center text-slate-900 dark:text-slate-100"
             >
               <MessageCircle size={24} />
             </Link>
 
-            <button type="button" onClick={() => setShowShareModal(true)}>
+            <button
+              type="button"
+              onClick={() => setShowShareModal(true)}
+              className="flex min-h-11 min-w-11 items-center justify-center"
+            >
               <Send size={24} />
             </button>
           </div>
@@ -164,7 +170,9 @@ const PostCard = ({ post }) => {
 
               setShowCollectionModal(true);
             }}
-            className={isSaved ? "text-slate-950" : "text-slate-700"}
+            className={`flex min-h-11 min-w-11 items-center justify-center ${
+              isSaved ? "text-slate-950 dark:text-white" : "text-slate-700"
+            }`}
           >
             <Bookmark size={24} fill={isSaved ? "currentColor" : "none"} />
           </button>

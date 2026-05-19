@@ -65,9 +65,9 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 dark:bg-slate-950">
-      <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h1 className="text-center text-3xl font-bold text-slate-900 dark:text-white">
+    <main className="flex min-h-dvh items-center justify-center bg-slate-50 px-3 py-6 dark:bg-slate-950 sm:px-4 sm:py-8">
+      <section className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-8">
+        <h1 className="text-center text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
           Create New Password
         </h1>
         <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">

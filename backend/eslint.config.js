@@ -17,6 +17,7 @@ export default [
     rules: {
       "no-console": "off",
       "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "no-duplicate-imports": "error",
       "prefer-const": "error",
       "no-var": "error",
       eqeqeq: ["error", "always"],

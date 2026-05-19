@@ -22,7 +22,7 @@ const FollowRequestsPage = () => {
 
   return (
     <section className="mx-auto max-w-2xl">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+      <div className="mobile-edge rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
         <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
           Follow Requests
         </h1>
@@ -57,7 +57,7 @@ const FollowRequestsPage = () => {
                 return (
                   <div
                     key={request._id}
-                    className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 p-4 dark:border-slate-800"
+                    className="flex flex-col justify-between gap-4 rounded-xl border border-slate-200 p-3 dark:border-slate-800 sm:flex-row sm:items-center sm:rounded-2xl sm:p-4"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar src={user?.avatar?.url} alt={user?.username} />
@@ -72,13 +72,13 @@ const FollowRequestsPage = () => {
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 gap-2">
+                    <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:w-auto sm:flex">
                       <button
                         type="button"
                         onClick={() =>
                           dispatch(acceptFollowRequest(request._id))
                         }
-                        className="rounded-xl bg-slate-950 p-2 text-white dark:bg-white dark:text-slate-950"
+                        className="flex min-h-11 items-center justify-center rounded-xl bg-slate-950 p-2 text-white dark:bg-white dark:text-slate-950 sm:min-w-11"
                         aria-label="Accept request"
                       >
                         <Check size={18} />
@@ -89,7 +89,7 @@ const FollowRequestsPage = () => {
                         onClick={() =>
                           dispatch(rejectFollowRequest(request._id))
                         }
-                        className="rounded-xl border border-slate-300 p-2 text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                        className="flex min-h-11 items-center justify-center rounded-xl border border-slate-300 p-2 text-slate-700 dark:border-slate-700 dark:text-slate-200 sm:min-w-11"
                         aria-label="Reject request"
                       >
                         <X size={18} />

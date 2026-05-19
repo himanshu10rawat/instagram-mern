@@ -59,6 +59,7 @@ const CreatePage = () => {
   const [tags, setTags] = useState("");
   const [storyText, setStoryText] = useState("");
   const [isCloseFriends, setIsCloseFriends] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const previews = useMemo(() => {
     return files.map((file) => ({
@@ -100,15 +101,35 @@ const CreatePage = () => {
     dispatch(clearCreateStatus());
   };
 
-  const handleFilesChange = (event) => {
-    const selectedFiles = Array.from(event.target.files || []);
-
+  const setSelectedFiles = (selectedFiles) => {
     if (contentType === "post") {
       setFiles(selectedFiles);
       return;
     }
 
     setFiles(selectedFiles.slice(0, 1));
+  };
+
+  const handleFilesChange = (event) => {
+    setSelectedFiles(Array.from(event.target.files || []));
+    event.target.value = "";
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event) => {
+    if (event.currentTarget.contains(event.relatedTarget)) return;
+
+    setIsDragging(false);
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setIsDragging(false);
+    setSelectedFiles(Array.from(event.dataTransfer.files || []));
   };
 
   const removeFile = (fileId) => {
@@ -225,7 +246,7 @@ const CreatePage = () => {
         : "image/*,video/*";
 
   return (
-    <section className="mx-auto max-w-4xl">
+    <section className="mx-auto max-w-6xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
           Create
@@ -236,7 +257,7 @@ const CreatePage = () => {
         </p>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+      <div className="mobile-edge rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
         <div className="grid gap-3 sm:grid-cols-3">
           {contentTypes.map((item) => {
             const Icon = item.icon;
@@ -272,138 +293,157 @@ const CreatePage = () => {
           </div>
         ) : null}
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-          <label className="flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 p-6 text-center dark:border-slate-700">
-            <Plus size={32} className="text-slate-500" />
+        <form
+          onSubmit={handleSubmit}
+          className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start"
+        >
+          <div className="space-y-5">
+            <label
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition lg:min-h-96 ${
+                isDragging
+                  ? "border-slate-950 bg-slate-50 dark:border-white dark:bg-slate-900"
+                  : "border-slate-300 dark:border-slate-700"
+              }`}
+            >
+              <Plus size={32} className="text-slate-500" />
 
-            <span className="mt-3 text-sm font-semibold text-slate-950 dark:text-white">
-              Select {contentType === "post" ? "media files" : "a media file"}
-            </span>
+              <span className="mt-3 text-sm font-semibold text-slate-950 dark:text-white">
+                Select {contentType === "post" ? "media files" : "a media file"}
+              </span>
 
-            <span className="mt-1 text-xs text-slate-500">
-              {contentType === "post"
-                ? "Images or videos. Multiple files allowed."
-                : contentType === "reel"
-                  ? "Video only."
-                  : "Image or video story."}
-            </span>
+              <span className="mt-1 text-xs text-slate-500">
+                {contentType === "post"
+                  ? "Tap to browse or drop images/videos here."
+                  : contentType === "reel"
+                    ? "Tap to browse or drop one video here."
+                    : "Tap to browse, capture, or drop one story file."}
+              </span>
 
-            <input
-              type="file"
-              accept={acceptType}
-              multiple={contentType === "post"}
-              onChange={handleFilesChange}
-              className="hidden"
-            />
-          </label>
+              <input
+                type="file"
+                accept={acceptType}
+                capture={contentType === "story" ? "environment" : undefined}
+                multiple={contentType === "post"}
+                onChange={handleFilesChange}
+                className="hidden"
+              />
+            </label>
 
-          {previews.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {previews.map((preview) => (
-                <div
-                  key={preview.id}
-                  className="relative aspect-square overflow-hidden rounded-xl bg-slate-100"
-                >
-                  {preview.type.startsWith("video/") ? (
-                    <video
-                      src={preview.url}
-                      controls
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={preview.url}
-                      alt={preview.name}
-                      className="h-full w-full object-cover"
-                    />
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => removeFile(preview.id)}
-                    className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white"
-                    aria-label="Remove file"
+            {previews.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                {previews.map((preview) => (
+                  <div
+                    key={preview.id}
+                    className="relative aspect-square overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-900"
                   >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : null}
+                    {preview.type.startsWith("video/") ? (
+                      <video
+                        src={preview.url}
+                        controls
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={preview.url}
+                        alt={preview.name}
+                        className="h-full w-full object-cover"
+                      />
+                    )}
 
-          {contentType !== "story" ? (
-            <>
-              <div>
-                <label
-                  htmlFor="caption"
-                  className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-                >
-                  Caption
-                </label>
-
-                <textarea
-                  id="caption"
-                  value={caption}
-                  onChange={(event) => setCaption(event.target.value)}
-                  rows={4}
-                  placeholder="Write a caption..."
-                  className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(preview.id)}
+                      className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white"
+                      aria-label="Remove file"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
               </div>
+            ) : null}
+          </div>
 
-              <Input
-                label="Location"
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
-                placeholder="Add location"
-              />
+          <div className="space-y-5 lg:sticky lg:top-6">
+            {contentType !== "story" ? (
+              <>
+                <div>
+                  <label
+                    htmlFor="caption"
+                    className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                  >
+                    Caption
+                  </label>
 
-              <Input
-                label="Tags"
-                value={tags}
-                onChange={(event) => setTags(event.target.value)}
-                placeholder="nature, travel, coding"
-              />
-            </>
-          ) : (
-            <>
-              <Input
-                label="Story caption"
-                value={storyText}
-                onChange={(event) => setStoryText(event.target.value)}
-                placeholder="Add caption to story"
-              />
+                  <textarea
+                    id="caption"
+                    value={caption}
+                    onChange={(event) => setCaption(event.target.value)}
+                    rows={4}
+                    placeholder="Write a caption..."
+                    className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  />
+                </div>
 
-              <label className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800">
-                <span>
-                  <span className="block text-sm font-semibold text-slate-950 dark:text-white">
-                    Close friends
-                  </span>
-
-                  <span className="text-xs text-slate-500">
-                    Show this story only to close friends.
-                  </span>
-                </span>
-
-                <input
-                  type="checkbox"
-                  checked={isCloseFriends}
-                  onChange={(event) => setIsCloseFriends(event.target.checked)}
-                  className="h-5 w-5"
+                <Input
+                  label="Location"
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                  placeholder="Add location"
                 />
-              </label>
-            </>
-          )}
 
-          <Button type="submit" disabled={loading || files.length === 0}>
-            {loading
-              ? "Publishing..."
-              : contentType === "post"
-                ? "Publish Post"
-                : contentType === "reel"
-                  ? "Publish Reel"
-                  : "Publish Story"}
-          </Button>
+                <Input
+                  label="Tags"
+                  value={tags}
+                  onChange={(event) => setTags(event.target.value)}
+                  placeholder="nature, travel, coding"
+                />
+              </>
+            ) : (
+              <>
+                <Input
+                  label="Story caption"
+                  value={storyText}
+                  onChange={(event) => setStoryText(event.target.value)}
+                  placeholder="Add caption to story"
+                />
+
+                <label className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800">
+                  <span>
+                    <span className="block text-sm font-semibold text-slate-950 dark:text-white">
+                      Close friends
+                    </span>
+
+                    <span className="text-xs text-slate-500">
+                      Show this story only to close friends.
+                    </span>
+                  </span>
+
+                  <input
+                    type="checkbox"
+                    checked={isCloseFriends}
+                    onChange={(event) =>
+                      setIsCloseFriends(event.target.checked)
+                    }
+                    className="h-5 w-5"
+                  />
+                </label>
+              </>
+            )}
+
+            <Button type="submit" disabled={loading || files.length === 0}>
+              {loading
+                ? "Publishing..."
+                : contentType === "post"
+                  ? "Publish Post"
+                  : contentType === "reel"
+                    ? "Publish Reel"
+                    : "Publish Story"}
+            </Button>
+          </div>
         </form>
       </div>
     </section>

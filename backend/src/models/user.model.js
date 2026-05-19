@@ -124,11 +124,6 @@ const userSchema = new mongoose.Schema(
       default: () => ({}),
     },
 
-    coverImage: {
-      type: mediaSchema,
-      default: () => ({}),
-    },
-
     bio: {
       type: String,
       default: "",

@@ -83,11 +83,6 @@ const fulfilledToasts = {
     title: "Avatar updated",
     message: "Your profile photo was updated.",
   },
-  "profile/updateCover/fulfilled": {
-    type: "success",
-    title: "Cover updated",
-    message: "Your cover image was updated.",
-  },
   "profile/updatePrivacySettings/fulfilled": {
     type: "success",
     title: "Privacy saved",

@@ -48,8 +48,8 @@ const NotificationsPage = () => {
 
   return (
     <section className="mx-auto max-w-3xl">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
-        <div className="flex items-center justify-between gap-4">
+      <div className="mobile-edge rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
               Notifications
@@ -62,9 +62,9 @@ const NotificationsPage = () => {
 
           {unreadCount > 0 ? (
             <button
-              type="button"
-              onClick={handleMarkAllRead}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
+            type="button"
+            onClick={handleMarkAllRead}
+              className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
             >
               Mark all read
             </button>

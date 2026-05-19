@@ -45,7 +45,7 @@ const AdminUsersPage = () => {
   };
 
   return (
-    <section className="mx-auto max-w-6xl space-y-6">
+    <section className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
           Users Management
@@ -56,17 +56,17 @@ const AdminUsersPage = () => {
         </p>
       </div>
 
-      <form onSubmit={handleSearchSubmit} className="flex gap-3">
+      <form onSubmit={handleSearchSubmit} className="grid gap-2 sm:flex sm:gap-3">
         <input
           value={searchValue}
           onChange={(event) => setSearchValue(event.target.value)}
           placeholder="Search username, email, full name..."
-          className="min-h-12 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+          className="min-h-12 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-base outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white sm:text-sm"
         />
 
         <button
           type="submit"
-          className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
         >
           <Search size={18} />
           Search
@@ -85,7 +85,7 @@ const AdminUsersPage = () => {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+      <div className="mobile-edge overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl">
         {loading ? (
           <TableRowsSkeleton count={5} />
         ) : null}
@@ -124,7 +124,7 @@ const AdminUsersPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="grid grid-cols-[auto_1fr] items-center gap-3 sm:flex">
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${
                     user.isBlockedByAdmin
@@ -139,7 +139,7 @@ const AdminUsersPage = () => {
                   type="button"
                   onClick={() => handleBlockToggle(user)}
                   disabled={actionLoading}
-                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-60 ${
+                  className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-60 ${
                     user.isBlockedByAdmin
                       ? "border border-emerald-200 text-emerald-600"
                       : "bg-red-600 text-white"

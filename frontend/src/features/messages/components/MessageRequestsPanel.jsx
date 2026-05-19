@@ -68,6 +68,7 @@ const MessageRequestsPanel = () => {
       <div className="divide-y divide-slate-100 dark:divide-slate-800">
         {requests.map((conversation) => {
           const user = getOtherParticipant(conversation, currentUser?._id);
+          const unreadCount = Number(conversation.unreadCount) || 0;
 
           return (
             <div key={conversation._id} className="p-4">
@@ -75,9 +76,17 @@ const MessageRequestsPanel = () => {
                 <Avatar src={user?.avatar?.url} alt={user?.username} />
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
-                    {user?.username || "Unknown user"}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                      {user?.username || "Unknown user"}
+                    </p>
+
+                    {unreadCount > 0 ? (
+                      <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    ) : null}
+                  </div>
 
                   <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                     {conversation.lastMessage?.text ||

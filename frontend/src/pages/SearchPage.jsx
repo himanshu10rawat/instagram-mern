@@ -73,7 +73,7 @@ const SearchPage = () => {
 
   return (
     <section className="mx-auto max-w-5xl">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+      <div className="mobile-edge rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
         <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
           Search
         </h1>
@@ -92,7 +92,7 @@ const SearchPage = () => {
               value={localQuery}
               onChange={(event) => setLocalQuery(event.target.value)}
               placeholder="Search Instagram"
-              className="flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
+              className="min-w-0 flex-1 bg-transparent text-base text-slate-950 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500 sm:text-sm"
             />
 
             {localQuery ? (
@@ -161,7 +161,7 @@ const SearchPage = () => {
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-3 text-sm font-semibold capitalize ${
+                  className={`min-h-11 shrink-0 px-4 py-3 text-sm font-semibold capitalize ${
                     activeTab === tab
                       ? "border-b-2 border-slate-950 text-slate-950 dark:border-white dark:text-white"
                       : "text-slate-500 dark:text-slate-400"

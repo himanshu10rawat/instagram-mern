@@ -66,8 +66,8 @@ const StoryViewerPage = () => {
 
   if (loading && !currentStory) {
     return (
-      <section className="mx-auto flex min-h-[calc(100dvh_-_7rem)] max-w-md items-center justify-center">
-        <SkeletonBlock className="h-[calc(100dvh_-_7rem)] w-full rounded-2xl" />
+      <section className="mx-auto flex min-h-[calc(100dvh_-_10.5rem)] max-w-md items-center justify-center md:min-h-[calc(100dvh_-_3rem)]">
+        <SkeletonBlock className="h-[calc(100dvh_-_10.5rem)] w-full rounded-xl md:h-[calc(100dvh_-_3rem)] md:rounded-2xl" />
       </section>
     );
   }
@@ -87,8 +87,8 @@ const StoryViewerPage = () => {
   }
 
   return (
-    <section className="mx-auto flex min-h-[calc(100dvh_-_7rem)] max-w-md items-center justify-center sm:min-h-[calc(100dvh_-_3rem)]">
-      <article className="relative h-[calc(100dvh_-_7rem)] max-h-205 w-full overflow-hidden rounded-2xl bg-black text-white sm:h-[calc(100dvh_-_6rem)] sm:min-h-155">
+    <section className="mx-auto flex min-h-[calc(100dvh_-_10.5rem)] max-w-md items-center justify-center md:min-h-[calc(100dvh_-_3rem)]">
+      <article className="relative h-[calc(100dvh_-_10.5rem)] min-h-120 w-full overflow-hidden rounded-xl bg-black text-white md:h-[calc(100dvh_-_3rem)] md:max-h-205 md:min-h-155 md:rounded-2xl">
         <div className="absolute left-0 right-0 top-0 z-30 p-4">
           <div className="h-1 overflow-hidden rounded-full bg-white/30">
             <div className="h-full w-full bg-white" />
@@ -168,7 +168,7 @@ const StoryViewerPage = () => {
                 value={replyText}
                 onChange={(event) => setReplyText(event.target.value)}
                 placeholder={`Reply to ${author?.username || "story"}...`}
-                className="flex-1 rounded-full border border-white/40 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/70"
+                className="min-w-0 flex-1 rounded-full border border-white/40 bg-black/30 px-4 py-3 text-base text-white outline-none placeholder:text-white/70 sm:text-sm"
               />
 
               <button

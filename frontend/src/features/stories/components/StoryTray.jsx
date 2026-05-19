@@ -34,7 +34,7 @@ const StoryTray = ({ storyGroups = [], currentUser, loading = false }) => {
   });
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
+    <div className="mobile-edge overflow-x-auto rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-4">
       <div className="flex gap-4">
         <div className="flex shrink-0 flex-col items-center gap-2">
           <div className="relative">

@@ -1,6 +1,6 @@
 const AdminStatCard = ({ icon: Icon, label, value }) => {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-5">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-sm text-slate-500">{label}</p>
