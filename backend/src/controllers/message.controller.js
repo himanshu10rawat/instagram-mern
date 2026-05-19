@@ -15,8 +15,6 @@ import {
   getOptimizedVideoUrl,
   getVideoThumbnailUrl,
 } from "../utils/cloudinaryUrl.js";
-import createNotification from "../utils/createNotification.js";
-
 const userPublicFields = "username fullName avatar isVerified";
 
 const messagePopulate = [
@@ -91,16 +89,12 @@ const getConversationKey = (conversation) => {
     .filter(Boolean)
     .sort();
 
-  return participantIds.length > 1
-    ? participantIds.join(":")
-    : conversation._id.toString();
+  return participantIds.length > 1 ? participantIds.join(":") : conversation._id.toString();
 };
 
 const getConversationTime = (conversation) => {
   const timestamp =
-    conversation?.lastMessage?.createdAt ||
-    conversation?.updatedAt ||
-    conversation?.createdAt;
+    conversation?.lastMessage?.createdAt || conversation?.updatedAt || conversation?.createdAt;
 
   return timestamp ? new Date(timestamp).getTime() || 0 : 0;
 };
@@ -147,8 +141,7 @@ const findOrCreateConversation = async (currentUserId, receiverId) => {
   }).sort({ updatedAt: -1 });
 
   let conversation =
-    existingConversations.find((item) => item.lastMessage) ||
-    existingConversations[0];
+    existingConversations.find((item) => item.lastMessage) || existingConversations[0];
 
   if (!conversation) {
     const receiver = await User.findById(receiverId).select("followers privacySettings");
@@ -269,13 +262,6 @@ export const sendMessage = asyncHandler(async (req, res) => {
   if (receiverSocketId) {
     io.to(receiverSocketId).emit("receive_message", populatedMessage);
   }
-
-  await createNotification({
-    sender: req.user._id,
-    receiver: receiverId,
-    type: "message",
-    message: message._id,
-  });
 
   return res
     .status(HTTP_STATUS.CREATED)
@@ -696,13 +682,6 @@ export const forwardMessage = asyncHandler(async (req, res) => {
   if (receiverSocketId) {
     getIO().to(receiverSocketId).emit("receive_message", populatedMessage);
   }
-
-  await createNotification({
-    sender: req.user._id,
-    receiver: receiverId,
-    type: "message",
-    message: forwardedMessage._id,
-  });
 
   return res
     .status(HTTP_STATUS.CREATED)

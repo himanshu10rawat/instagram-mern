@@ -10,7 +10,6 @@ import {
   clearProfileStatus,
   fetchMyProfile,
   updateAvatar,
-  updateCover,
   updateProfile,
 } from "../features/profile/profileSlice";
 
@@ -44,15 +43,6 @@ const EditProfileForm = ({ profile, updating }) => {
     }
   };
 
-  const handleCoverChange = async (event) => {
-    const file = event.target.files?.[0];
-
-    if (file) {
-      await dispatch(updateCover(file));
-      event.target.value = "";
-    }
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -68,34 +58,7 @@ const EditProfileForm = ({ profile, updating }) => {
 
   return (
     <>
-      <div className="mt-6 space-y-6">
-        <div>
-          <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-            Cover photo
-          </p>
-
-          <label className="relative flex h-44 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-900">
-            {profile?.coverImage?.url || profile?.cover?.url ? (
-              <img
-                src={profile.coverImage?.url || profile.cover?.url}
-                alt="Cover"
-                className="h-full w-full object-cover"
-              />
-            ) : null}
-
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-white">
-              <Camera size={24} />
-            </div>
-
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleCoverChange}
-              className="hidden"
-            />
-          </label>
-        </div>
-
+      <div className="mt-6">
         <div>
           <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
             Avatar

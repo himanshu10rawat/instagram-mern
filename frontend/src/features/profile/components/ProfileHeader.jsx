@@ -76,25 +76,59 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-      <div className="h-48 bg-slate-100 dark:bg-slate-900">
-        {profile?.coverImage?.url || profile?.cover?.url ? (
-          <img
-            src={profile.coverImage?.url || profile.cover?.url}
-            alt="Cover"
-            className="h-full w-full object-cover"
-          />
-        ) : null}
-      </div>
-
-      <div className="px-6 pb-6">
-        <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="-mt-14">
+      <div className="px-6 py-6">
+        <div className="flex items-center gap-6">
+          <div>
             <Avatar
               src={profile?.avatar?.url}
               alt={profile?.username}
               size="lg"
               ring
             />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
+              {profile?.fullName || "User"}
+            </h1>
+
+            <div className="mt-1 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <span className="truncate">@{profile?.username}</span>
+
+              {profile?.isPrivate ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                  <Lock size={12} />
+                  Private
+                </span>
+              ) : null}
+            </div>
+
+            {profile?.bio ? (
+              <p className="mt-2 truncate max-w-2xl text-sm text-slate-700 dark:text-slate-300">
+                {profile.bio}
+              </p>
+            ) : null}
+
+            <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-600 dark:text-slate-400">
+              {profile?.website ? (
+                <a
+                  href={profile.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 font-medium text-blue-600"
+                >
+                  <Globe size={16} />
+                  {profile.website}
+                </a>
+              ) : null}
+
+              {profile?.createdAt ? (
+                <span className="flex items-center gap-1">
+                  <Calendar size={16} />
+                  Joined {new Date(profile.createdAt).toLocaleDateString()}
+                </span>
+              ) : null}
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -130,11 +164,7 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
                   type="button"
                   onClick={handleFollowToggle}
                   disabled={actionLoading || hasRequested}
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70 ${
-                    isFollowing || hasRequested
-                      ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-900"
-                      : "bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950"
-                  }`}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70 ${isFollowing || hasRequested ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-900" : "bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950"}`}
                 >
                   {getFollowButtonText()}
                 </button>
@@ -159,50 +189,6 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
                 </button>
               </>
             )}
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <h1 className="text-2xl font-bold text-slate-950 dark:text-white">
-            {profile?.fullName || "User"}
-          </h1>
-
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-            <span>@{profile?.username}</span>
-
-            {profile?.isPrivate ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                <Lock size={12} />
-                Private
-              </span>
-            ) : null}
-          </div>
-
-          {profile?.bio ? (
-            <p className="mt-3 max-w-2xl text-sm text-slate-700 dark:text-slate-300">
-              {profile.bio}
-            </p>
-          ) : null}
-
-          <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-600 dark:text-slate-400">
-            {profile?.website ? (
-              <a
-                href={profile.website}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1 font-medium text-blue-600"
-              >
-                <Globe size={16} />
-                {profile.website}
-              </a>
-            ) : null}
-
-            {profile?.createdAt ? (
-              <span className="flex items-center gap-1">
-                <Calendar size={16} />
-                Joined {new Date(profile.createdAt).toLocaleDateString()}
-              </span>
-            ) : null}
           </div>
         </div>
 
@@ -236,13 +222,13 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
         </div>
       </div>
 
-      {followListType ? (
+      {followListType && (
         <FollowListModal
           profileId={profile._id}
           type={followListType}
           onClose={() => setFollowListType(null)}
         />
-      ) : null}
+      )}
 
       <ShareModal
         open={showShareModal}

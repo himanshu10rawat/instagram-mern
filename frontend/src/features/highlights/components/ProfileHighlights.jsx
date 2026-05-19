@@ -15,7 +15,6 @@ import HighlightViewerModal from "./HighlightViewerModal";
 
 const getHighlightCover = (highlight) => {
   return (
-    highlight.coverImage?.url ||
     highlight.stories?.[0]?.media?.thumbnailUrl ||
     highlight.stories?.[0]?.media?.optimizedUrl ||
     highlight.stories?.[0]?.media?.url ||

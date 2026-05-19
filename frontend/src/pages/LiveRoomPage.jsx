@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
-import LiveVideoPlayer from "../features/live/components/LiveVideoPlayer";
 import {
   endLive,
   fetchAgoraRtcToken,
@@ -11,11 +10,6 @@ import {
   leaveLive,
   resetCurrentLive,
 } from "../features/live/liveSlice";
-import {
-  createAgoraClient,
-  createLocalTracks,
-  stopAndCloseTracks,
-} from "../lib/agora";
 
 const getAgoraConfig = (tokenData) => {
   return {
@@ -48,6 +42,7 @@ const LiveRoomPage = () => {
   const [joined, setJoined] = useState(false);
   const [micEnabled, setMicEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [LiveVideoPlayer, setLiveVideoPlayer] = useState(null);
 
   const role = searchParams.get("role") === "host" ? "host" : "audience";
   const isHost = role === "host";
@@ -59,8 +54,16 @@ const LiveRoomPage = () => {
   useEffect(() => {
     if (!liveId) return undefined;
 
+    let agoraLib = null;
+
     const joinLiveRoom = async () => {
       try {
+        if (!LiveVideoPlayer) {
+          const module =
+            await import("../features/live/components/LiveVideoPlayer");
+          setLiveVideoPlayer(() => module.default);
+        }
+
         const liveResult = await dispatch(joinLive(liveId));
 
         if (joinLive.rejected.match(liveResult)) return;
@@ -83,8 +86,9 @@ const LiveRoomPage = () => {
         if (fetchAgoraRtcToken.rejected.match(tokenResult)) return;
 
         const agoraConfig = getAgoraConfig(tokenResult.payload);
-        const client = createAgoraClient();
+        agoraLib = await import("../lib/agora");
 
+        const client = agoraLib.createAgoraClient();
         clientRef.current = client;
 
         client.setClientRole(isHost ? "host" : "audience");
@@ -117,7 +121,7 @@ const LiveRoomPage = () => {
         );
 
         if (isHost) {
-          const tracks = await createLocalTracks();
+          const tracks = await agoraLib.createLocalTracks();
 
           localTracksRef.current = tracks;
           setLocalVideoTrack(tracks.cameraTrack);
@@ -138,7 +142,9 @@ const LiveRoomPage = () => {
       const cleanup = async () => {
         const { microphoneTrack, cameraTrack } = localTracksRef.current;
 
-        stopAndCloseTracks([microphoneTrack, cameraTrack]);
+        if (agoraLib?.stopAndCloseTracks) {
+          agoraLib.stopAndCloseTracks([microphoneTrack, cameraTrack]);
+        }
 
         if (clientRef.current) {
           clientRef.current.removeAllListeners();
@@ -150,7 +156,7 @@ const LiveRoomPage = () => {
 
       cleanup();
     };
-  }, [currentUser?._id, dispatch, isHost, liveId]);
+  }, [LiveVideoPlayer, currentUser?._id, dispatch, isHost, liveId]);
 
   const handleToggleMic = async () => {
     const track = localTracksRef.current.microphoneTrack;
@@ -207,7 +213,7 @@ const LiveRoomPage = () => {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-h-130 rounded-2xl bg-black p-3">
-          {isHost && localVideoTrack ? (
+          {isHost && localVideoTrack && LiveVideoPlayer ? (
             <LiveVideoPlayer track={localVideoTrack} className="h-130 w-full" />
           ) : null}
 
@@ -219,7 +225,7 @@ const LiveRoomPage = () => {
 
           {!isHost
             ? remoteUsers.map((user) =>
-                user.videoTrack ? (
+                user.videoTrack && LiveVideoPlayer ? (
                   <LiveVideoPlayer
                     key={user.uid}
                     track={user.videoTrack}

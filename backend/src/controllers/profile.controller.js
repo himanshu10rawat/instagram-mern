@@ -248,30 +248,3 @@ export const updateAvatar = asyncHandler(async (req, res) => {
     .status(HTTP_STATUS.Ok)
     .json(new ApiResponse(HTTP_STATUS.Ok, profile, "Avatar updated successfully"));
 });
-
-export const updateCoverImage = asyncHandler(async (req, res) => {
-  if (!req.file) {
-    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Cover image is required");
-  }
-
-  const currentUser = await User.findById(req.user._id);
-
-  if (currentUser.coverImage?.publicId) {
-    await cloudinary.uploader.destroy(currentUser.coverImage.publicId);
-  }
-
-  const uploadedImage = await uploadToCloudinary(req.file.buffer, "instagram/cover");
-
-  currentUser.coverImage = {
-    url: uploadedImage.secure_url,
-    publicId: uploadedImage.public_id,
-  };
-
-  await currentUser.save({ validateBeforeSave: false });
-
-  const profile = await getUpdatedProfilePayload(req.user._id);
-
-  res
-    .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, profile, "Cover image updated successfully"));
-});

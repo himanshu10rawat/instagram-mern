@@ -5,7 +5,6 @@ import {
   getUserProfileApi,
   removeAccountApi,
   updateAvatarApi,
-  updateCoverApi,
   updatePrivacySettingsApi,
   updateProfileApi,
   getMySavedProfilePostsApi,
@@ -102,22 +101,6 @@ export const updateAvatar = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to update avatar",
-      );
-    }
-  },
-);
-
-export const updateCover = createAsyncThunk(
-  "profile/updateCover",
-  async (file, { rejectWithValue }) => {
-    try {
-      const formData = new FormData();
-      formData.append(FORM_DATA_FIELDS.profile.coverImage, file);
-
-      return await updateCoverApi(formData);
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to update cover",
       );
     }
   },
@@ -245,20 +228,6 @@ const profileSlice = createSlice({
         state.successMessage = "Avatar updated successfully";
       })
       .addCase(updateAvatar.rejected, (state, action) => {
-        state.updating = false;
-        state.error = action.payload;
-      })
-
-      .addCase(updateCover.pending, (state) => {
-        state.updating = true;
-        state.error = null;
-      })
-      .addCase(updateCover.fulfilled, (state, action) => {
-        state.updating = false;
-        state.profile = action.payload;
-        state.successMessage = "Cover updated successfully";
-      })
-      .addCase(updateCover.rejected, (state, action) => {
         state.updating = false;
         state.error = action.payload;
       })

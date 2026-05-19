@@ -18,6 +18,11 @@ export const errorMiddleware = (error, _req, res, _next) => {
     message = "Invalid resource id";
   }
 
+  if (error.code === "LIMIT_FILE_SIZE") {
+    statusCode = HTTP_STATUS.BAD_REQUEST;
+    message = "File too large. Maximum upload size is 10MB.";
+  }
+
   if (error.code === 11000) {
     statusCode = HTTP_STATUS.CONFLICT;
     const fields = Object.keys(error.keyValue).join(", ");

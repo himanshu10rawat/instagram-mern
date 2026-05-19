@@ -5,7 +5,6 @@ import {
   getPublicProfile,
   softDeleteAccount,
   updateAvatar,
-  updateCoverImage,
   updatePrivacySettings,
   updateProfile,
 } from "../controllers/profile.controller.js";
@@ -35,6 +34,5 @@ router.patch(
 router.delete("/me", isAuthenticated, validate(softDeleteAccountSchema), softDeleteAccount);
 
 router.patch("/me/avatar", isAuthenticated, upload.single("avatar"), updateAvatar);
-router.patch("/me/cover", isAuthenticated, upload.single("coverImage"), updateCoverImage);
 
 export default router;

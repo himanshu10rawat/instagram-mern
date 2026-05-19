@@ -113,7 +113,7 @@ const MessagesPage = () => {
   };
 
   return (
-    <section className="flex h-[calc(100dvh_-_7rem)] min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:h-[calc(100dvh_-_3rem)]">
+    <section className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:h-[calc(100dvh-3rem)]">
       {error ? (
         <div className="shrink-0 border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}

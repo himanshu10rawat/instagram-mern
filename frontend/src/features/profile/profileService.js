@@ -26,16 +26,6 @@ export const updateAvatarApi = async (formData) => {
   return response.data.data;
 };
 
-export const updateCoverApi = async (formData) => {
-  const response = await api.patch(API_ROUTES.profile.cover, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-
-  return response.data.data;
-};
-
 export const updatePrivacySettingsApi = async (payload) => {
   const { privacySettings, ...restPayload } = payload || {};
   const normalizedPayload = {

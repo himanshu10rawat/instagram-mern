@@ -19,7 +19,6 @@ export const API_ROUTES = {
     user: (username) => `/profile/${username}`,
     update: "/profile/me",
     avatar: "/profile/me/avatar",
-    cover: "/profile/me/cover",
     privacy: "/profile/me/privacy",
     deactivate: "/profile/me",
   },
@@ -221,7 +220,6 @@ export const API_ROUTES = {
 export const FORM_DATA_FIELDS = {
   profile: {
     avatar: "avatar",
-    coverImage: "coverImage",
   },
 
   post: {
@@ -234,7 +232,6 @@ export const FORM_DATA_FIELDS = {
 
   reel: {
     video: "video",
-    coverImage: "coverImage",
   },
 
   message: {

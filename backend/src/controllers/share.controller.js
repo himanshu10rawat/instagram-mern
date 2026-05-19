@@ -224,12 +224,9 @@ export const shareToUser = asyncHandler(async (req, res) => {
     getIO().to(receiverSocketId).emit("receive_message", populatedMessage);
   }
 
-  await createNotification({
-    sender: req.user._id,
-    receiver: receiverId,
-    type: "message",
-    message: message._id,
-  });
+  // Do not create a notification for regular/shared messages —
+  // messages are delivered via the Messages section (socket + DB).
+  // Only story replies should generate notifications (handled in story.controller).
 
   return res
     .status(HTTP_STATUS.CREATED)

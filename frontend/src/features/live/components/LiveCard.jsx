@@ -12,17 +12,9 @@ const LiveCard = ({ live }) => {
       className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
     >
       <div className="relative aspect-video bg-slate-100 dark:bg-slate-900">
-        {live.coverImage?.url ? (
-          <img
-            src={live.coverImage.url}
-            alt={live.title || "Live"}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Radio className="text-red-500" size={42} />
-          </div>
-        )}
+        <div className="flex h-full w-full items-center justify-center">
+          <Radio className="text-red-500" size={42} />
+        </div>
 
         <span className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white">
           LIVE
