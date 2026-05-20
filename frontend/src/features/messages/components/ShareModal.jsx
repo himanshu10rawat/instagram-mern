@@ -83,6 +83,15 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
               onChange={(event) => setSearchValue(event.target.value)}
               placeholder="Search users"
               className="flex-1 bg-transparent text-sm outline-none dark:text-white"
+              onFocus={() => {
+                // ensure modal contents are scrolled into view on mobile when keyboard opens
+                setTimeout(() => {
+                  document.activeElement?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                  });
+                }, 250);
+              }}
             />
           </div>
         </div>

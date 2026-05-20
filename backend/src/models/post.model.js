@@ -118,6 +118,7 @@ const postSchema = new mongoose.Schema(
 
 postSchema.index({ caption: "text", tags: "text", location: "text" });
 postSchema.index({ author: 1, createdAt: -1 });
+postSchema.index({ author: 1, isDeleted: 1, isArchived: 1, createdAt: -1 });
 
 const Post = mongoose.model("Post", postSchema);
 

@@ -29,6 +29,8 @@ const PostCard = ({ post }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
   const [showInsightsModal, setShowInsightsModal] = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.auth.user);
   const { detailLoading, postAnalytics } = useSelector(
@@ -52,7 +54,7 @@ const PostCard = ({ post }) => {
   };
 
   return (
-    <article className="mobile-edge overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl">
+    <article className="post-card mobile-edge overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl">
       <header className="flex items-center justify-between p-3 sm:p-4">
         <div className="flex items-center gap-3">
           <Avatar
@@ -117,13 +119,17 @@ const PostCard = ({ post }) => {
           <video
             src={firstMedia.optimizedUrl || firstMedia.url}
             controls
-            className="max-h-180 w-full object-cover"
+            preload="metadata"
+            poster={firstMedia.thumbnailUrl}
+            className="max-h-[60vh] w-full object-cover"
           />
         ) : firstMedia?.url ? (
           <img
             src={firstMedia.optimizedUrl || firstMedia.url}
             alt={post.caption || "Post"}
-            className="max-h-180 w-full object-cover"
+            loading="lazy"
+            decoding="async"
+            className="max-h-[60vh] w-full object-cover"
           />
         ) : (
           <div className="aspect-square w-full bg-slate-100 dark:bg-slate-900"></div>
@@ -135,14 +141,31 @@ const PostCard = ({ post }) => {
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() => dispatch(likePost({ postId: post._id, isLiked }))}
+              onClick={async () => {
+                if (likeLoading) return;
+                setLikeLoading(true);
+
+                try {
+                  await dispatch(likePost({ postId: post._id, isLiked }));
+                } finally {
+                  setLikeLoading(false);
+                }
+              }}
               className={
                 isLiked
                   ? "flex min-h-11 min-w-11 items-center justify-center text-red-500"
                   : "flex min-h-11 min-w-11 items-center justify-center text-slate-900 dark:text-slate-100"
               }
+              aria-label={isLiked ? "Unlike post" : "Like post"}
             >
-              <Heart size={24} fill={isLiked ? "currentColor" : "none"} />
+              {likeLoading ? (
+                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+              ) : (
+                <Heart size={24} fill={isLiked ? "currentColor" : "none"} />
+              )}
             </button>
 
             <Link
@@ -164,17 +187,31 @@ const PostCard = ({ post }) => {
           <button
             type="button"
             onClick={async () => {
-              if (!isSaved) {
-                await dispatch(savePost({ postId: post._id, isSaved }));
-              }
+              if (saveLoading) return;
+              setSaveLoading(true);
 
-              setShowCollectionModal(true);
+              try {
+                if (!isSaved) {
+                  await dispatch(savePost({ postId: post._id, isSaved }));
+                }
+                setShowCollectionModal(true);
+              } finally {
+                setSaveLoading(false);
+              }
             }}
             className={`flex min-h-11 min-w-11 items-center justify-center ${
               isSaved ? "text-slate-950 dark:text-white" : "text-slate-700"
             }`}
+            aria-label={isSaved ? "Saved" : "Save post"}
           >
-            <Bookmark size={24} fill={isSaved ? "currentColor" : "none"} />
+            {saveLoading ? (
+              <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+            ) : (
+              <Bookmark size={24} fill={isSaved ? "currentColor" : "none"} />
+            )}
           </button>
         </div>
 

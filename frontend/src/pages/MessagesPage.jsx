@@ -138,7 +138,7 @@ const MessagesPage = () => {
   };
 
   return (
-    <section className="mobile-edge flex h-[calc(100dvh_-_10.5rem)] min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 md:h-[calc(100dvh_-_3rem)] md:rounded-2xl">
+    <section className="mobile-edge flex h-[calc(100dvh-10.5rem)] min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 md:h-[calc(100dvh-3rem)] md:rounded-2xl">
       {error ? (
         <div className="shrink-0 border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}

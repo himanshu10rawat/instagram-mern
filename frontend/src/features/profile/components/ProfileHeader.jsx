@@ -6,12 +6,20 @@ import { useDispatch, useSelector } from "react-redux";
 import Avatar from "../../../components/common/Avatar";
 import ShareModal from "../../messages/components/ShareModal";
 import ProfileSafetyMenu from "../../safety/components/ProfileSafetyMenu";
-import { followUser, unfollowUser } from "../../follow/followSlice";
+import {
+  acceptFollowRequest,
+  cancelFollowRequest,
+  followUser,
+  rejectFollowRequest,
+  unfollowUser,
+} from "../../follow/followSlice";
 import { fetchUserProfile } from "../profileSlice";
 import FollowListModal from "./FollowListModal";
 
 const ProfileHeader = ({ profile, isMyProfile }) => {
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [optimisticRequested, setOptimisticRequested] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -43,23 +51,77 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
 
       return request?._id === currentUser?._id;
     });
+  const incomingFollowRequest = profile?.incomingFollowRequest;
+  const hasIncomingFollowRequest =
+    incomingFollowRequest?.status === "pending" && incomingFollowRequest?._id;
+  const hasOutgoingFollowRequest = hasRequested || optimisticRequested;
 
   const handleFollowToggle = async () => {
     if (!profile?._id) return;
 
     let result;
 
-    if (isFollowing) {
-      result = await dispatch(unfollowUser(profile._id));
-    } else {
-      result = await dispatch(followUser(profile._id));
-    }
+    setIsProcessing(true);
 
-    if (
-      followUser.fulfilled.match(result) ||
-      unfollowUser.fulfilled.match(result)
-    ) {
-      dispatch(fetchUserProfile(profile.username));
+    try {
+      if (isFollowing) {
+        result = await dispatch(unfollowUser(profile._id));
+      } else if (hasOutgoingFollowRequest) {
+        result = await dispatch(cancelFollowRequest(profile._id));
+      } else {
+        // optimistic UI: mark requested immediately
+        setOptimisticRequested(true);
+        result = await dispatch(followUser(profile._id));
+      }
+
+      if (
+        followUser.fulfilled.match(result) ||
+        unfollowUser.fulfilled.match(result) ||
+        cancelFollowRequest.fulfilled.match(result)
+      ) {
+        if (cancelFollowRequest.fulfilled.match(result)) {
+          setOptimisticRequested(false);
+        }
+
+        // refresh profile state
+        await dispatch(fetchUserProfile(profile.username));
+      } else if (
+        followUser.rejected.match(result) &&
+        result.payload === "Follow request already sent"
+      ) {
+        setOptimisticRequested(true);
+        await dispatch(fetchUserProfile(profile.username));
+      } else {
+        // revert optimistic on failure
+        setOptimisticRequested(false);
+      }
+    } catch {
+      setOptimisticRequested(false);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleIncomingFollowRequest = async (action) => {
+    if (!incomingFollowRequest?._id || !profile?.username) return;
+
+    setIsProcessing(true);
+
+    try {
+      const result =
+        action === "accept"
+          ? await dispatch(acceptFollowRequest(incomingFollowRequest._id))
+          : await dispatch(rejectFollowRequest(incomingFollowRequest._id));
+
+      const isFulfilled =
+        acceptFollowRequest.fulfilled.match(result) ||
+        rejectFollowRequest.fulfilled.match(result);
+
+      if (isFulfilled) {
+        await dispatch(fetchUserProfile(profile.username));
+      }
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -70,7 +132,7 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
   const getFollowButtonText = () => {
     if (actionLoading) return "Please wait...";
     if (isFollowing) return "Following";
-    if (hasRequested) return "Requested";
+    if (hasOutgoingFollowRequest) return "Cancel request";
     return profile?.isPrivate ? "Request" : "Follow";
   };
 
@@ -88,7 +150,7 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
           </div>
 
           <div className="min-w-0 flex-1">
-            <h1 className="break-words text-xl font-bold text-slate-950 dark:text-white sm:text-2xl">
+            <h1 className="wrap-break-word text-xl font-bold text-slate-950 dark:text-white sm:text-2xl">
               {profile?.fullName || "User"}
             </h1>
 
@@ -104,7 +166,7 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
             </div>
 
             {profile?.bio ? (
-              <p className="mt-3 max-w-2xl break-words text-sm text-slate-700 dark:text-slate-300">
+              <p className="mt-3 max-w-2xl wrap-break-word text-sm text-slate-700 dark:text-slate-300">
                 {profile.bio}
               </p>
             ) : null}
@@ -161,20 +223,65 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
             </>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={handleFollowToggle}
-                disabled={actionLoading}
-                className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
-                  actionLoading ? "cursor-not-allowed opacity-60" : ""
-                } ${
-                  isFollowing || hasRequested
-                    ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-900"
-                    : "bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950"
-                }`}
-              >
-                {getFollowButtonText()}
-              </button>
+              {hasIncomingFollowRequest ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleIncomingFollowRequest("accept")}
+                    disabled={actionLoading || isProcessing}
+                    className={`inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-950`}
+                  >
+                    Accept
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleIncomingFollowRequest("reject")}
+                    disabled={actionLoading || isProcessing}
+                    className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
+                  >
+                    Decline
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleFollowToggle}
+                  disabled={actionLoading || isProcessing}
+                  className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+                    actionLoading || isProcessing
+                      ? "cursor-not-allowed opacity-60"
+                      : ""
+                  } ${
+                    isFollowing || hasRequested || optimisticRequested
+                      ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-900"
+                      : "bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950"
+                  }`}
+                >
+                  {isProcessing ? (
+                    <svg
+                      className="h-4 w-4 animate-spin mr-2"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                  ) : null}
+
+                  {getFollowButtonText()}
+                </button>
+              )}
 
               <button
                 type="button"

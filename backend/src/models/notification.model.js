@@ -50,6 +50,11 @@ const notificationSchema = new mongoose.Schema(
       ref: "Comment",
     },
 
+    followRequest: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "FollowRequest",
+    },
+
     isRead: {
       type: Boolean,
       default: false,

@@ -41,6 +41,16 @@ const getUpdatedProfilePayload = async (userId, extraFields = {}) => {
   return buildProfilePayload(user, extraFields);
 };
 
+const getPendingFollowRequest = async ({ sender, receiver }) => {
+  if (!sender || !receiver) return null;
+
+  return FollowRequest.findOne({
+    sender,
+    receiver,
+    status: "pending",
+  }).select("_id sender receiver status createdAt");
+};
+
 export const getMyProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select(userSelectFields);
   const profile = await buildProfilePayload(user);
@@ -78,17 +88,21 @@ export const getPublicProfile = asyncHandler(async (req, res) => {
     (followerId) => followerId.toString() === req.user?._id?.toString(),
   );
 
-  if (user.isPrivate && !isOwnProfile && !isFollowing) {
-    const hasPendingFollowRequest = req.user?._id
-      ? Boolean(
-          await FollowRequest.exists({
-            sender: req.user._id,
-            receiver: user._id,
-            status: "pending",
-          }),
-        )
-      : false;
+  const canCheckRequests = !isOwnProfile && req.user?._id;
+  const [outgoingFollowRequest, incomingFollowRequest] = canCheckRequests
+    ? await Promise.all([
+        getPendingFollowRequest({
+          sender: req.user._id,
+          receiver: user._id,
+        }),
+        getPendingFollowRequest({
+          sender: user._id,
+          receiver: req.user._id,
+        }),
+      ])
+    : [null, null];
 
+  if (user.isPrivate && !isOwnProfile && !isFollowing) {
     return res.status(HTTP_STATUS.Ok).json(
       new ApiResponse(
         HTTP_STATUS.Ok,
@@ -100,7 +114,8 @@ export const getPublicProfile = asyncHandler(async (req, res) => {
           bio: user.bio,
           isPrivate: user.isPrivate,
           isVerified: user.isVerified,
-          hasPendingFollowRequest,
+          hasPendingFollowRequest: Boolean(outgoingFollowRequest),
+          incomingFollowRequest,
           postsCount: 0,
           followersCount: user.followers.length,
           followingCount: user.following.length,
@@ -110,18 +125,10 @@ export const getPublicProfile = asyncHandler(async (req, res) => {
     );
   }
 
-  const hasPendingFollowRequest =
-    !isOwnProfile && req.user?._id
-      ? Boolean(
-          await FollowRequest.exists({
-            sender: req.user._id,
-            receiver: user._id,
-            status: "pending",
-          }),
-        )
-      : false;
-
-  const profile = await buildProfilePayload(user, { hasPendingFollowRequest });
+  const profile = await buildProfilePayload(user, {
+    hasPendingFollowRequest: Boolean(outgoingFollowRequest),
+    incomingFollowRequest,
+  });
 
   res
     .status(HTTP_STATUS.Ok)

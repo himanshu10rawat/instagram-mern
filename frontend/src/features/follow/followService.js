@@ -11,6 +11,11 @@ export const unfollowUserApi = async (userId) => {
   return response.data.data;
 };
 
+export const cancelFollowRequestApi = async (userId) => {
+  const response = await api.delete(API_ROUTES.follow.cancel(userId));
+  return response.data.data;
+};
+
 export const getFollowersApi = async (userId) => {
   const response = await api.get(API_ROUTES.follow.followers(userId));
   return response.data.data;

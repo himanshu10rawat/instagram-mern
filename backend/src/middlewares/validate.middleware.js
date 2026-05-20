@@ -10,7 +10,11 @@ export const validate = (schema) => {
     });
 
     if (!result.success) {
-      const errors = result.error.issues.map((issue) => issue.message);
+      const errors = result.error.issues.map((issue) => ({
+        field: issue.path.filter((pathPart) => pathPart !== "body").join("."),
+        message: issue.message,
+      }));
+
       next(new ApiError(HTTP_STATUS.BAD_REQUEST, "Validation failed", errors));
       return;
     }

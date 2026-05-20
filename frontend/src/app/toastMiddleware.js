@@ -143,6 +143,12 @@ const fulfilledToasts = {
     message: "You are no longer following this user.",
     duration: 2500,
   },
+  "follow/cancelFollowRequest/fulfilled": {
+    type: "success",
+    title: "Request cancelled",
+    message: "Your follow request was cancelled.",
+    duration: 2500,
+  },
   "follow/acceptFollowRequest/fulfilled": {
     type: "success",
     title: "Request accepted",
@@ -338,6 +344,16 @@ const silentRejectedBases = new Set([
 
 const getToastMessage = (action) => {
   if (typeof action.payload === "string") return action.payload;
+
+  const validationDetails = action.payload?.errors
+    ?.map((error) => (typeof error === "string" ? error : error?.message))
+    .filter(Boolean)
+    .join(". ");
+
+  if (action.payload?.message === "Validation failed" && validationDetails) {
+    return validationDetails;
+  }
+
   if (action.payload?.message) return action.payload.message;
 
   return action.error?.message || "Something went wrong. Please try again.";

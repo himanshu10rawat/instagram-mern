@@ -18,6 +18,18 @@ export const fetchNotifications = createAsyncThunk(
       );
     }
   },
+  {
+    condition: (arg, { getState }) => {
+      const { notifications } = getState();
+
+      if (arg?.force) return true;
+      if (notifications.lastFetched && Date.now() - notifications.lastFetched < 30000) {
+        return false;
+      }
+
+      return !notifications.loading;
+    },
+  },
 );
 
 export const markNotificationRead = createAsyncThunk(
@@ -65,6 +77,7 @@ export const deleteNotification = createAsyncThunk(
 const initialState = {
   notifications: [],
   unreadCount: 0,
+  lastFetched: 0,
   loading: false,
   error: null,
 };
@@ -102,6 +115,7 @@ const notificationSlice = createSlice({
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.loading = false;
         state.notifications = action.payload || [];
+        state.lastFetched = Date.now();
         state.unreadCount = state.notifications.filter(
           (notification) => !notification.isRead,
         ).length;

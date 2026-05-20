@@ -66,7 +66,34 @@ export const register = asyncHandler(async (req, res) => {
   });
 
   if (existingUser) {
-    throw new ApiError(HTTP_STATUS.CONFLICT, "Username, email, or phone number already exists");
+    const duplicateErrors = [];
+
+    if (existingUser.username === username) {
+      duplicateErrors.push({
+        field: "username",
+        message: "Username is already taken",
+      });
+    }
+
+    if (email && existingUser.email === email) {
+      duplicateErrors.push({
+        field: "email",
+        message: "Email is already registered",
+      });
+    }
+
+    if (phoneNumber && existingUser.phoneNumber === phoneNumber) {
+      duplicateErrors.push({
+        field: "phoneNumber",
+        message: "Phone number is already registered",
+      });
+    }
+
+    const duplicateMessage =
+      duplicateErrors.map((error) => error.message).join(". ") ||
+      "Username, email, or phone number already exists";
+
+    throw new ApiError(HTTP_STATUS.CONFLICT, duplicateMessage, duplicateErrors);
   }
 
   const user = await User.create({

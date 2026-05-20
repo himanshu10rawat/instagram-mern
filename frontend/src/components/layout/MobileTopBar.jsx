@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import Avatar from "../common/Avatar";
-import { logoutUser } from "../../features/auth/authSlice";
+import { logoutUser, logoutLocally } from "../../features/auth/authSlice";
 import { adminNavItems, navItems } from "./navigationItems";
 
 const MobileTopBar = () => {
@@ -26,9 +26,20 @@ const MobileTopBar = () => {
   }, [isAdmin]);
 
   const handleLogout = async () => {
-    await dispatch(logoutUser());
-    setIsOpen(false);
-    navigate("/login");
+    try {
+      const result = await dispatch(logoutUser());
+
+      if (result?.meta?.requestStatus === "rejected") {
+        dispatch(logoutLocally());
+      }
+
+      setIsOpen(false);
+      navigate("/login");
+    } catch {
+      dispatch(logoutLocally());
+      setIsOpen(false);
+      navigate("/login");
+    }
   };
 
   return (
@@ -68,7 +79,7 @@ const MobileTopBar = () => {
       </header>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-[60] bg-black/45 md:hidden">
+        <div className="fixed inset-0 z-60 bg-black/45 md:hidden">
           <button
             type="button"
             onClick={() => setIsOpen(false)}
@@ -77,7 +88,7 @@ const MobileTopBar = () => {
           />
 
           <aside className="relative ml-auto flex h-full w-[min(23rem,92vw)] flex-col border-l border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
-            <div className="shrink-0 border-b border-slate-200 px-4 pt-[calc(0.75rem_+_env(safe-area-inset-top))] pb-3 dark:border-slate-800">
+            <div className="shrink-0 border-b border-slate-200 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 dark:border-slate-800">
               <div className="flex items-center justify-between gap-3">
                 <Link
                   to="/profile/me"
@@ -161,7 +172,7 @@ const MobileTopBar = () => {
               </div>
             </div>
 
-            <div className="shrink-0 border-t border-slate-200 p-3 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))] dark:border-slate-800">
+            <div className="shrink-0 border-t border-slate-200 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] dark:border-slate-800">
               <button
                 type="button"
                 onClick={handleLogout}

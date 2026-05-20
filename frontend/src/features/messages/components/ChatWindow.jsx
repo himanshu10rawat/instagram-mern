@@ -119,7 +119,7 @@ const ChatWindow = () => {
   const isTyping = Boolean(typingUsers[activeConversation._id]);
 
   return (
-    <div className="flex h-[calc(100dvh_-_10.5rem)] min-h-0 flex-col overflow-hidden md:h-[calc(100dvh_-_3rem)] rounded-t-2xl md:rounded-2xl md:border md:border-slate-200 md:dark:border-slate-800 bg-white dark:bg-slate-950">
+    <div className="flex h-[calc(100dvh-10.5rem)] min-h-0 flex-col overflow-hidden md:h-[calc(100dvh-3rem)] rounded-t-2xl md:rounded-2xl md:border md:border-slate-200 md:dark:border-slate-800 bg-white dark:bg-slate-950">
       <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 p-3 dark:border-slate-800 sm:p-4">
         <button
           type="button"
@@ -187,7 +187,7 @@ const ChatWindow = () => {
 
       <form
         onSubmit={handleSend}
-        className="flex shrink-0 items-center gap-2 border-t border-slate-200 p-3 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))] dark:border-slate-800 sm:gap-3 sm:p-4"
+        className="flex shrink-0 items-center gap-2 border-t border-slate-200 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] dark:border-slate-800 sm:gap-3 sm:p-4"
       >
         <label className="shrink-0 cursor-pointer rounded-xl p-2 text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900">
           <Image size={22} />
@@ -207,6 +207,7 @@ const ChatWindow = () => {
             handleTyping();
           }}
           placeholder="Message..."
+          enterKeyHint="send"
           className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
         />
 

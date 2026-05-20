@@ -1,10 +1,51 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { CircleCheck, TriangleAlert } from "lucide-react";
 
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import { clearAuthError, registerUser } from "../features/auth/authSlice";
+
+const usernamePattern = /^[a-zA-Z0-9._]+$/;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const getPhoneDigits = ({ countryCode, phoneNumber }) => {
+  return `${countryCode.replace(/\D/g, "")}${phoneNumber.trim()}`;
+};
+
+const getApiFieldName = (error) => {
+  if (typeof error !== "string") return error?.field;
+
+  const lowerMessage = error.toLowerCase();
+
+  if (lowerMessage.includes("username")) return "username";
+  if (lowerMessage.includes("full name")) return "fullName";
+  if (lowerMessage.includes("email")) return "email";
+  if (lowerMessage.includes("phone")) return "phoneNumber";
+  if (lowerMessage.includes("password")) return "password";
+  if (lowerMessage.includes("birth") || lowerMessage.includes("age")) {
+    return "dateOfBirth";
+  }
+
+  return "";
+};
+
+const getApiErrorMessage = (error) =>
+  typeof error === "string" ? error : error?.message || "";
+
+const getApiFieldErrors = (errors = []) => {
+  return errors.reduce((fieldErrors, error) => {
+    const field = getApiFieldName(error);
+    const message = getApiErrorMessage(error);
+
+    if (field && message) {
+      fieldErrors[field] = message;
+    }
+
+    return fieldErrors;
+  }, {});
+};
 
 const getAge = (date) => {
   const today = new Date();
@@ -87,20 +128,45 @@ const RegisterPage = () => {
 
     if (!formData.username.trim()) {
       errors.username = "Username is required";
+    } else if (formData.username.trim().length < 3) {
+      errors.username = "Username must be at least 3 characters";
+    } else if (formData.username.trim().length > 30) {
+      errors.username = "Username cannot exceed 30 characters";
+    } else if (!usernamePattern.test(formData.username.trim())) {
+      errors.username =
+        "Username can only contain letters, numbers, dots and underscores";
     }
 
     if (!formData.fullName.trim()) {
       errors.fullName = "Full name is required";
+    } else if (formData.fullName.trim().length > 60) {
+      errors.fullName = "Full name cannot exceed 60 characters";
     }
 
     if (!formData.email.trim()) {
       errors.email = "Email is required";
+    } else if (!emailPattern.test(formData.email.trim())) {
+      errors.email = "Enter a valid email address";
     }
 
     if (!formData.password.trim()) {
       errors.password = "Password is required";
     } else if (formData.password.length < 8) {
       errors.password = "Password must be at least 8 characters";
+    } else if (formData.password.length > 64) {
+      errors.password = "Password cannot exceed 64 characters";
+    }
+
+    if (formData.phoneNumber.trim()) {
+      const localPhoneNumber = formData.phoneNumber.trim();
+      const fullPhoneNumber = getPhoneDigits(formData);
+
+      if (!/^\d+$/.test(localPhoneNumber)) {
+        errors.phoneNumber = "Use digits only; country code is already selected";
+      } else if (fullPhoneNumber.length < 10 || fullPhoneNumber.length > 15) {
+        errors.phoneNumber =
+          "Phone number must be 10 to 15 digits including country code";
+      }
     }
 
     if (!formData.dateOfBirth) {
@@ -126,15 +192,15 @@ const RegisterPage = () => {
     if (!validateForm()) return;
 
     const payload = {
-      username: formData.username,
-      fullName: formData.fullName,
-      email: formData.email,
+      username: formData.username.trim(),
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim(),
       password: formData.password,
       dateOfBirth: formData.dateOfBirth,
     };
 
     if (formData.phoneNumber.trim()) {
-      payload.phoneNumber = `${formData.countryCode}${formData.phoneNumber.trim()}`;
+      payload.phoneNumber = getPhoneDigits(formData);
     }
 
     const result = await dispatch(registerUser(payload));
@@ -145,6 +211,11 @@ const RegisterPage = () => {
       setTimeout(() => {
         navigate("/login");
       }, 1200);
+    } else if (registerUser.rejected.match(result)) {
+      setFormErrors((prev) => ({
+        ...prev,
+        ...getApiFieldErrors(result.payload?.errors),
+      }));
     }
   };
 
@@ -160,7 +231,7 @@ const RegisterPage = () => {
 
         {error ? (
           <div className="mt-6 flex items-start gap-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-300">
-            <div className="mt-0.5 shrink-0 text-lg">⚠️</div>
+            <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
               <p className="font-semibold">Registration failed</p>
               <p className="mt-1 text-xs">{error}</p>
@@ -170,7 +241,7 @@ const RegisterPage = () => {
 
         {successMessage ? (
           <div className="mt-6 flex items-start gap-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-300">
-            <div className="mt-0.5 shrink-0 text-lg">✓</div>
+            <CircleCheck className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
               <p className="font-semibold">Success!</p>
               <p className="mt-1 text-xs">{successMessage}</p>
@@ -222,8 +293,15 @@ const RegisterPage = () => {
                     ...prev,
                     countryCode: e.target.value,
                   }));
+                  setFormErrors((prev) => ({
+                    ...prev,
+                    phoneNumber: "",
+                  }));
+                  if (error) {
+                    dispatch(clearAuthError());
+                  }
                 }}
-                className="flex-shrink-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="shrink-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
                 {countryOptions.map((opt) => (
                   <option key={opt.code} value={opt.code}>
@@ -238,9 +316,15 @@ const RegisterPage = () => {
                 onChange={handleChange}
                 placeholder="Phone number"
                 autoComplete="tel"
+                aria-invalid={Boolean(formErrors.phoneNumber)}
                 className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm outline-none focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
               />
             </div>
+            {formErrors.phoneNumber ? (
+              <p className="mt-1 text-xs text-red-500">
+                {formErrors.phoneNumber}
+              </p>
+            ) : null}
           </div>
 
           <Input

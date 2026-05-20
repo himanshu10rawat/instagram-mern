@@ -50,7 +50,7 @@ const HomePage = () => {
   return (
     <section className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0">
-        <section className="mx-auto max-w-2xl space-y-4 sm:space-y-6">
+        <section className="mx-auto max-w-full space-y-4 sm:space-y-6">
           <StoryTray
             storyGroups={storyGroups}
             currentUser={storyCurrentUser}
@@ -68,10 +68,8 @@ const HomePage = () => {
           </div>
         ) : null}
 
-        <div className="mt-4 space-y-4 sm:mt-6 sm:space-y-6">
-          {loading && posts.length === 0 ? (
-            <FeedSkeleton count={2} />
-          ) : null}
+        <div className="mt-3 space-y-3 sm:mt-6 sm:space-y-6">
+          {loading && posts.length === 0 ? <FeedSkeleton count={2} /> : null}
 
           {!loading && posts.length === 0 ? (
             <EmptyState

@@ -1,6 +1,7 @@
 import { Check, UserPlus, X } from "lucide-react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
 import Avatar from "../components/common/Avatar";
 import EmptyState from "../components/ui/EmptyState";
@@ -53,24 +54,30 @@ const FollowRequestsPage = () => {
             ? requests.map((request) => {
                 const user =
                   request.sender || request.requestedBy || request.user;
+                const profilePath = user?.username
+                  ? `/profile/${user.username}`
+                  : "";
 
                 return (
                   <div
                     key={request._id}
                     className="flex flex-col justify-between gap-4 rounded-xl border border-slate-200 p-3 dark:border-slate-800 sm:flex-row sm:items-center sm:rounded-2xl sm:p-4"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
+                    <Link
+                      to={profilePath || "/follow-requests"}
+                      className="flex min-w-0 items-center gap-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-400"
+                    >
                       <Avatar src={user?.avatar?.url} alt={user?.username} />
 
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                        <p className="truncate text-sm font-semibold text-slate-950 hover:underline dark:text-white">
                           {user?.username || "Unknown user"}
                         </p>
                         <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                           {user?.fullName || "Wants to follow you"}
                         </p>
                       </div>
-                    </div>
+                    </Link>
 
                     <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:w-auto sm:flex">
                       <button

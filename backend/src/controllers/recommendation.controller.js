@@ -1,4 +1,5 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
+import FollowRequest from "../models/followRequest.model.js";
 import Post from "../models/post.model.js";
 import Reel from "../models/reel.model.js";
 import User from "../models/user.model.js";
@@ -8,6 +9,27 @@ import { getCache, setCache } from "../utils/cache.js";
 
 const userPublicFields = "username fullName avatar bio isVerified followers following isPrivate";
 const authorPublicFields = "username fullName avatar isVerified";
+
+const addFollowRequestStatus = async (users, currentUserId) => {
+  const userIds = users.map((user) => user._id);
+
+  const pendingRequests = await FollowRequest.find({
+    sender: currentUserId,
+    receiver: {
+      $in: userIds,
+    },
+    status: "pending",
+  }).select("receiver");
+
+  const pendingReceiverIds = new Set(
+    pendingRequests.map((request) => request.receiver.toString()),
+  );
+
+  return users.map((user) => ({
+    ...(typeof user.toObject === "function" ? user.toObject() : user),
+    hasPendingFollowRequest: pendingReceiverIds.has(String(user._id)),
+  }));
+};
 
 const getVisibleAuthorIds = async (currentUser, currentUserId) => {
   return User.find({
@@ -77,9 +99,11 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
   const cachedUsers = await getCache(cacheKey);
 
   if (cachedUsers) {
+    const users = await addFollowRequestStatus(cachedUsers, req.user._id);
+
     return res
       .status(HTTP_STATUS.OK)
-      .json(new ApiResponse(HTTP_STATUS.OK, cachedUsers, "Suggested users fetched from cache"));
+      .json(new ApiResponse(HTTP_STATUS.OK, users, "Suggested users fetched from cache"));
   }
 
   const currentUser = await User.findById(req.user._id).select("following blockedUsers");
@@ -98,9 +122,10 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
     followers: {
       $in: currentUser.following,
     },
-  })
+    })
     .select(userPublicFields)
-    .limit(20);
+    .limit(20)
+    .lean();
 
   const popularCandidates = await User.find({
     _id: {
@@ -111,15 +136,19 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
     blockedUsers: {
       $ne: req.user._id,
     },
-  })
+    })
     .select(userPublicFields)
     .sort({
       followers: -1,
       createdAt: -1,
     })
-    .limit(20);
+    .limit(20)
+    .lean();
 
-  const users = [...mutualCandidates, ...popularCandidates].slice(0, 20);
+  const users = await addFollowRequestStatus(
+    [...mutualCandidates, ...popularCandidates].slice(0, 20),
+    req.user._id,
+  );
 
   await setCache(cacheKey, users, 120);
 

@@ -30,7 +30,7 @@ const MainLayout = () => {
       <MobileTopBar />
       <Sidebar />
 
-      <main className="min-h-dvh pt-14 pb-[calc(5rem_+_env(safe-area-inset-bottom))] md:ml-20 md:pt-0 md:pb-0 xl:ml-64">
+      <main className="min-h-dvh pt-14 pb-[calc(5rem+env(safe-area-inset-bottom))] md:ml-20 md:pt-0 md:pb-0 xl:ml-64">
         <div className="mx-auto min-h-dvh w-full max-w-7xl px-3 py-3 sm:px-4 sm:py-4">
           <Outlet />
         </div>

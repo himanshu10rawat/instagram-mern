@@ -126,6 +126,7 @@ const storySchema = new mongoose.Schema(
 );
 
 storySchema.index({ author: 1, createdAt: -1 });
+storySchema.index({ author: 1, expiresAt: 1, isDeleted: 1, createdAt: -1 });
 
 const Story = mongoose.model("Story", storySchema);
 

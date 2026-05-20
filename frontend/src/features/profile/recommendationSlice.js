@@ -13,10 +13,26 @@ export const fetchSuggestedUsers = createAsyncThunk(
       );
     }
   },
+  {
+    condition: (arg, { getState }) => {
+      const { recommendations } = getState();
+
+      if (arg?.force) return true;
+      if (
+        recommendations.users.length > 0 &&
+        Date.now() - recommendations.lastFetched < 60000
+      ) {
+        return false;
+      }
+
+      return !recommendations.loading;
+    },
+  },
 );
 
 const initialState = {
   users: [],
+  lastFetched: 0,
   loading: false,
   error: null,
 };
@@ -33,6 +49,7 @@ const recommendationSlice = createSlice({
       .addCase(fetchSuggestedUsers.fulfilled, (state, action) => {
         state.loading = false;
         state.users = action.payload || [];
+        state.lastFetched = Date.now();
       })
       .addCase(fetchSuggestedUsers.rejected, (state, action) => {
         state.loading = false;

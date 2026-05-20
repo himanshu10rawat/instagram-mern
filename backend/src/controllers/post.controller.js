@@ -172,7 +172,8 @@ export const getFeedPosts = asyncHandler(async (req, res) => {
     .populate("author", userPublicFields)
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit);
+    .limit(limit)
+    .lean();
 
   const responseData = {
     posts,

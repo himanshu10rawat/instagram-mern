@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
   acceptFollowRequestApi,
+  cancelFollowRequestApi,
   followUserApi,
   getFollowRequestsApi,
   rejectFollowRequestApi,
@@ -29,6 +30,20 @@ export const unfollowUser = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to unfollow user",
+      );
+    }
+  },
+);
+
+export const cancelFollowRequest = createAsyncThunk(
+  "follow/cancelFollowRequest",
+  async (userId, { rejectWithValue }) => {
+    try {
+      await cancelFollowRequestApi(userId);
+      return userId;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to cancel request",
       );
     }
   },
@@ -110,6 +125,18 @@ const followSlice = createSlice({
         state.actionLoading = false;
       })
       .addCase(unfollowUser.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(cancelFollowRequest.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+      })
+      .addCase(cancelFollowRequest.fulfilled, (state) => {
+        state.actionLoading = false;
+      })
+      .addCase(cancelFollowRequest.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
       })

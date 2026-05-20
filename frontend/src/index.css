@@ -73,8 +73,20 @@ textarea {
     border-left-width: 0;
     border-radius: 0;
     border-right-width: 0;
-    margin-left: -0.75rem;
-    margin-right: -0.75rem;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+  }
+}
+
+/* Post card spacing tuned for mobile */
+.post-card {
+  margin-bottom: 0.5rem;
+}
+
+/* Make small touch targets slightly larger on mobile */
+@media (max-width: 767px) {
+  .min-h-11 {
+    min-height: 3rem;
   }
 }
 

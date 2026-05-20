@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Users } from "lucide-react";
@@ -6,7 +6,11 @@ import { Users } from "lucide-react";
 import Avatar from "../../../components/common/Avatar";
 import EmptyState from "../../../components/ui/EmptyState";
 import { ListSkeleton } from "../../../components/ui/Skeleton";
-import { followUser, unfollowUser } from "../../follow/followSlice";
+import {
+  cancelFollowRequest,
+  followUser,
+  unfollowUser,
+} from "../../follow/followSlice";
 import { fetchSuggestedUsers } from "../recommendationSlice";
 
 const getId = (value) => (typeof value === "string" ? value : value?._id);
@@ -19,9 +23,9 @@ const getFollowStatus = ({ user, currentUserId }) => {
     (follower) => getId(follower) === currentUserId,
   );
 
-  const hasRequested = followRequests.some(
-    (requestUser) => getId(requestUser) === currentUserId,
-  );
+  const hasRequested =
+    Boolean(user?.hasPendingFollowRequest) ||
+    followRequests.some((requestUser) => getId(requestUser) === currentUserId);
 
   return {
     isFollowing,
@@ -40,32 +44,63 @@ const SuggestedUsers = ({ limit = 5, showHeader = true }) => {
   const currentUserId = currentUser?._id;
   const visibleUsers = limit ? users.slice(0, limit) : users;
 
+  const [processingIds, setProcessingIds] = useState([]);
+  const [requestedIds, setRequestedIds] = useState([]);
+
   useEffect(() => {
     dispatch(fetchSuggestedUsers());
   }, [dispatch]);
 
-  const handleFollowToggle = async ({ user, isFollowing }) => {
+  const handleFollowToggle = async ({ user, isFollowing, isRequested }) => {
     if (!user?._id) return;
 
-    let result;
+    // optimistic UI per-item
+    setProcessingIds((prev) => [...prev, user._id]);
 
-    if (isFollowing) {
-      result = await dispatch(unfollowUser(user._id));
-    } else {
-      result = await dispatch(followUser(user._id));
-    }
+    try {
+      let result;
 
-    if (
-      followUser.fulfilled.match(result) ||
-      unfollowUser.fulfilled.match(result)
-    ) {
-      dispatch(fetchSuggestedUsers());
+      if (isFollowing) {
+        result = await dispatch(unfollowUser(user._id));
+      } else if (isRequested) {
+        result = await dispatch(cancelFollowRequest(user._id));
+      } else {
+        // optimistic: update UI immediately by re-fetching suggestions after success
+        result = await dispatch(followUser(user._id));
+      }
+
+      if (
+        followUser.fulfilled.match(result) ||
+        unfollowUser.fulfilled.match(result) ||
+        cancelFollowRequest.fulfilled.match(result)
+      ) {
+        if (followUser.fulfilled.match(result) && user.isPrivate) {
+          setRequestedIds((prev) =>
+            prev.includes(user._id) ? prev : [...prev, user._id],
+          );
+        }
+
+        if (cancelFollowRequest.fulfilled.match(result)) {
+          setRequestedIds((prev) => prev.filter((id) => id !== user._id));
+        }
+
+        dispatch(fetchSuggestedUsers({ force: true }));
+      } else if (
+        followUser.rejected.match(result) &&
+        result.payload === "Follow request already sent"
+      ) {
+        setRequestedIds((prev) =>
+          prev.includes(user._id) ? prev : [...prev, user._id],
+        );
+      }
+    } finally {
+      setProcessingIds((prev) => prev.filter((id) => id !== user._id));
     }
   };
 
   const getButtonText = ({ user, isFollowing, hasRequested }) => {
     if (isFollowing) return "Following";
-    if (hasRequested) return "Requested";
+    if (hasRequested) return "Cancel";
 
     return user?.isPrivate ? "Request" : "Follow";
   };
@@ -87,9 +122,7 @@ const SuggestedUsers = ({ limit = 5, showHeader = true }) => {
         </div>
       ) : null}
 
-      {loading ? (
-        <ListSkeleton count={limit || 5} withActions />
-      ) : null}
+      {loading ? <ListSkeleton count={limit || 5} withActions /> : null}
 
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
@@ -110,6 +143,8 @@ const SuggestedUsers = ({ limit = 5, showHeader = true }) => {
                 user,
                 currentUserId,
               });
+              const isRequested =
+                hasRequested || requestedIds.includes(user._id);
 
               return (
                 <div
@@ -139,15 +174,39 @@ const SuggestedUsers = ({ limit = 5, showHeader = true }) => {
 
                   <button
                     type="button"
-                    onClick={() => handleFollowToggle({ user, isFollowing })}
-                    disabled={hasRequested}
-                    className={`min-h-10 shrink-0 rounded-xl px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-70 ${
-                      isFollowing || hasRequested
+                    onClick={() =>
+                      handleFollowToggle({ user, isFollowing, isRequested })
+                    }
+                    disabled={processingIds.includes(user._id)}
+                    className={`min-h-10 shrink-0 rounded-xl px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-70 flex items-center gap-2 ${
+                      isFollowing || isRequested
                         ? "border border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-300"
                         : "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
                     }`}
                   >
-                    {getButtonText({ user, isFollowing, hasRequested })}
+                    {processingIds.includes(user._id) ? (
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
+                      </svg>
+                    ) : null}
+
+                    {getButtonText({
+                      user,
+                      isFollowing,
+                      hasRequested: isRequested,
+                    })}
                   </button>
                 </div>
               );

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Bell } from "lucide-react";
 
@@ -11,9 +11,14 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "../features/notifications/notificationSlice";
+import {
+  acceptFollowRequest,
+  rejectFollowRequest,
+} from "../features/follow/followSlice";
 
 const NotificationsPage = () => {
   const dispatch = useDispatch();
+  const [processingRequestId, setProcessingRequestId] = useState("");
 
   const { notifications, loading, error, unreadCount } = useSelector(
     (state) => state.notifications,
@@ -21,7 +26,7 @@ const NotificationsPage = () => {
 
   useEffect(() => {
     const syncNotifications = async () => {
-      const result = await dispatch(fetchNotifications());
+      const result = await dispatch(fetchNotifications({ force: true }));
 
       if (
         fetchNotifications.fulfilled.match(result) &&
@@ -40,6 +45,34 @@ const NotificationsPage = () => {
 
   const handleDelete = (notificationId) => {
     dispatch(deleteNotification(notificationId));
+  };
+
+  const handleAcceptRequest = async ({ notification, followRequestId }) => {
+    setProcessingRequestId(followRequestId);
+
+    try {
+      const result = await dispatch(acceptFollowRequest(followRequestId));
+
+      if (acceptFollowRequest.fulfilled.match(result)) {
+        dispatch(deleteNotification(notification._id));
+      }
+    } finally {
+      setProcessingRequestId("");
+    }
+  };
+
+  const handleRejectRequest = async ({ notification, followRequestId }) => {
+    setProcessingRequestId(followRequestId);
+
+    try {
+      const result = await dispatch(rejectFollowRequest(followRequestId));
+
+      if (rejectFollowRequest.fulfilled.match(result)) {
+        dispatch(deleteNotification(notification._id));
+      }
+    } finally {
+      setProcessingRequestId("");
+    }
   };
 
   const handleMarkAllRead = () => {
@@ -100,8 +133,11 @@ const NotificationsPage = () => {
                 <NotificationItem
                   key={notification._id}
                   notification={notification}
+                  onAcceptRequest={handleAcceptRequest}
                   onRead={handleMarkAsRead}
                   onDelete={handleDelete}
+                  onRejectRequest={handleRejectRequest}
+                  processingRequestId={processingRequestId}
                 />
               ))
             : null}

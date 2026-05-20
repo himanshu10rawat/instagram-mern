@@ -199,7 +199,8 @@ export const getActiveStories = asyncHandler(async (req, res) => {
     isDeleted: false,
   })
     .populate("author", userPublicFields)
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   const visibleStories = stories.filter(
     (story) => story.author && canViewStory(story, story.author, req.user._id),

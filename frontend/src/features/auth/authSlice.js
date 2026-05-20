@@ -33,6 +33,55 @@ const clearStoredCredentials = () => {
   localStorage.removeItem("refreshToken");
 };
 
+const fieldLabels = {
+  username: "Username",
+  fullName: "Full name",
+  email: "Email",
+  phoneNumber: "Phone number",
+  password: "Password",
+  dateOfBirth: "Date of birth",
+};
+
+const normalizeApiErrors = (errors = []) =>
+  errors
+    .map((error) => {
+      if (typeof error === "string") {
+        return {
+          field: "",
+          message: error,
+        };
+      }
+
+      return {
+        field: error?.field || "",
+        message: error?.message || "",
+      };
+    })
+    .filter((error) => error.message);
+
+const formatErrorMessage = (error) => {
+  const label = fieldLabels[error.field];
+
+  if (!label || error.message.toLowerCase().startsWith(label.toLowerCase())) {
+    return error.message;
+  }
+
+  return `${label}: ${error.message}`;
+};
+
+const getApiErrorPayload = (error, fallbackMessage) => {
+  const data = error.response?.data;
+  const errors = normalizeApiErrors(data?.errors);
+  const message = errors.length
+    ? errors.map(formatErrorMessage).join(". ")
+    : data?.message || fallbackMessage;
+
+  return {
+    message,
+    errors,
+  };
+};
+
 const applyCredentials = (state, payload) => {
   const user = payload?.user || null;
   const accessToken = payload?.accessToken || null;
@@ -98,9 +147,7 @@ export const registerUser = createAsyncThunk(
     try {
       return await registerUserApi(payload);
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Registration failed",
-      );
+      return rejectWithValue(getApiErrorPayload(error, "Registration failed"));
     }
   },
 );
@@ -242,7 +289,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || "Registration failed";
       })
 
       .addCase(getCurrentUser.pending, (state) => {

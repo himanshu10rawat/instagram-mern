@@ -25,6 +25,9 @@ export const fetchConversations = createAsyncThunk(
       );
     }
   },
+  {
+    condition: (_, { getState }) => !getState().messages.loading,
+  },
 );
 
 export const fetchMessages = createAsyncThunk(
@@ -103,6 +106,9 @@ export const fetchMessageRequests = createAsyncThunk(
         error.response?.data?.message || "Failed to fetch requests",
       );
     }
+  },
+  {
+    condition: (_, { getState }) => !getState().messages.requestsLoading,
   },
 );
 
@@ -337,6 +343,7 @@ const initialState = {
   page: 1,
   hasMore: true,
   loading: false,
+  requestsLoading: false,
   messagesLoading: false,
   sending: false,
   error: null,
@@ -575,9 +582,18 @@ const messageSlice = createSlice({
         );
       })
 
+      .addCase(fetchMessageRequests.pending, (state) => {
+        state.requestsLoading = true;
+        state.error = null;
+      })
       .addCase(fetchMessageRequests.fulfilled, (state, action) => {
+        state.requestsLoading = false;
         state.requests = action.payload || [];
         recalculateUnreadCounts(state);
+      })
+      .addCase(fetchMessageRequests.rejected, (state, action) => {
+        state.requestsLoading = false;
+        state.error = action.payload;
       })
 
       .addCase(acceptMessageRequest.fulfilled, (state, action) => {

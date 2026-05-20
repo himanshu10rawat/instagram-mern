@@ -11,6 +11,7 @@ const createNotification = async ({
   reel = null,
   story = null,
   comment = null,
+  followRequest = null,
   message = null,
 }) => {
   if (!sender || !receiver) return null;
@@ -25,6 +26,7 @@ const createNotification = async ({
     reel,
     story,
     comment,
+    followRequest,
     message,
   });
 
@@ -35,6 +37,7 @@ const createNotification = async ({
     .populate("post")
     .populate("reel")
     .populate("story")
+    .populate("followRequest")
     .populate("message");
 
   const receiverSocketId = await getUserSocket(receiver);

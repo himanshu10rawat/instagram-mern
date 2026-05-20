@@ -51,6 +51,23 @@ export const fetchFeedPosts = createAsyncThunk(
       );
     }
   },
+  {
+    condition: ({ page = 1, force = false } = {}, { getState }) => {
+      const { posts } = getState();
+
+      if (posts.loading) return false;
+      if (force) return true;
+      if (
+        page === 1 &&
+        posts.posts.length > 0 &&
+        Date.now() - posts.lastFetched < 30000
+      ) {
+        return false;
+      }
+
+      return true;
+    },
+  },
 );
 
 export const likePost = createAsyncThunk(
@@ -171,6 +188,7 @@ const initialState = {
   currentPost: null,
   page: 1,
   hasMore: true,
+  lastFetched: 0,
   loading: false,
   actionLoading: false,
   error: null,
@@ -239,6 +257,7 @@ const postSlice = createSlice({
 
         state.page = pagination?.page || 1;
         state.hasMore = Boolean(pagination?.hasMore);
+        state.lastFetched = Date.now();
       })
       .addCase(fetchFeedPosts.rejected, (state, action) => {
         state.loading = false;

@@ -2,12 +2,13 @@ import mongoose from "mongoose";
 
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import FollowRequest from "../models/followRequest.model.js";
+import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createNotification from "../utils/createNotification.js";
-import { deleteCacheByPattern } from "../utils/cache.js";
+import { deleteCache, deleteCacheByPattern } from "../utils/cache.js";
 
 const userPublicFields = "username fullName avatar bio isPrivate isVerified";
 
@@ -24,6 +25,21 @@ const hasObjectId = (objectIds = [], id) => {
 const deleteRecommendationCaches = async (userId) => {
   await deleteCacheByPattern(`recommendations:*:${userId}:*`);
   await deleteCacheByPattern(`recommendations:users:${userId}`);
+};
+
+const deleteFollowRequestNotifications = async ({ sender, receiver, requestId }) => {
+  await Notification.deleteMany({
+    sender,
+    receiver,
+    type: "follow_request",
+    $or: [
+      { followRequest: requestId },
+      { followRequest: { $exists: false } },
+      { followRequest: null },
+    ],
+  });
+
+  await deleteCache(`notifications:${receiver}`);
 };
 
 export const followUser = asyncHandler(async (req, res) => {
@@ -87,6 +103,7 @@ export const followUser = asyncHandler(async (req, res) => {
       sender: currentUserId,
       receiver: userId,
       type: "follow_request",
+      followRequest: followRequest._id,
     });
 
     await deleteRecommendationCaches(req.user._id);
@@ -158,6 +175,12 @@ export const cancelFollowRequest = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Follow request not found");
   }
 
+  await deleteFollowRequestNotifications({
+    sender: currentUserId,
+    receiver: userId,
+    requestId: request._id,
+  });
+
   await deleteRecommendationCaches(req.user._id);
 
   res
@@ -192,6 +215,12 @@ export const acceptFollowRequest = asyncHandler(async (req, res) => {
     $addToSet: { followers: request.sender },
   });
 
+  await deleteFollowRequestNotifications({
+    sender: request.sender,
+    receiver: currentUserId,
+    requestId: request._id,
+  });
+
   await deleteRecommendationCaches(req.user._id);
   await deleteRecommendationCaches(request.sender);
 
@@ -224,6 +253,11 @@ export const rejectFollowRequest = asyncHandler(async (req, res) => {
 
   await deleteRecommendationCaches(req.user._id);
   await deleteRecommendationCaches(request.sender);
+  await deleteFollowRequestNotifications({
+    sender: request.sender,
+    receiver: currentUserId,
+    requestId: request._id,
+  });
 
   res.status(HTTP_STATUS.Ok).json(new ApiResponse(HTTP_STATUS.Ok, null, "Follow request rejected"));
 });

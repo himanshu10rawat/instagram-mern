@@ -19,6 +19,21 @@ export const fetchStoriesFeed = createAsyncThunk(
       );
     }
   },
+  {
+    condition: (arg, { getState }) => {
+      const { stories } = getState();
+
+      if (arg?.force) return true;
+      if (
+        stories.storyGroups.length > 0 &&
+        Date.now() - stories.lastFetched < 30000
+      ) {
+        return false;
+      }
+
+      return !stories.loading;
+    },
+  },
 );
 
 export const fetchSingleStory = createAsyncThunk(
@@ -124,6 +139,7 @@ const normalizeStoryGroups = (payload = []) => {
 const initialState = {
   storyGroups: [],
   currentStory: null,
+  lastFetched: 0,
   loading: false,
   actionLoading: false,
   error: null,
@@ -152,6 +168,7 @@ const storySlice = createSlice({
       .addCase(fetchStoriesFeed.fulfilled, (state, action) => {
         state.loading = false;
         state.storyGroups = normalizeStoryGroups(action.payload);
+        state.lastFetched = Date.now();
       })
       .addCase(fetchStoriesFeed.rejected, (state, action) => {
         state.loading = false;
