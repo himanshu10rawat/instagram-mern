@@ -3,6 +3,10 @@ import { createSlice, nanoid } from "@reduxjs/toolkit";
 const VALID_TOAST_TYPES = new Set(["success", "error", "info", "warning"]);
 const DEFAULT_DURATION = 4000;
 const MAX_TOASTS = 4;
+const DUPLICATE_TOAST_WINDOW_MS = 1800;
+
+const getToastKey = (toast) =>
+  [toast.type, toast.title, toast.message].join("|");
 
 const normalizeDuration = (duration) => {
   if (duration === 0) return 0;
@@ -38,6 +42,18 @@ const toastSlice = createSlice({
   reducers: {
     showToast: {
       reducer: (state, action) => {
+        const incomingToast = action.payload;
+        const incomingKey = getToastKey(incomingToast);
+        const hasRecentDuplicate = state.items.some((toast) => {
+          return (
+            getToastKey(toast) === incomingKey &&
+            Math.abs(incomingToast.createdAt - toast.createdAt) <
+              DUPLICATE_TOAST_WINDOW_MS
+          );
+        });
+
+        if (hasRecentDuplicate) return;
+
         state.items.unshift(action.payload);
         state.items = state.items.slice(0, MAX_TOASTS);
       },

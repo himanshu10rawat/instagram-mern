@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import MediaPreviewFallback from "../../../components/common/MediaPreviewFallback";
 import { editMessage, reactMessage } from "../messageSlice";
 
 const getReplyPreview = (replyTo) => {
@@ -14,17 +16,29 @@ const getReplyPreview = (replyTo) => {
 
 const getMediaUrl = (media) => media?.optimizedUrl || media?.url;
 
+const heartReactionValues = new Set(["<3", "heart", "like", "love"]);
+
+const isHeartReaction = (emoji = "") => {
+  const normalizedEmoji = emoji.toLowerCase();
+
+  return (
+    heartReactionValues.has(normalizedEmoji) ||
+    normalizedEmoji.includes("\u2764")
+  );
+};
+
 const MessageBubble = ({ message, isMine, onReply }) => {
   const dispatch = useDispatch();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.text || "");
+  const [mediaPreviewFailed, setMediaPreviewFailed] = useState(false);
 
   const handleReact = () => {
     dispatch(
       reactMessage({
         messageId: message._id,
-        emoji: "<3",
+        emoji: "heart",
       }),
     );
   };
@@ -76,14 +90,22 @@ const MessageBubble = ({ message, isMine, onReply }) => {
                 poster={message.media.thumbnailUrl}
                 className="max-h-96 w-full max-w-full object-contain"
               />
-            ) : (
+            ) : !mediaPreviewFailed ? (
               <img
                 src={getMediaUrl(message.media)}
                 alt="Message media"
                 loading="lazy"
                 decoding="async"
+                onError={() => setMediaPreviewFailed(true)}
                 className="max-h-96 w-full max-w-full object-contain"
               />
+            ) : (
+              <div className="h-52 w-full">
+                <MediaPreviewFallback
+                  label="IMAGE"
+                  message="Preview unavailable"
+                />
+              </div>
             )}
           </div>
         ) : null}
@@ -210,8 +232,30 @@ const MessageBubble = ({ message, isMine, onReply }) => {
         </div>
 
         {message.reactions?.length > 0 ? (
-          <div className="mt-2 text-xs">
-            {message.reactions.map((reaction) => reaction.emoji).join(" ")}
+          <div className="mt-2 flex flex-wrap gap-1">
+            {message.reactions.map((reaction, index) => {
+              const reactionKey =
+                reaction._id ||
+                `${reaction.user?._id || reaction.user || "reaction"}-${index}`;
+
+              return (
+                <span
+                  key={reactionKey}
+                  className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs shadow-sm ${
+                    isMine
+                      ? "bg-white text-red-500 dark:bg-slate-950"
+                      : "bg-white text-red-500 dark:bg-slate-800"
+                  }`}
+                  title={isHeartReaction(reaction.emoji) ? "Liked" : reaction.emoji}
+                >
+                  {isHeartReaction(reaction.emoji) ? (
+                    <Heart size={14} fill="currentColor" aria-hidden="true" />
+                  ) : (
+                    reaction.emoji
+                  )}
+                </span>
+              );
+            })}
           </div>
         ) : null}
       </div>

@@ -18,6 +18,9 @@ const MobileTopBar = () => {
     (state) => state.notifications.unreadCount,
   );
   const unreadMessages = useSelector((state) => state.messages.unreadCount);
+  const pendingFollowRequests = useSelector(
+    (state) => state.follow.requests.length,
+  );
 
   const isAdmin = currentUser?.role === "admin" || currentUser?.isAdmin;
 
@@ -139,9 +142,14 @@ const MobileTopBar = () => {
                     item.path === "/notifications" && unreadNotifications > 0;
                   const showMessageBadge =
                     item.path === "/messages" && unreadMessages > 0;
+                  const showRequestBadge =
+                    item.path === "/follow-requests" &&
+                    pendingFollowRequests > 0;
                   const badgeCount = showNotificationBadge
                     ? unreadNotifications
-                    : unreadMessages;
+                    : showMessageBadge
+                      ? unreadMessages
+                      : pendingFollowRequests;
 
                   return (
                     <NavLink
@@ -161,7 +169,9 @@ const MobileTopBar = () => {
                         {item.label}
                       </span>
 
-                      {showNotificationBadge || showMessageBadge ? (
+                      {showNotificationBadge ||
+                      showMessageBadge ||
+                      showRequestBadge ? (
                         <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
                           {badgeCount > 99 ? "99+" : badgeCount}
                         </span>

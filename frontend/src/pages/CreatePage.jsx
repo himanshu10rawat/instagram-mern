@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+import MediaPreviewFallback from "../components/common/MediaPreviewFallback";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import {
@@ -13,6 +14,10 @@ import {
 } from "../features/create/createSlice";
 import { fetchStoriesFeed } from "../features/stories/storySlice";
 import { FORM_DATA_FIELDS } from "../constants/apiRoutes";
+import {
+  canPreviewImageFile,
+  getFileTypeLabel,
+} from "../utils/mediaPreview";
 
 const contentTypes = [
   {
@@ -120,18 +125,52 @@ const getFileKind = (file) => {
 const getFileId = (file, index = 0) =>
   `${file.name}-${file.lastModified}-${file.size}-${index}`;
 
-const createFilePreviews = (selectedFiles) =>
-  selectedFiles.map((file, index) => ({
+const readFileAsDataUrl = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+
+    reader.addEventListener("load", () => {
+      resolve(typeof reader.result === "string" ? reader.result : "");
+    });
+
+    reader.addEventListener("error", () => {
+      resolve("");
+    });
+
+    reader.readAsDataURL(file);
+  });
+};
+
+const createFilePreview = async (file, index) => {
+  const kind = getFileKind(file);
+  const canPreview = kind !== "image" || canPreviewImageFile(file);
+  const shouldUseDataUrl = kind === "image" && canPreview;
+  const url = shouldUseDataUrl
+    ? await readFileAsDataUrl(file)
+    : URL.createObjectURL(file);
+
+  return {
+    canPreview,
     id: getFileId(file, index),
-    kind: getFileKind(file),
+    kind,
     name: file.name,
     type: file.type,
-    url: URL.createObjectURL(file),
-  }));
+    url,
+    objectUrl: !shouldUseDataUrl,
+    failed: shouldUseDataUrl && !url,
+  };
+};
+
+const createFilePreviews = (selectedFiles) =>
+  Promise.all(
+    selectedFiles.map((file, index) => createFilePreview(file, index)),
+  );
 
 const revokeFilePreviews = (filePreviews) => {
   filePreviews.forEach((preview) => {
-    URL.revokeObjectURL(preview.url);
+    if (preview.objectUrl && preview.url) {
+      URL.revokeObjectURL(preview.url);
+    }
   });
 };
 
@@ -212,19 +251,32 @@ const CreatePage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [localError, setLocalError] = useState("");
   const [previews, setPreviews] = useState([]);
+  const isMountedRef = useRef(true);
+  const previewRequestRef = useRef(0);
   const previewsRef = useRef([]);
 
   useEffect(() => {
     dispatch(clearCreateStatus());
 
     return () => {
+      isMountedRef.current = false;
+      previewRequestRef.current += 1;
       revokeFilePreviews(previewsRef.current);
       dispatch(clearCreateStatus());
     };
   }, [dispatch]);
 
-  const replaceFiles = (nextFiles) => {
-    const nextPreviews = createFilePreviews(nextFiles);
+  const replaceFiles = async (nextFiles) => {
+    const requestId = previewRequestRef.current + 1;
+
+    previewRequestRef.current = requestId;
+
+    const nextPreviews = await createFilePreviews(nextFiles);
+
+    if (!isMountedRef.current || previewRequestRef.current !== requestId) {
+      revokeFilePreviews(nextPreviews);
+      return;
+    }
 
     revokeFilePreviews(previewsRef.current);
     previewsRef.current = nextPreviews;
@@ -248,7 +300,7 @@ const CreatePage = () => {
     dispatch(clearCreateStatus());
   };
 
-  const setSelectedFiles = (selectedFiles) => {
+  const setSelectedFiles = async (selectedFiles) => {
     const nextFiles = Array.from(selectedFiles || []);
     const validationError = getSelectedFilesError(nextFiles, contentType);
 
@@ -260,11 +312,11 @@ const CreatePage = () => {
     }
 
     setLocalError("");
-    replaceFiles(nextFiles);
+    await replaceFiles(nextFiles);
   };
 
-  const handleFilesChange = (event) => {
-    setSelectedFiles(Array.from(event.target.files || []));
+  const handleFilesChange = async (event) => {
+    await setSelectedFiles(Array.from(event.target.files || []));
     event.target.value = "";
   };
 
@@ -279,10 +331,10 @@ const CreatePage = () => {
     setIsDragging(false);
   };
 
-  const handleDrop = (event) => {
+  const handleDrop = async (event) => {
     event.preventDefault();
     setIsDragging(false);
-    setSelectedFiles(Array.from(event.dataTransfer.files || []));
+    await setSelectedFiles(Array.from(event.dataTransfer.files || []));
   };
 
   const removeFile = (fileId) => {
@@ -296,6 +348,17 @@ const CreatePage = () => {
     if (indexToRemove === -1) return;
 
     replaceFiles(files.filter((_, index) => index !== indexToRemove));
+  };
+
+  const markPreviewFailed = (previewId) => {
+    setPreviews((currentPreviews) =>
+      currentPreviews.map((preview) =>
+        preview.id === previewId ? { ...preview, failed: true } : preview,
+      ),
+    );
+    previewsRef.current = previewsRef.current.map((preview) =>
+      preview.id === previewId ? { ...preview, failed: true } : preview,
+    );
   };
 
   const appendCommonPostFields = (formData, tagField = "tags") => {
@@ -510,14 +573,15 @@ const CreatePage = () => {
                     key={preview.id}
                     className="relative aspect-square overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-900"
                   >
-                    {preview.kind === "video" ? (
+                    {preview.kind === "video" && !preview.failed ? (
                       <video
                         src={preview.url}
-                        controls
+                        autoPlay
+                        loop
                         muted
                         playsInline
                         preload="auto"
-                        onLoadedMetadata={(event) => {
+                        onLoadedData={(event) => {
                           const video = event.currentTarget;
 
                           if (
@@ -529,16 +593,29 @@ const CreatePage = () => {
                               video.duration / 2,
                             );
                           }
+
+                          video.play().catch(() => {});
                         }}
+                        onError={() => markPreviewFailed(preview.id)}
                         className="h-full w-full object-cover"
                       />
-                    ) : (
+                    ) : preview.canPreview && !preview.failed ? (
                       <img
                         src={preview.url}
                         alt={preview.name}
                         loading="lazy"
                         decoding="async"
+                        onError={() => markPreviewFailed(preview.id)}
                         className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <MediaPreviewFallback
+                        label={getFileTypeLabel(preview)}
+                        message={
+                          preview.canPreview
+                            ? "Preview unavailable"
+                            : "Browser preview unavailable"
+                        }
                       />
                     )}
 

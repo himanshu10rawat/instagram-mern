@@ -14,6 +14,9 @@ const Sidebar = () => {
     (state) => state.notifications.unreadCount,
   );
   const unreadMessages = useSelector((state) => state.messages.unreadCount);
+  const pendingFollowRequests = useSelector(
+    (state) => state.follow.requests.length,
+  );
 
   const isAdmin = currentUser?.role === "admin" || currentUser?.isAdmin;
   const finalNavItems = isAdmin ? [...navItems, ...adminNavItems] : navItems;
@@ -47,9 +50,13 @@ const Sidebar = () => {
             item.path === "/notifications" && unreadNotifications > 0;
           const showMessageBadge =
             item.path === "/messages" && unreadMessages > 0;
+          const showRequestBadge =
+            item.path === "/follow-requests" && pendingFollowRequests > 0;
           const badgeCount = showNotificationBadge
             ? unreadNotifications
-            : unreadMessages;
+            : showMessageBadge
+              ? unreadMessages
+              : pendingFollowRequests;
 
           return (
             <NavLink
@@ -69,7 +76,7 @@ const Sidebar = () => {
               <span className="relative shrink-0">
                 <Icon size={22} />
 
-                {showNotificationBadge || showMessageBadge ? (
+                {showNotificationBadge || showMessageBadge || showRequestBadge ? (
                   <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-4 text-white xl:hidden">
                     {badgeCount > 9 ? "9+" : badgeCount}
                   </span>
@@ -79,7 +86,7 @@ const Sidebar = () => {
               <span className="hidden min-w-0 flex-1 items-center justify-between xl:flex">
                 <span className="truncate">{item.label}</span>
 
-                {showNotificationBadge || showMessageBadge ? (
+                {showNotificationBadge || showMessageBadge || showRequestBadge ? (
                   <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
                     {badgeCount > 99 ? "99+" : badgeCount}
                   </span>

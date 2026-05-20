@@ -95,12 +95,75 @@ const initialState = {
   error: null,
 };
 
+const getRequestId = (request) => request?._id?.toString?.() || request?._id;
+
+const getFollowRequestFromNotification = (notification) => {
+  if (notification?.type !== "follow_request") return null;
+
+  const followRequest = notification.followRequest;
+
+  if (
+    !followRequest?._id ||
+    (followRequest.status && followRequest.status !== "pending")
+  ) {
+    return null;
+  }
+
+  return {
+    ...followRequest,
+    sender: notification.sender || followRequest.sender,
+    createdAt: followRequest.createdAt || notification.createdAt,
+    status: followRequest.status || "pending",
+  };
+};
+
+const upsertFollowRequest = (state, request) => {
+  const requestId = getRequestId(request);
+
+  if (!requestId || request.status !== "pending") return;
+
+  const existingIndex = state.requests.findIndex(
+    (item) => getRequestId(item) === requestId,
+  );
+
+  if (existingIndex >= 0) {
+    state.requests[existingIndex] = {
+      ...state.requests[existingIndex],
+      ...request,
+    };
+  } else {
+    state.requests.unshift(request);
+  }
+
+  state.requests.sort(
+    (first, second) =>
+      new Date(second.createdAt || 0).getTime() -
+      new Date(first.createdAt || 0).getTime(),
+  );
+};
+
 const followSlice = createSlice({
   name: "follow",
   initialState,
   reducers: {
     clearFollowError: (state) => {
       state.error = null;
+    },
+
+    addFollowRequestFromNotification: (state, action) => {
+      upsertFollowRequest(
+        state,
+        getFollowRequestFromNotification(action.payload),
+      );
+    },
+
+    syncFollowRequestsFromNotifications: (state, action) => {
+      (action.payload || []).forEach((notification) => {
+        upsertFollowRequest(
+          state,
+          getFollowRequestFromNotification(notification),
+        );
+      });
     },
   },
   extraReducers: (builder) => {
@@ -172,6 +235,10 @@ const followSlice = createSlice({
   },
 });
 
-export const { clearFollowError } = followSlice.actions;
+export const {
+  addFollowRequestFromNotification,
+  clearFollowError,
+  syncFollowRequestsFromNotifications,
+} = followSlice.actions;
 
 export default followSlice.reducer;

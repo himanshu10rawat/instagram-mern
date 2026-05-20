@@ -6,6 +6,10 @@ import MobileBottomNav from "../components/layout/MobileBottomNav";
 import MobileTopBar from "../components/layout/MobileTopBar";
 import Sidebar from "../components/layout/Sidebar";
 import {
+  fetchFollowRequests,
+  syncFollowRequestsFromNotifications,
+} from "../features/follow/followSlice";
+import {
   fetchConversations,
   fetchMessageRequests,
 } from "../features/messages/messageSlice";
@@ -29,9 +33,19 @@ const MainLayout = () => {
   useSocketMessages();
 
   useEffect(() => {
-    dispatch(fetchNotifications());
+    dispatch(fetchFollowRequests());
     dispatch(fetchConversations());
     dispatch(fetchMessageRequests());
+
+    const syncNotifications = async () => {
+      const result = await dispatch(fetchNotifications());
+
+      if (fetchNotifications.fulfilled.match(result)) {
+        dispatch(syncFollowRequestsFromNotifications(result.payload));
+      }
+    };
+
+    syncNotifications();
   }, [dispatch]);
 
   return (

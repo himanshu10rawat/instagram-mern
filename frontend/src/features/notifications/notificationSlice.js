@@ -1,6 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
+  acceptFollowRequest,
+  rejectFollowRequest,
+} from "../follow/followSlice";
+import {
   deleteNotificationApi,
   getNotificationsApi,
   markAllNotificationsReadApi,
@@ -82,6 +86,19 @@ const initialState = {
   error: null,
 };
 
+const recalculateUnreadCount = (state) => {
+  state.unreadCount = state.notifications.filter(
+    (notification) => !notification.isRead,
+  ).length;
+};
+
+const removeFollowRequestNotification = (state, requestId) => {
+  state.notifications = state.notifications.filter(
+    (notification) => notification.followRequest?._id !== requestId,
+  );
+  recalculateUnreadCount(state);
+};
+
 const notificationSlice = createSlice({
   name: "notifications",
   initialState,
@@ -116,9 +133,7 @@ const notificationSlice = createSlice({
         state.loading = false;
         state.notifications = action.payload || [];
         state.lastFetched = Date.now();
-        state.unreadCount = state.notifications.filter(
-          (notification) => !notification.isRead,
-        ).length;
+        recalculateUnreadCount(state);
       })
       .addCase(fetchNotifications.rejected, (state, action) => {
         state.loading = false;
@@ -134,9 +149,7 @@ const notificationSlice = createSlice({
             : notification,
         );
 
-        state.unreadCount = state.notifications.filter(
-          (notification) => !notification.isRead,
-        ).length;
+        recalculateUnreadCount(state);
       })
 
       .addCase(markAllNotificationsRead.fulfilled, (state) => {
@@ -155,9 +168,15 @@ const notificationSlice = createSlice({
           (notification) => notification._id !== notificationId,
         );
 
-        state.unreadCount = state.notifications.filter(
-          (notification) => !notification.isRead,
-        ).length;
+        recalculateUnreadCount(state);
+      })
+
+      .addCase(acceptFollowRequest.fulfilled, (state, action) => {
+        removeFollowRequestNotification(state, action.meta.arg);
+      })
+
+      .addCase(rejectFollowRequest.fulfilled, (state, action) => {
+        removeFollowRequestNotification(state, action.meta.arg);
       });
   },
 });

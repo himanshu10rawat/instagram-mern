@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import { addFollowRequestFromNotification } from "../features/follow/followSlice";
 import { addRealtimeNotification } from "../features/notifications/notificationSlice";
 import { connectSocket, getSocket } from "../lib/socket";
 
@@ -15,6 +16,7 @@ const useSocketNotifications = () => {
 
     const handleNewNotification = (notification) => {
       dispatch(addRealtimeNotification(notification));
+      dispatch(addFollowRequestFromNotification(notification));
     };
 
     socket.on("new_notification", handleNewNotification);

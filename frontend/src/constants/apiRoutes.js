@@ -94,6 +94,12 @@ export const API_ROUTES = {
     cancel: (userId) => `/follow/request/${userId}`,
   },
 
+  closeFriends: {
+    list: "/close-friends",
+    add: (userId) => `/close-friends/${userId}`,
+    remove: (userId) => `/close-friends/${userId}`,
+  },
+
   notifications: {
     list: "/notifications",
     markRead: (notificationId) => `/notifications/${notificationId}/read`,
@@ -131,6 +137,13 @@ export const API_ROUTES = {
     trendingReels: "/explore/trending/reels",
     trendingHashtags: "/explore/trending/hashtags",
     suggestedUsers: "/explore/suggested/users",
+  },
+
+  searchHistory: {
+    list: "/search-history",
+    save: "/search-history",
+    clear: "/search-history/clear",
+    delete: (searchId) => `/search-history/${searchId}`,
   },
 
   share: {

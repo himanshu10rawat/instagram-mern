@@ -1,10 +1,16 @@
 import { ArrowLeft, Image, Send, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
+import MediaPreviewFallback from "../../../components/common/MediaPreviewFallback";
 import { SkeletonBlock } from "../../../components/ui/Skeleton";
 import { getSocket } from "../../../lib/socket";
+import {
+  canPreviewImageFile,
+  getFileTypeLabel,
+  isVideoFile,
+} from "../../../utils/mediaPreview";
 import {
   fetchMessages,
   markConversationSeen,
@@ -25,6 +31,7 @@ const ChatWindow = () => {
   const dispatch = useDispatch();
 
   const messagesScrollerRef = useRef(null);
+  const filePreviewUrlRef = useRef("");
   const typingTimeoutRef = useRef(null);
 
   const currentUser = useSelector((state) => state.auth.user);
@@ -37,14 +44,12 @@ const ChatWindow = () => {
 
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
+  const [filePreviewUrl, setFilePreviewUrl] = useState("");
+  const [filePreviewFailed, setFilePreviewFailed] = useState(false);
   const [replyTarget, setReplyTarget] = useState(null);
   const [sendingReceiverId, setSendingReceiverId] = useState(null);
 
   const otherUser = getOtherParticipant(activeConversation, currentUser?._id);
-  const filePreviewUrl = useMemo(
-    () => (file ? URL.createObjectURL(file) : ""),
-    [file],
-  );
 
   useEffect(() => {
     if (activeConversation?._id) {
@@ -78,11 +83,22 @@ const ChatWindow = () => {
 
   useEffect(() => {
     return () => {
-      if (filePreviewUrl) {
-        URL.revokeObjectURL(filePreviewUrl);
+      if (filePreviewUrlRef.current) {
+        URL.revokeObjectURL(filePreviewUrlRef.current);
       }
     };
-  }, [filePreviewUrl]);
+  }, []);
+
+  const clearSelectedFile = () => {
+    if (filePreviewUrlRef.current) {
+      URL.revokeObjectURL(filePreviewUrlRef.current);
+      filePreviewUrlRef.current = "";
+    }
+
+    setFile(null);
+    setFilePreviewUrl("");
+    setFilePreviewFailed(false);
+  };
 
   if (!activeConversation) {
     return (
@@ -140,7 +156,7 @@ const ChatWindow = () => {
 
       if (sendMessage.fulfilled.match(result)) {
         setText("");
-        setFile(null);
+        clearSelectedFile();
         setReplyTarget(null);
       }
     } finally {
@@ -157,12 +173,31 @@ const ChatWindow = () => {
   };
 
   const handleFileChange = (event) => {
-    setFile(event.target.files?.[0] || null);
+    const selectedFile = event.target.files?.[0] || null;
+
+    if (!selectedFile) {
+      clearSelectedFile();
+      event.target.value = "";
+      return;
+    }
+
+    if (filePreviewUrlRef.current) {
+      URL.revokeObjectURL(filePreviewUrlRef.current);
+    }
+
+    const nextPreviewUrl = URL.createObjectURL(selectedFile);
+
+    filePreviewUrlRef.current = nextPreviewUrl;
+    setFile(selectedFile);
+    setFilePreviewUrl(nextPreviewUrl);
+    setFilePreviewFailed(false);
     event.target.value = "";
   };
 
   const isTyping = Boolean(typingUsers[activeConversation._id]);
   const isSending = sendingReceiverId === otherUser?._id;
+  const selectedFileIsVideo = isVideoFile(file);
+  const selectedImageCanPreview = canPreviewImageFile(file);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white dark:bg-slate-950 md:rounded-2xl md:border md:border-slate-200 md:dark:border-slate-800">
@@ -247,17 +282,28 @@ const ChatWindow = () => {
       {file ? (
         <div className="flex shrink-0 items-center gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-300">
           <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-900">
-            {file.type.startsWith("video/") ? (
+            {selectedFileIsVideo ? (
               <video
                 src={filePreviewUrl}
                 className="h-full w-full object-cover"
                 muted
               />
-            ) : (
+            ) : selectedImageCanPreview && !filePreviewFailed ? (
               <img
                 src={filePreviewUrl}
                 alt="Selected media preview"
+                onError={() => setFilePreviewFailed(true)}
                 className="h-full w-full object-cover"
+              />
+            ) : (
+              <MediaPreviewFallback
+                label={getFileTypeLabel(file)}
+                message={
+                  selectedImageCanPreview
+                    ? "Preview unavailable"
+                    : "Browser preview unavailable"
+                }
+                compact
               />
             )}
           </div>
@@ -267,13 +313,13 @@ const ChatWindow = () => {
               {file.name}
             </p>
             <p className="text-xs">
-              {file.type.startsWith("video/") ? "Video selected" : "Image selected"}
+              {selectedFileIsVideo ? "Video selected" : "Image selected"}
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => setFile(null)}
+            onClick={clearSelectedFile}
             disabled={isSending}
             className="font-semibold text-red-500 disabled:opacity-60"
           >

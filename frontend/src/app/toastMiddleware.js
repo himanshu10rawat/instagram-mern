@@ -159,6 +159,18 @@ const fulfilledToasts = {
     title: "Request declined",
     message: "The follow request was removed.",
   },
+  "closeFriends/addCloseFriend/fulfilled": {
+    type: "success",
+    title: "Close friends updated",
+    message: "User added to your close friends list.",
+    duration: 2500,
+  },
+  "closeFriends/removeCloseFriend/fulfilled": {
+    type: "success",
+    title: "Close friends updated",
+    message: "User removed from your close friends list.",
+    duration: 2500,
+  },
   "collections/createCollection/fulfilled": {
     type: "success",
     title: "Collection created",
@@ -383,6 +395,12 @@ const getFulfilledToast = (action) => {
 
 export const toastMiddleware = (store) => (next) => (action) => {
   const result = next(action);
+  const shouldSkipToast =
+    action.meta?.arg?.silentToast ||
+    action.meta?.arg?.skipToast ||
+    action.meta?.arg?.suppressToast;
+
+  if (shouldSkipToast) return result;
 
   if (action.type?.endsWith("/fulfilled")) {
     const toast = getFulfilledToast(action);

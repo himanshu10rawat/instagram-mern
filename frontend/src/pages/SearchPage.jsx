@@ -1,7 +1,9 @@
 import { Hash, Search, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
+import Avatar from "../components/common/Avatar";
 import EmptyState from "../components/ui/EmptyState";
 import { GridSkeleton, ListSkeleton } from "../components/ui/Skeleton";
 import HashtagSearchResult from "../features/search/components/HashtagSearchResult";
@@ -9,9 +11,12 @@ import MediaGrid from "../features/search/components/MediaGrid";
 import UserSearchResult from "../features/search/components/UserSearchResult";
 import {
   addRecentSearch,
+  clearSearchHistory,
   clearRecentSearches,
   clearSearchResults,
+  fetchSearchHistory,
   searchAll,
+  saveSearchHistory,
   setSearchQuery,
 } from "../features/search/searchSlice";
 
@@ -33,6 +38,10 @@ const SearchPage = () => {
 
   const [activeTab, setActiveTab] = useState("users");
   const [localQuery, setLocalQuery] = useState(query);
+
+  useEffect(() => {
+    dispatch(fetchSearchHistory());
+  }, [dispatch]);
 
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -59,14 +68,53 @@ const SearchPage = () => {
 
     if (trimmedQuery.length >= 2) {
       dispatch(addRecentSearch(trimmedQuery));
+      dispatch(saveSearchHistory(trimmedQuery));
       dispatch(searchAll(trimmedQuery));
     }
   };
 
-  const handleRecentClick = (value) => {
-    setLocalQuery(value);
-    dispatch(addRecentSearch(value));
-    dispatch(searchAll(value));
+  const handleRecentClick = (item) => {
+    const searchValue = typeof item === "string" ? item : item.value;
+
+    if (!searchValue) return;
+
+    setLocalQuery(searchValue);
+    dispatch(addRecentSearch(item));
+    dispatch(saveSearchHistory(searchValue));
+    dispatch(searchAll(searchValue));
+  };
+
+  const handleUserSelect = (user) => {
+    if (!user?._id) return;
+
+    const historyItem = {
+      type: "user",
+      value: user.username,
+      label: user.username,
+      subtitle: user.fullName || "Instagram user",
+      user,
+    };
+
+    dispatch(addRecentSearch(historyItem));
+    dispatch(
+      saveSearchHistory({
+        searchType: "user",
+        searchedUserId: user._id,
+      }),
+    );
+  };
+
+  const handleRecentUserClick = (item) => {
+    dispatch(addRecentSearch(item));
+
+    if (item.user?._id) {
+      dispatch(
+        saveSearchHistory({
+          searchType: "user",
+          searchedUserId: item.user._id,
+        }),
+      );
+    }
   };
 
   const hasQuery = localQuery.trim().length >= 2;
@@ -117,7 +165,10 @@ const SearchPage = () => {
               {recentSearches.length > 0 ? (
                 <button
                   type="button"
-                  onClick={() => dispatch(clearRecentSearches())}
+                  onClick={() => {
+                    dispatch(clearRecentSearches());
+                    dispatch(clearSearchHistory());
+                  }}
                   className="text-sm font-semibold text-blue-500"
                 >
                   Clear all
@@ -125,7 +176,7 @@ const SearchPage = () => {
               ) : null}
             </div>
 
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {recentSearches.length === 0 ? (
                 <EmptyState
                   icon={Search}
@@ -135,16 +186,44 @@ const SearchPage = () => {
                   size="sm"
                 />
               ) : (
-                recentSearches.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => handleRecentClick(item)}
-                    className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                  >
-                    {item}
-                  </button>
-                ))
+                recentSearches.map((item) => {
+                  if (item.type === "user" && item.user?.username) {
+                    return (
+                      <Link
+                        key={item.key || item.user._id}
+                        to={`/profile/${item.user.username}`}
+                        onClick={() => handleRecentUserClick(item)}
+                        className="flex min-w-0 items-center gap-3 rounded-2xl bg-slate-100 px-4 py-3 text-left transition hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800"
+                      >
+                        <Avatar
+                          src={item.user.avatar?.url}
+                          alt={item.user.username}
+                        />
+
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold text-slate-950 dark:text-white">
+                            {item.label || item.user.username}
+                          </span>
+                          <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
+                            {item.subtitle || "Instagram user"}
+                          </span>
+                        </span>
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={item.key || item.value}
+                      type="button"
+                      onClick={() => handleRecentClick(item)}
+                      className="flex min-h-12 min-w-0 items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <Search size={16} className="shrink-0" />
+                      <span className="truncate">{item.label || item.value}</span>
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>
@@ -197,7 +276,11 @@ const SearchPage = () => {
                     />
                   ) : (
                     users.map((user) => (
-                      <UserSearchResult key={user._id} user={user} />
+                      <UserSearchResult
+                        key={user._id}
+                        user={user}
+                        onSelect={handleUserSelect}
+                      />
                     ))
                   )}
                 </div>

@@ -14,6 +14,7 @@ import {
 import {
   acceptFollowRequest,
   rejectFollowRequest,
+  syncFollowRequestsFromNotifications,
 } from "../features/follow/followSlice";
 
 const NotificationsPage = () => {
@@ -32,7 +33,11 @@ const NotificationsPage = () => {
         fetchNotifications.fulfilled.match(result) &&
         (result.payload || []).some((notification) => !notification.isRead)
       ) {
-        dispatch(markAllNotificationsRead());
+        dispatch(markAllNotificationsRead({ silentToast: true }));
+      }
+
+      if (fetchNotifications.fulfilled.match(result)) {
+        dispatch(syncFollowRequestsFromNotifications(result.payload));
       }
     };
 

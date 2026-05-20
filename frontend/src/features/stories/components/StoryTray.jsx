@@ -26,6 +26,7 @@ const StoryTray = ({ storyGroups = [], currentUser, loading = false }) => {
     ? `/stories/${ownFirstStory._id}`
     : "/create?type=story";
   const ownAvatarUrl = currentUser?.avatar?.url || ownStoryUser?.avatar?.url;
+  const hasOwnActiveStory = Boolean(ownFirstStory?._id);
   const visibleStoryGroups = safeStoryGroups.filter((group) => {
     if (!currentUserId) return true;
 
@@ -46,7 +47,7 @@ const StoryTray = ({ storyGroups = [], currentUser, loading = false }) => {
                 src={ownAvatarUrl}
                 alt={currentUser?.username || ownStoryUser?.username}
                 size="lg"
-                ring
+                ring={hasOwnActiveStory}
               />
             </Link>
 

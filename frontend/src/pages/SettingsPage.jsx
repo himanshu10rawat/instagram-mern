@@ -25,6 +25,7 @@ import {
   removeAccount,
   updatePrivacySettings,
 } from "../features/profile/profileSlice";
+import CloseFriendsSettings from "../features/closeFriends/components/CloseFriendsSettings";
 import { setTheme } from "../features/theme/themeSlice";
 import TwoFactorSettings from "../features/twoFactor/components/TwoFactorSettings";
 
@@ -281,26 +282,28 @@ const PasswordSettingsForm = ({ authLoading }) => {
   );
 };
 
-<div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
-  <div className="mb-4 flex items-center gap-3">
-    <MonitorSmartphone size={22} />
+const LoginActivitySettings = () => (
+  <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
+    <div className="mb-4 flex items-center gap-3">
+      <MonitorSmartphone size={22} />
 
-    <h2 className="text-lg font-bold text-slate-950 dark:text-white">
-      Login Activity
-    </h2>
+      <h2 className="text-lg font-bold text-slate-950 dark:text-white">
+        Login Activity
+      </h2>
+    </div>
+
+    <p className="text-sm text-slate-500 dark:text-slate-400">
+      View active devices and logout sessions you do not recognize.
+    </p>
+
+    <Link
+      to="/sessions"
+      className="mt-4 inline-flex min-h-12 items-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+    >
+      Manage Sessions
+    </Link>
   </div>
-
-  <p className="text-sm text-slate-500">
-    View active devices and logout sessions you do not recognize.
-  </p>
-
-  <Link
-    to="/sessions"
-    className="mt-4 inline-flex rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
-  >
-    Manage Sessions
-  </Link>
-</div>;
+);
 
 const ThemeSettings = ({ theme }) => {
   const dispatch = useDispatch();
@@ -492,6 +495,8 @@ const SettingsPage = () => {
 
       <PasswordSettingsForm authLoading={authLoading} />
 
+      {profile ? <CloseFriendsSettings profile={profile} /> : null}
+
       <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
         <div className="mb-4 flex items-center gap-3">
           <ShieldAlert size={22} />
@@ -512,6 +517,8 @@ const SettingsPage = () => {
           Manage Safety
         </Link>
       </div>
+
+      <LoginActivitySettings />
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl sm:p-6">
         <div className="mb-4 flex items-center gap-3">
