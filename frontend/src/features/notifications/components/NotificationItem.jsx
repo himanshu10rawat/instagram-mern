@@ -1,5 +1,5 @@
 import { Check, Trash2, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import Avatar from "../../../components/common/Avatar";
 
@@ -50,6 +50,7 @@ const NotificationItem = ({
   onRejectRequest,
   processingRequestId,
 }) => {
+  const location = useLocation();
   const followRequestId = notification.followRequest?._id;
   const senderUsername = notification.sender?.username || "Someone";
   const senderProfileLink = notification.sender?.username
@@ -61,6 +62,10 @@ const NotificationItem = ({
     notification.type === "follow_request" &&
     notification.followRequest?.status === "pending" &&
     followRequestId;
+  const storyReturnState = {
+    storyReturnTo: `${location.pathname}${location.search}`,
+  };
+  const targetState = notification.story?._id ? storyReturnState : undefined;
   const isProcessing = processingRequestId === followRequestId;
   const handleRead = () => {
     if (!notification.isRead) {
@@ -119,6 +124,7 @@ const NotificationItem = ({
             {targetLabel && targetLink !== "/notifications" ? (
               <Link
                 to={targetLink}
+                state={targetState}
                 onClick={handleRead}
                 className="font-semibold text-slate-700 hover:underline dark:text-slate-200"
               >

@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import Avatar from "./Avatar";
 
 const getCommentAuthor = (comment) => comment.author || comment.user || {};
@@ -11,6 +13,7 @@ const formatCommentTime = (createdAt) => {
 const CommentItem = ({ comment, onReply, depth = 0 }) => {
   const author = getCommentAuthor(comment);
   const replies = Array.isArray(comment.replies) ? comment.replies : [];
+  const authorProfilePath = author.username ? `/profile/${author.username}` : "";
   const indentClass =
     depth > 0
       ? "ml-8 border-l border-slate-200 pl-3 dark:border-slate-800"
@@ -19,13 +22,31 @@ const CommentItem = ({ comment, onReply, depth = 0 }) => {
   return (
     <div className={indentClass}>
       <div className="flex gap-3">
-        <Avatar src={author.avatar?.url} alt={author.username} size="sm" />
+        {authorProfilePath ? (
+          <Link
+            to={authorProfilePath}
+            aria-label={`View ${author.username}'s profile`}
+          >
+            <Avatar src={author.avatar?.url} alt={author.username} size="sm" />
+          </Link>
+        ) : (
+          <Avatar src={author.avatar?.url} alt={author.username} size="sm" />
+        )}
 
         <div className="min-w-0 flex-1">
           <p className="break-words text-sm text-slate-800 dark:text-slate-200">
-            <span className="font-semibold text-slate-950 dark:text-white">
-              {author.username || "user"}
-            </span>{" "}
+            {authorProfilePath ? (
+              <Link
+                to={authorProfilePath}
+                className="font-semibold text-slate-950 hover:underline dark:text-white"
+              >
+                {author.username || "user"}
+              </Link>
+            ) : (
+              <span className="font-semibold text-slate-950 dark:text-white">
+                {author.username || "user"}
+              </span>
+            )}{" "}
             {comment.text}
           </p>
 

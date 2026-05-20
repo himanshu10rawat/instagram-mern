@@ -10,6 +10,7 @@ import {
   markConversationSeenApi,
   reactMessageApi,
   rejectMessageRequestApi,
+  removeMessageReactionApi,
   sendMessageApi,
   shareToMessageApi,
 } from "./messageService";
@@ -78,6 +79,19 @@ export const reactMessage = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to react message",
+      );
+    }
+  },
+);
+
+export const removeMessageReaction = createAsyncThunk(
+  "messages/removeMessageReaction",
+  async (messageId, { rejectWithValue }) => {
+    try {
+      return await removeMessageReactionApi(messageId);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to remove reaction",
       );
     }
   },
@@ -571,6 +585,12 @@ const messageSlice = createSlice({
       })
 
       .addCase(reactMessage.fulfilled, (state, action) => {
+        state.messages = state.messages.map((message) =>
+          sameId(message._id, action.payload._id) ? action.payload : message,
+        );
+      })
+
+      .addCase(removeMessageReaction.fulfilled, (state, action) => {
         state.messages = state.messages.map((message) =>
           sameId(message._id, action.payload._id) ? action.payload : message,
         );

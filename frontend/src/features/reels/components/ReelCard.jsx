@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
 import Avatar from "../../../components/common/Avatar";
 import CommentThread from "../../../components/common/CommentThread";
@@ -50,6 +51,9 @@ const ReelCard = ({ reel }) => {
   const commentInputRef = useRef(null);
 
   const isOwnReel = reel.author?._id === currentUser?._id;
+  const authorProfilePath = reel.author?.username
+    ? `/profile/${reel.author.username}`
+    : "";
 
   useEffect(() => {
     if (showCommentBox && reel?._id && !Array.isArray(reel.comments)) {
@@ -155,15 +159,37 @@ const ReelCard = ({ reel }) => {
         <div className="pointer-events-auto flex items-end justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3">
-              <Avatar
-                src={reel.author?.avatar?.url}
-                alt={reel.author?.username}
-                size="sm"
-              />
+              {authorProfilePath ? (
+                <Link
+                  to={authorProfilePath}
+                  aria-label={`View ${reel.author?.username}'s profile`}
+                >
+                  <Avatar
+                    src={reel.author?.avatar?.url}
+                    alt={reel.author?.username}
+                    size="sm"
+                  />
+                </Link>
+              ) : (
+                <Avatar
+                  src={reel.author?.avatar?.url}
+                  alt={reel.author?.username}
+                  size="sm"
+                />
+              )}
 
-              <p className="text-sm font-semibold">
-                {reel.author?.username || "unknown"}
-              </p>
+              {authorProfilePath ? (
+                <Link
+                  to={authorProfilePath}
+                  className="text-sm font-semibold hover:underline"
+                >
+                  {reel.author?.username || "unknown"}
+                </Link>
+              ) : (
+                <p className="text-sm font-semibold">
+                  {reel.author?.username || "unknown"}
+                </p>
+              )}
             </div>
 
             {reel.caption ? (

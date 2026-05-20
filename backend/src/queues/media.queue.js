@@ -3,10 +3,12 @@ import { Queue } from "bullmq";
 import { createRedisClient } from "../config/redis.js";
 
 const connection = createRedisClient({
+  enableOfflineQueue: false,
   maxRetriesPerRequest: null,
 });
 
 let mediaQueue;
+let hasLoggedQueueFailure = false;
 
 export const getMediaQueue = () => {
   if (!mediaQueue) {
@@ -28,5 +30,18 @@ export const getMediaQueue = () => {
 };
 
 export const addMediaJob = async (data) => {
-  await getMediaQueue().add("process-media", data);
+  try {
+    await getMediaQueue().add("process-media", data);
+    return true;
+  } catch (error) {
+    if (!hasLoggedQueueFailure) {
+      console.warn(
+        "Media queue unavailable; continuing without background media processing:",
+        error.message,
+      );
+      hasLoggedQueueFailure = true;
+    }
+
+    return false;
+  }
 };

@@ -125,6 +125,28 @@ const getFileKind = (file) => {
 const getFileId = (file, index = 0) =>
   `${file.name}-${file.lastModified}-${file.size}-${index}`;
 
+const getFileSignature = (file) =>
+  `${file.name}-${file.lastModified}-${file.size}`;
+
+const mergePostFiles = (currentFiles, incomingFiles) => {
+  const selectedFileSignatures = new Set(
+    currentFiles.map((file) => getFileSignature(file)),
+  );
+
+  const uniqueIncomingFiles = incomingFiles.filter((file) => {
+    const signature = getFileSignature(file);
+
+    if (selectedFileSignatures.has(signature)) {
+      return false;
+    }
+
+    selectedFileSignatures.add(signature);
+    return true;
+  });
+
+  return [...currentFiles, ...uniqueIncomingFiles];
+};
+
 const readFileAsDataUrl = (file) => {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -252,10 +274,12 @@ const CreatePage = () => {
   const [localError, setLocalError] = useState("");
   const [previews, setPreviews] = useState([]);
   const isMountedRef = useRef(true);
+  const fileInputRef = useRef(null);
   const previewRequestRef = useRef(0);
   const previewsRef = useRef([]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     dispatch(clearCreateStatus());
 
     return () => {
@@ -301,7 +325,9 @@ const CreatePage = () => {
   };
 
   const setSelectedFiles = async (selectedFiles) => {
-    const nextFiles = Array.from(selectedFiles || []);
+    const incomingFiles = Array.from(selectedFiles || []);
+    const nextFiles =
+      contentType === "post" ? mergePostFiles(files, incomingFiles) : incomingFiles;
     const validationError = getSelectedFilesError(nextFiles, contentType);
 
     dispatch(clearCreateStatus());
@@ -318,6 +344,17 @@ const CreatePage = () => {
   const handleFilesChange = async (event) => {
     await setSelectedFiles(Array.from(event.target.files || []));
     event.target.value = "";
+  };
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDropzoneKeyDown = (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+
+    event.preventDefault();
+    openFilePicker();
   };
 
   const handleDragOver = (event) => {
@@ -532,105 +569,125 @@ const CreatePage = () => {
           className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start"
         >
           <div className="space-y-5">
-            <label
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={acceptType}
+              capture={contentType === "story" ? "environment" : undefined}
+              multiple={contentType === "post"}
+              onChange={handleFilesChange}
+              className="sr-only"
+              tabIndex={-1}
+            />
+
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={openFilePicker}
+              onKeyDown={handleDropzoneKeyDown}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition lg:min-h-96 ${
+              className={`flex min-h-56 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition focus:outline-none focus:ring-2 focus:ring-slate-400 lg:min-h-96 ${
                 isDragging
                   ? "border-slate-950 bg-slate-50 dark:border-white dark:bg-slate-900"
                   : "border-slate-300 dark:border-slate-700"
               }`}
             >
-              <Plus size={32} className="text-slate-500" />
-
-              <span className="mt-3 text-sm font-semibold text-slate-950 dark:text-white">
-                Select {contentType === "post" ? "media files" : "a media file"}
-              </span>
-
-              <span className="mt-1 text-xs text-slate-500">
-                {contentType === "post"
-                  ? "Tap to browse or drop images/videos here."
-                  : contentType === "reel"
-                    ? "Tap to browse or drop one video here."
-                    : "Tap to browse, capture, or drop one story file."}
-              </span>
-
-              <input
-                type="file"
-                accept={acceptType}
-                capture={contentType === "story" ? "environment" : undefined}
-                multiple={contentType === "post"}
-                onChange={handleFilesChange}
-                className="hidden"
-              />
-            </label>
-
-            {previews.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-                {previews.map((preview) => (
-                  <div
-                    key={preview.id}
-                    className="relative aspect-square overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-900"
-                  >
-                    {preview.kind === "video" && !preview.failed ? (
-                      <video
-                        src={preview.url}
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        preload="auto"
-                        onLoadedData={(event) => {
-                          const video = event.currentTarget;
-
-                          if (
-                            Number.isFinite(video.duration) &&
-                            video.duration > 0
-                          ) {
-                            video.currentTime = Math.min(
-                              0.1,
-                              video.duration / 2,
-                            );
-                          }
-
-                          video.play().catch(() => {});
-                        }}
-                        onError={() => markPreviewFailed(preview.id)}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : preview.canPreview && !preview.failed ? (
-                      <img
-                        src={preview.url}
-                        alt={preview.name}
-                        loading="lazy"
-                        decoding="async"
-                        onError={() => markPreviewFailed(preview.id)}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <MediaPreviewFallback
-                        label={getFileTypeLabel(preview)}
-                        message={
-                          preview.canPreview
-                            ? "Preview unavailable"
-                            : "Browser preview unavailable"
-                        }
-                      />
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => removeFile(preview.id)}
-                      className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white"
-                      aria-label="Remove file"
+              {previews.length > 0 ? (
+                <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                  {previews.map((preview) => (
+                    <div
+                      key={preview.id}
+                      className="relative aspect-square overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-900"
                     >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+                      {preview.kind === "video" && !preview.failed ? (
+                        <video
+                          src={preview.url}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          preload="auto"
+                          onLoadedData={(event) => {
+                            const video = event.currentTarget;
+
+                            if (
+                              Number.isFinite(video.duration) &&
+                              video.duration > 0
+                            ) {
+                              video.currentTime = Math.min(
+                                0.1,
+                                video.duration / 2,
+                              );
+                            }
+
+                            video.play().catch(() => {});
+                          }}
+                          onError={() => markPreviewFailed(preview.id)}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : preview.canPreview && !preview.failed ? (
+                        <img
+                          src={preview.url}
+                          alt={preview.name}
+                          loading="lazy"
+                          decoding="async"
+                          onError={() => markPreviewFailed(preview.id)}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <MediaPreviewFallback
+                          label={getFileTypeLabel(preview)}
+                          message={
+                            preview.canPreview
+                              ? "Preview unavailable"
+                              : "Browser preview unavailable"
+                          }
+                        />
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          removeFile(preview.id);
+                        }}
+                        className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white"
+                        aria-label="Remove file"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+
+                  {contentType === "post" && previews.length < uploadRules.post.maxFiles ? (
+                    <div className="flex aspect-square flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 text-slate-500 dark:border-slate-700">
+                      <Plus size={26} />
+                      <span className="mt-2 text-xs font-semibold">
+                        Add more
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <>
+                  <Plus size={32} className="text-slate-500" />
+
+                  <span className="mt-3 text-sm font-semibold text-slate-950 dark:text-white">
+                    Select {contentType === "post" ? "media files" : "a media file"}
+                  </span>
+
+                  <span className="mt-1 text-xs text-slate-500">
+                    {contentType === "post"
+                      ? "Tap to browse or drop images/videos here."
+                      : contentType === "reel"
+                        ? "Tap to browse or drop one video here."
+                        : "Tap to browse, capture, or drop one story file."}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="space-y-5 lg:sticky lg:top-6">

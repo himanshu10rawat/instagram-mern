@@ -600,6 +600,24 @@ export const removeMessageReaction = asyncHandler(async (req, res) => {
 
   validateObjectId(messageId, "Invalid message id");
 
+  const existingMessage = await Message.findOne({
+    _id: messageId,
+    isDeletedForEveryone: false,
+  });
+
+  if (!existingMessage) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Message not found");
+  }
+
+  const conversation = await Conversation.findOne({
+    _id: existingMessage.conversation,
+    participants: req.user._id,
+  });
+
+  if (!conversation) {
+    throw new ApiError(HTTP_STATUS.FORBIDDEN, "You cannot react to this message");
+  }
+
   const message = await Message.findOneAndUpdate(
     {
       _id: messageId,
@@ -619,6 +637,16 @@ export const removeMessageReaction = asyncHandler(async (req, res) => {
 
   if (!message) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Message not found");
+  }
+
+  for (const participantId of conversation.participants) {
+    if (participantId.toString() !== req.user._id.toString()) {
+      const participantSocketId = await getUserSocket(participantId);
+
+      if (participantSocketId) {
+        getIO().to(participantSocketId).emit("message_reaction", message);
+      }
+    }
   }
 
   return res

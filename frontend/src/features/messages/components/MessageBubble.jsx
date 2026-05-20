@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Heart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import MediaPreviewFallback from "../../../components/common/MediaPreviewFallback";
-import { editMessage, reactMessage } from "../messageSlice";
+import { editMessage, reactMessage, removeMessageReaction } from "../messageSlice";
 
 const getReplyPreview = (replyTo) => {
   if (!replyTo) return "";
@@ -27,14 +27,59 @@ const isHeartReaction = (emoji = "") => {
   );
 };
 
+const getReactionUserId = (reaction) => {
+  if (!reaction?.user) return "";
+  if (typeof reaction.user === "string") return reaction.user;
+  return reaction.user._id || "";
+};
+
+const getReactionGroupKey = (emoji = "") =>
+  isHeartReaction(emoji) ? "heart" : emoji;
+
+const getReactionGroups = (reactions = []) => {
+  const groups = new Map();
+
+  reactions.forEach((reaction) => {
+    const key = getReactionGroupKey(reaction.emoji);
+    const existingGroup = groups.get(key);
+
+    if (existingGroup) {
+      existingGroup.count += 1;
+      return;
+    }
+
+    groups.set(key, {
+      count: 1,
+      emoji: reaction.emoji,
+      key,
+    });
+  });
+
+  return Array.from(groups.values());
+};
+
 const MessageBubble = ({ message, isMine, onReply }) => {
   const dispatch = useDispatch();
+  const location = useLocation();
+  const currentUser = useSelector((state) => state.auth.user);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.text || "");
   const [mediaPreviewFailed, setMediaPreviewFailed] = useState(false);
+  const reactionGroups = getReactionGroups(message.reactions);
+  const storyReturnState = {
+    storyReturnTo: `${location.pathname}${location.search}`,
+  };
+  const hasCurrentUserReaction = message.reactions?.some(
+    (reaction) => getReactionUserId(reaction) === currentUser?._id,
+  );
 
   const handleReact = () => {
+    if (hasCurrentUserReaction) {
+      dispatch(removeMessageReaction(message._id));
+      return;
+    }
+
     dispatch(
       reactMessage({
         messageId: message._id,
@@ -163,6 +208,7 @@ const MessageBubble = ({ message, isMine, onReply }) => {
             {message.shared?.story ? (
               <Link
                 to={`/stories/${message.shared.story._id}`}
+                state={storyReturnState}
                 className="mt-2 block rounded-xl bg-black/10 p-3 text-sm font-semibold"
               >
                 Shared a story
@@ -205,7 +251,7 @@ const MessageBubble = ({ message, isMine, onReply }) => {
               isMine ? "text-white/80 dark:text-slate-600" : "text-slate-500"
             }`}
           >
-            Like
+            {hasCurrentUserReaction ? "Unlike" : "Like"}
           </button>
 
           <button
@@ -231,31 +277,37 @@ const MessageBubble = ({ message, isMine, onReply }) => {
           ) : null}
         </div>
 
-        {message.reactions?.length > 0 ? (
+        {reactionGroups.length > 0 ? (
           <div className="mt-2 flex flex-wrap gap-1">
-            {message.reactions.map((reaction, index) => {
-              const reactionKey =
-                reaction._id ||
-                `${reaction.user?._id || reaction.user || "reaction"}-${index}`;
+            {reactionGroups.map((reactionGroup) => (
+              <span
+                key={reactionGroup.key}
+                className={`inline-flex h-6 min-w-6 items-center justify-center gap-1 rounded-full px-1.5 text-xs shadow-sm ${
+                  isMine
+                    ? "bg-white text-red-500 dark:bg-slate-950"
+                    : "bg-white text-red-500 dark:bg-slate-800"
+                }`}
+                title={
+                  reactionGroup.key === "heart"
+                    ? `${reactionGroup.count} like${
+                        reactionGroup.count > 1 ? "s" : ""
+                      }`
+                    : `${reactionGroup.count} ${reactionGroup.emoji}`
+                }
+              >
+                {reactionGroup.key === "heart" ? (
+                  <Heart size={14} fill="currentColor" aria-hidden="true" />
+                ) : (
+                  reactionGroup.emoji
+                )}
 
-              return (
-                <span
-                  key={reactionKey}
-                  className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs shadow-sm ${
-                    isMine
-                      ? "bg-white text-red-500 dark:bg-slate-950"
-                      : "bg-white text-red-500 dark:bg-slate-800"
-                  }`}
-                  title={isHeartReaction(reaction.emoji) ? "Liked" : reaction.emoji}
-                >
-                  {isHeartReaction(reaction.emoji) ? (
-                    <Heart size={14} fill="currentColor" aria-hidden="true" />
-                  ) : (
-                    reaction.emoji
-                  )}
-                </span>
-              );
-            })}
+                {reactionGroup.count > 1 ? (
+                  <span className="font-semibold leading-none">
+                    {reactionGroup.count}
+                  </span>
+                ) : null}
+              </span>
+            ))}
           </div>
         ) : null}
       </div>

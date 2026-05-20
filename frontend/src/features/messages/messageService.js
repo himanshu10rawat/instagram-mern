@@ -61,6 +61,12 @@ export const reactMessageApi = async ({ messageId, emoji }) => {
   return response.data.data;
 };
 
+export const removeMessageReactionApi = async (messageId) => {
+  const response = await api.delete(API_ROUTES.messages.removeReaction(messageId));
+
+  return response.data.data;
+};
+
 export const editMessageApi = async ({ messageId, text }) => {
   const response = await api.patch(API_ROUTES.messages.edit(messageId), {
     text,

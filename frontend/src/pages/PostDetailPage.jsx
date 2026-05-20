@@ -16,6 +16,7 @@ import Avatar from "../components/common/Avatar";
 import CommentThread from "../components/common/CommentThread";
 import { PostDetailSkeleton } from "../components/ui/Skeleton";
 import EditCaptionModal from "../features/posts/components/EditCaptionModal";
+import PostMediaCarousel from "../features/posts/components/PostMediaCarousel";
 import {
   clearCurrentPost,
   commentPost,
@@ -107,37 +108,41 @@ const PostDetailPage = () => {
     return null;
   }
 
-  const firstMedia = currentPost.media?.[0];
   const isLiked = isUserIncluded(currentPost.likes, currentUser?._id);
   const isSaved = isUserIncluded(currentPost.savedBy, currentUser?._id);
   const isOwner = currentPost.author?._id === currentUser?._id;
+  const authorProfilePath = currentPost.author?.username
+    ? `/profile/${currentPost.author.username}`
+    : "";
 
   return (
     <section className="mx-auto max-w-6xl">
       <article className="mobile-edge grid overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl lg:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="flex min-h-80 items-center justify-center bg-black sm:min-h-130">
-          {firstMedia?.type === "video" ? (
-            <video
-              src={firstMedia.optimizedUrl || firstMedia.url}
-              controls
-              className="max-h-190 w-full object-contain"
-            />
-          ) : (
-            <img
-              src={firstMedia?.optimizedUrl || firstMedia?.url}
-              alt={currentPost.caption || "Post"}
-              className="max-h-190 w-full object-contain"
-            />
-          )}
-        </div>
+        <PostMediaCarousel
+          media={currentPost.media}
+          alt={currentPost.caption || "Post"}
+          variant="detail"
+        />
 
         <div className="flex min-h-0 flex-col sm:min-h-130">
           <header className="flex items-center justify-between border-b border-slate-200 p-3 dark:border-slate-800 sm:p-4">
             <div className="flex items-center gap-3">
-              <Avatar
-                src={currentPost.author?.avatar?.url}
-                alt={currentPost.author?.username}
-              />
+              {authorProfilePath ? (
+                <Link
+                  to={authorProfilePath}
+                  aria-label={`View ${currentPost.author?.username}'s profile`}
+                >
+                  <Avatar
+                    src={currentPost.author?.avatar?.url}
+                    alt={currentPost.author?.username}
+                  />
+                </Link>
+              ) : (
+                <Avatar
+                  src={currentPost.author?.avatar?.url}
+                  alt={currentPost.author?.username}
+                />
+              )}
 
               <div className="min-w-0">
                 <Link
@@ -221,16 +226,38 @@ const PostDetailPage = () => {
           <div className="flex-1 overflow-y-auto p-3 sm:p-4">
             {currentPost.caption ? (
               <div className="mb-5 flex gap-3">
-                <Avatar
-                  src={currentPost.author?.avatar?.url}
-                  alt={currentPost.author?.username}
-                  size="sm"
-                />
+                {authorProfilePath ? (
+                  <Link
+                    to={authorProfilePath}
+                    aria-label={`View ${currentPost.author?.username}'s profile`}
+                  >
+                    <Avatar
+                      src={currentPost.author?.avatar?.url}
+                      alt={currentPost.author?.username}
+                      size="sm"
+                    />
+                  </Link>
+                ) : (
+                  <Avatar
+                    src={currentPost.author?.avatar?.url}
+                    alt={currentPost.author?.username}
+                    size="sm"
+                  />
+                )}
 
                 <p className="text-sm text-slate-800 dark:text-slate-200">
-                  <span className="font-semibold text-slate-950 dark:text-white">
-                    {currentPost.author?.username}
-                  </span>{" "}
+                  {authorProfilePath ? (
+                    <Link
+                      to={authorProfilePath}
+                      className="font-semibold text-slate-950 hover:underline dark:text-white"
+                    >
+                      {currentPost.author?.username}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-slate-950 dark:text-white">
+                      {currentPost.author?.username}
+                    </span>
+                  )}{" "}
                   {currentPost.caption}
                 </p>
               </div>

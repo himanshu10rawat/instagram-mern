@@ -15,6 +15,12 @@ api.interceptors.request.use(
   (config) => {
     const accessToken = localStorage.getItem("accessToken");
 
+    if (config.data instanceof FormData) {
+      config.headers.delete?.("Content-Type");
+      delete config.headers["Content-Type"];
+      delete config.headers["content-type"];
+    }
+
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }

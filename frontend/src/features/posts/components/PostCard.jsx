@@ -15,6 +15,7 @@ import Avatar from "../../../components/common/Avatar";
 import ShareModal from "../../messages/components/ShareModal";
 import ReportModal from "../../safety/components/ReportModal";
 import SaveToCollectionModal from "../../collections/components/SaveToCollectionModal";
+import PostMediaCarousel from "./PostMediaCarousel";
 import { likePost, savePost } from "../postSlice";
 import {
   fetchPostAnalytics,
@@ -41,8 +42,9 @@ const PostCard = ({ post }) => {
   const currentUserId = currentUser?._id;
   const isLiked = post.likes?.some((id) => getId(id) === currentUserId);
   const isSaved = post.savedBy?.some((id) => getId(id) === currentUserId);
-
-  const firstMedia = post.media?.[0];
+  const authorProfilePath = post.author?.username
+    ? `/profile/${post.author.username}`
+    : "";
 
   const handleViewInsights = () => {
     if (!post?._id) return;
@@ -57,15 +59,36 @@ const PostCard = ({ post }) => {
     <article className="post-card mobile-edge overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 sm:rounded-2xl">
       <header className="flex items-center justify-between p-3 sm:p-4">
         <div className="flex items-center gap-3">
-          <Avatar
-            src={post.author?.avatar?.url}
-            alt={post.author?.username}
-            size="md"
-          />
+          {authorProfilePath ? (
+            <Link to={authorProfilePath} aria-label={`View ${post.author?.username}'s profile`}>
+              <Avatar
+                src={post.author?.avatar?.url}
+                alt={post.author?.username}
+                size="md"
+              />
+            </Link>
+          ) : (
+            <Avatar
+              src={post.author?.avatar?.url}
+              alt={post.author?.username}
+              size="md"
+            />
+          )}
+
           <div>
-            <h3 className="text-sm font-semibold text-slate-950 dark:text-white">
-              {post.author?.username || "unknown"}
-            </h3>
+            {authorProfilePath ? (
+              <Link
+                to={authorProfilePath}
+                className="text-sm font-semibold text-slate-950 hover:underline dark:text-white"
+              >
+                {post.author?.username || "unknown"}
+              </Link>
+            ) : (
+              <h3 className="text-sm font-semibold text-slate-950 dark:text-white">
+                {post.author?.username || "unknown"}
+              </h3>
+            )}
+
             {post.location ? (
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {post.location}
@@ -114,27 +137,7 @@ const PostCard = ({ post }) => {
         </div>
       </header>
 
-      <div className="bg-slate-100 dark:bg-slate-900">
-        {firstMedia?.type === "video" ? (
-          <video
-            src={firstMedia.optimizedUrl || firstMedia.url}
-            controls
-            preload="metadata"
-            poster={firstMedia.thumbnailUrl}
-            className="post-media w-full object-cover object-top"
-          />
-        ) : firstMedia?.url ? (
-          <img
-            src={firstMedia.optimizedUrl || firstMedia.url}
-            alt={post.caption || "Post"}
-            loading="lazy"
-            decoding="async"
-            className="post-media w-full object-cover object-top"
-          />
-        ) : (
-          <div className="aspect-square w-full bg-slate-100 dark:bg-slate-900"></div>
-        )}
-      </div>
+      <PostMediaCarousel media={post.media} alt={post.caption || "Post"} />
 
       <div className="p-3 sm:p-4">
         <div className="flex items-center justify-between">
@@ -243,7 +246,16 @@ const PostCard = ({ post }) => {
 
         {post.caption ? (
           <p className="mt-2 text-sm text-slate-900 dark:text-slate-100">
-            <span className="font-semibold">{post.author?.username}</span>{" "}
+            {authorProfilePath ? (
+              <Link
+                to={authorProfilePath}
+                className="font-semibold hover:underline"
+              >
+                {post.author?.username}
+              </Link>
+            ) : (
+              <span className="font-semibold">{post.author?.username}</span>
+            )}{" "}
             {post.caption}
           </p>
         ) : null}

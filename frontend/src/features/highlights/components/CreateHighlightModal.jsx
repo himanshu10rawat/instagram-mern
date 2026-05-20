@@ -16,6 +16,10 @@ const getStoryThumb = (story) => {
   );
 };
 
+const isActiveStory = (story) => {
+  return new Date(story?.expiresAt || 0).getTime() > Date.now();
+};
+
 const CreateHighlightModal = ({ open, onClose }) => {
   const dispatch = useDispatch();
 
@@ -75,14 +79,14 @@ const CreateHighlightModal = ({ open, onClose }) => {
 
         <div>
           <p className="mb-3 text-sm font-semibold text-slate-950 dark:text-white">
-            Select archived stories
+            Select stories
           </p>
 
           {archivedStories.length === 0 ? (
             <EmptyState
               icon={Plus}
-              title="No archived stories found"
-              description="Create stories first, then add them to highlights."
+              title="No stories found"
+              description="Create a story first, then add it to highlights."
               variant="subtle"
               size="sm"
             />
@@ -91,6 +95,7 @@ const CreateHighlightModal = ({ open, onClose }) => {
               {archivedStories.map((story) => {
                 const isSelected = selectedStoryIds.includes(story._id);
                 const thumb = getStoryThumb(story);
+                const storyIsActive = isActiveStory(story);
 
                 return (
                   <button
@@ -113,10 +118,18 @@ const CreateHighlightModal = ({ open, onClose }) => {
                     ) : (
                       <img
                         src={thumb}
-                        alt={story.caption || "Archived story"}
+                        alt={story.caption || "Story"}
                         className="h-full w-full object-cover"
                       />
                     )}
+
+                    <span
+                      className={`absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white ${
+                        storyIsActive ? "bg-emerald-500" : "bg-slate-950/80"
+                      }`}
+                    >
+                      {storyIsActive ? "Current" : "Archived"}
+                    </span>
 
                     {isSelected ? (
                       <span className="absolute right-2 top-2 rounded-full bg-slate-950 px-2 py-1 text-xs font-bold text-white">

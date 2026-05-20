@@ -7,8 +7,8 @@ import {
   Share2,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../components/common/Avatar";
@@ -28,6 +28,8 @@ import {
 const getId = (value) => (typeof value === "string" ? value : value?._id);
 const getStoryTime = (story) => Date.parse(story?.createdAt || "") || 0;
 const getViewerUser = (viewer) => viewer?.user || viewer;
+const STORY_AUTO_ADVANCE_MS = 5000;
+const STORY_HOLD_TO_PAUSE_MS = 250;
 
 const StoryEngagementModal = ({
   activeTab,
@@ -130,7 +132,18 @@ const StoryViewerPage = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showEngagementModal, setShowEngagementModal] = useState(false);
   const [engagementTab, setEngagementTab] = useState("viewers");
+  const [isPaused, setIsPaused] = useState(false);
+  const [storyProgress, setStoryProgress] = useState({
+    storyId: "",
+    value: 0,
+  });
+  const progressStartRef = useRef(0);
+  const elapsedBeforePauseRef = useRef(0);
+  const pointerDownAtRef = useRef(0);
+  const suppressTapNavigationRef = useRef(false);
+  const videoRef = useRef(null);
   const { storyId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -184,6 +197,108 @@ const StoryViewerPage = () => {
     return currentStory?.likes?.some((item) => getId(item) === currentUserId);
   }, [currentStory?.likes, currentUserId]);
 
+  const storyReturnTo =
+    typeof location.state?.storyReturnTo === "string"
+      ? location.state.storyReturnTo
+      : "/";
+  const storyNavigationState = useMemo(
+    () => ({
+      ...(location.state || {}),
+      storyReturnTo,
+    }),
+    [location.state, storyReturnTo],
+  );
+  const isTimelinePaused = isPaused || showShareModal || showEngagementModal;
+  const currentStoryProgress =
+    storyProgress.storyId === currentStory?._id ? storyProgress.value : 0;
+
+  const pauseStory = useCallback(() => {
+    setIsPaused(true);
+  }, []);
+
+  const resumeStory = useCallback(() => {
+    setIsPaused(false);
+  }, []);
+
+  const handleStoryPointerDown = useCallback(() => {
+    pointerDownAtRef.current = performance.now();
+    suppressTapNavigationRef.current = false;
+    pauseStory();
+  }, [pauseStory]);
+
+  const handleStoryPointerUp = useCallback(() => {
+    const pressStartedAt = pointerDownAtRef.current;
+    const pressDuration = pressStartedAt
+      ? performance.now() - pressStartedAt
+      : 0;
+
+    pointerDownAtRef.current = 0;
+    suppressTapNavigationRef.current = pressDuration >= STORY_HOLD_TO_PAUSE_MS;
+    resumeStory();
+
+    window.setTimeout(() => {
+      suppressTapNavigationRef.current = false;
+    }, 0);
+  }, [resumeStory]);
+
+  const handleStoryPointerEnd = useCallback(() => {
+    pointerDownAtRef.current = 0;
+    suppressTapNavigationRef.current = false;
+    resumeStory();
+  }, [resumeStory]);
+
+  const shouldIgnoreTapNavigation = useCallback(() => {
+    if (!suppressTapNavigationRef.current) return false;
+
+    suppressTapNavigationRef.current = false;
+    return true;
+  }, []);
+
+  const handleCloseStory = useCallback(() => {
+    setIsPaused(false);
+    navigate(storyReturnTo, { replace: true });
+  }, [navigate, storyReturnTo]);
+
+  const handleNavigateStory = useCallback(
+    (story) => {
+      if (!story?._id) return;
+
+      setIsPaused(false);
+      navigate(`/stories/${story._id}`, {
+        replace: true,
+        state: storyNavigationState,
+      });
+    },
+    [navigate, storyNavigationState],
+  );
+
+  const handlePreviousStory = useCallback(() => {
+    if (!previousStory) return;
+
+    handleNavigateStory(previousStory);
+  }, [handleNavigateStory, previousStory]);
+
+  const handleNextStory = useCallback(() => {
+    if (nextStory) {
+      handleNavigateStory(nextStory);
+      return;
+    }
+
+    handleCloseStory();
+  }, [handleCloseStory, handleNavigateStory, nextStory]);
+
+  const handlePreviousStoryTap = useCallback(() => {
+    if (shouldIgnoreTapNavigation()) return;
+
+    handlePreviousStory();
+  }, [handlePreviousStory, shouldIgnoreTapNavigation]);
+
+  const handleNextStoryTap = useCallback(() => {
+    if (shouldIgnoreTapNavigation()) return;
+
+    handleNextStory();
+  }, [handleNextStory, shouldIgnoreTapNavigation]);
+
   useEffect(() => {
     dispatch(fetchSingleStory(storyId));
 
@@ -205,11 +320,63 @@ const StoryViewerPage = () => {
     dispatch(fetchStoryEngagement(storyId));
   }, [dispatch, isOwnStory, storyId]);
 
-  const handleNavigateStory = (story) => {
-    if (!story?._id) return;
+  useEffect(() => {
+    elapsedBeforePauseRef.current = 0;
+    progressStartRef.current = performance.now();
+  }, [storyId]);
 
-    navigate(`/stories/${story._id}`);
-  };
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isTimelinePaused) {
+      video.pause();
+      return;
+    }
+
+    video.play().catch(() => {});
+  }, [isTimelinePaused, media?.optimizedUrl, media?.url]);
+
+  useEffect(() => {
+    if (!currentStory?._id || isTimelinePaused) return undefined;
+
+    progressStartRef.current = performance.now();
+    let frameId;
+
+    const updateProgress = (now) => {
+      const elapsed =
+        elapsedBeforePauseRef.current + now - progressStartRef.current;
+      const nextProgress = Math.min(
+        (elapsed / STORY_AUTO_ADVANCE_MS) * 100,
+        100,
+      );
+
+      setStoryProgress({
+        storyId: currentStory._id,
+        value: nextProgress,
+      });
+
+      if (nextProgress >= 100) {
+        elapsedBeforePauseRef.current = STORY_AUTO_ADVANCE_MS;
+        handleNextStory();
+        return;
+      }
+
+      frameId = requestAnimationFrame(updateProgress);
+    };
+
+    frameId = requestAnimationFrame(updateProgress);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      elapsedBeforePauseRef.current = Math.min(
+        elapsedBeforePauseRef.current +
+          performance.now() -
+          progressStartRef.current,
+        STORY_AUTO_ADVANCE_MS,
+      );
+    };
+  }, [currentStory?._id, handleNextStory, isTimelinePaused]);
 
   const handleReplySubmit = async (event) => {
     event.preventDefault();
@@ -252,24 +419,37 @@ const StoryViewerPage = () => {
 
   return (
     <section className="mx-auto flex h-full min-h-0 max-w-md items-center justify-center md:min-h-[calc(100dvh_-_2rem)]">
-      <article className="relative h-full min-h-0 w-full overflow-hidden bg-black text-white md:h-[calc(100dvh_-_2rem)] md:max-h-205 md:min-h-155 md:rounded-2xl">
+      <article
+        className="relative h-full min-h-0 w-full overflow-hidden bg-black text-white md:h-[calc(100dvh_-_2rem)] md:max-h-205 md:min-h-155 md:rounded-2xl"
+        onPointerDownCapture={handleStoryPointerDown}
+        onPointerUpCapture={handleStoryPointerUp}
+        onPointerCancelCapture={handleStoryPointerEnd}
+        onPointerLeave={handleStoryPointerEnd}
+      >
         <div className="absolute left-0 right-0 top-0 z-30 p-4">
           <div className="flex gap-1">
             {(activeStories.length ? activeStories : [currentStory]).map(
-              (story, index) => (
-                <div
-                  key={story?._id || index}
-                  className="h-1 flex-1 overflow-hidden rounded-full bg-white/30"
-                >
+              (story, index) => {
+                const activeIndex = Math.max(currentStoryIndex, 0);
+                const progressWidth =
+                  index < activeIndex
+                    ? "100%"
+                    : index === activeIndex
+                      ? `${currentStoryProgress}%`
+                      : "0%";
+
+                return (
                   <div
-                    className={`h-full ${
-                      index <= Math.max(currentStoryIndex, 0)
-                        ? "w-full bg-white"
-                        : "w-0 bg-white"
-                    }`}
-                  />
-                </div>
-              ),
+                    key={story?._id || index}
+                    className="h-1 flex-1 overflow-hidden rounded-full bg-white/30"
+                  >
+                    <div
+                      className="h-full bg-white transition-[width] duration-75 ease-linear"
+                      style={{ width: progressWidth }}
+                    />
+                  </div>
+                );
+              },
             )}
           </div>
 
@@ -297,7 +477,7 @@ const StoryViewerPage = () => {
 
             <button
               type="button"
-              onClick={() => navigate(-1)}
+              onClick={handleCloseStory}
               className="rounded-full bg-black/30 p-2"
               aria-label="Close story"
             >
@@ -308,6 +488,7 @@ const StoryViewerPage = () => {
 
         {media?.type === "video" ? (
           <video
+            ref={videoRef}
             src={media.optimizedUrl || media.url}
             autoPlay
             loop
@@ -323,30 +504,31 @@ const StoryViewerPage = () => {
           />
         )}
 
+        <button
+          type="button"
+          onClick={handlePreviousStoryTap}
+          disabled={!previousStory}
+          className="absolute bottom-32 left-0 top-24 z-20 w-1/2 disabled:cursor-default"
+          aria-label="Previous story"
+        />
+
+        <button
+          type="button"
+          onClick={handleNextStoryTap}
+          className="absolute bottom-32 right-0 top-24 z-20 w-1/2"
+          aria-label={nextStory ? "Next story" : "Close story"}
+        />
+
         {previousStory ? (
-          <button
-            type="button"
-            onClick={() => handleNavigateStory(previousStory)}
-            className="absolute bottom-32 left-0 top-24 z-20 flex w-1/3 items-center justify-start px-3 text-white"
-            aria-label="Previous story"
-          >
-            <span className="rounded-full bg-black/30 p-2 backdrop-blur">
-              <ChevronLeft size={22} />
-            </span>
-          </button>
+          <div className="pointer-events-none absolute left-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white backdrop-blur">
+            <ChevronLeft size={22} />
+          </div>
         ) : null}
 
         {nextStory ? (
-          <button
-            type="button"
-            onClick={() => handleNavigateStory(nextStory)}
-            className="absolute bottom-32 right-0 top-24 z-20 flex w-1/3 items-center justify-end px-3 text-white"
-            aria-label="Next story"
-          >
-            <span className="rounded-full bg-black/30 p-2 backdrop-blur">
-              <ChevronRight size={22} />
-            </span>
-          </button>
+          <div className="pointer-events-none absolute right-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white backdrop-blur">
+            <ChevronRight size={22} />
+          </div>
         ) : null}
 
         <div className="absolute inset-x-0 bottom-0 z-30 bg-linear-to-t from-black/80 to-transparent p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
@@ -395,6 +577,8 @@ const StoryViewerPage = () => {
               <input
                 value={replyText}
                 onChange={(event) => setReplyText(event.target.value)}
+                onBlur={resumeStory}
+                onFocus={pauseStory}
                 placeholder={`Reply to ${author?.username || "story"}...`}
                 className="min-w-0 flex-1 rounded-full border border-white/40 bg-black/30 px-4 py-3 text-base text-white outline-none placeholder:text-white/70 sm:text-sm"
               />

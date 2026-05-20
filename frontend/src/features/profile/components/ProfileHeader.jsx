@@ -16,7 +16,12 @@ import {
 import { fetchUserProfile } from "../profileSlice";
 import FollowListModal from "./FollowListModal";
 
-const ProfileHeader = ({ profile, isMyProfile }) => {
+const ProfileHeader = ({
+  profile,
+  isMyProfile,
+  hasActiveStory = false,
+  storyRingTone = "active",
+}) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [optimisticRequested, setOptimisticRequested] = useState(false);
@@ -145,7 +150,8 @@ const ProfileHeader = ({ profile, isMyProfile }) => {
               src={profile?.avatar?.url}
               alt={profile?.username}
               size="lg"
-              ring
+              ring={hasActiveStory}
+              ringTone={storyRingTone}
             />
           </div>
 

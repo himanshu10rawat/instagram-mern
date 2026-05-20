@@ -533,15 +533,12 @@ export const getStoryReplies = asyncHandler(async (req, res) => {
 export const getArchivedStories = asyncHandler(async (req, res) => {
   const stories = await Story.find({
     author: req.user._id,
-    expiresAt: {
-      $lte: new Date(),
-    },
     isDeleted: false,
   }).sort({ createdAt: -1 });
 
   return res
     .status(HTTP_STATUS.OK)
-    .json(new ApiResponse(HTTP_STATUS.OK, stories, "Archived stories fetched successfully"));
+    .json(new ApiResponse(HTTP_STATUS.OK, stories, "Stories available for highlights fetched"));
 });
 
 export const archiveStory = asyncHandler(async (req, res) => {

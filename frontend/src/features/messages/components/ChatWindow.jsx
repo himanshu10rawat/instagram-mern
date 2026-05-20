@@ -1,5 +1,5 @@
 import { ArrowLeft, Image, Send, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
@@ -17,6 +17,7 @@ import {
   sendMessage,
   setActiveConversation,
 } from "../messageSlice";
+import useMediaQuery from "../../../hooks/useMediaQuery";
 import MessageBubble from "./MessageBubble";
 
 const getOtherParticipant = (conversation, currentUserId) => {
@@ -31,8 +32,13 @@ const ChatWindow = () => {
   const dispatch = useDispatch();
 
   const messagesScrollerRef = useRef(null);
+  const messagesContentRef = useRef(null);
   const filePreviewUrlRef = useRef("");
   const typingTimeoutRef = useRef(null);
+  const shouldStickToBottomRef = useRef(true);
+  const scrollFrameRef = useRef(null);
+  const mobileSyncTimeoutsRef = useRef([]);
+  const isMobileChat = useMediaQuery("(max-width: 767px)");
 
   const currentUser = useSelector((state) => state.auth.user);
   const {
@@ -51,6 +57,48 @@ const ChatWindow = () => {
 
   const otherUser = getOtherParticipant(activeConversation, currentUser?._id);
 
+  const scrollMessagesToBottom = useCallback((behavior = "auto") => {
+    const scroller = messagesScrollerRef.current;
+
+    if (!scroller) return;
+
+    if (scrollFrameRef.current) {
+      cancelAnimationFrame(scrollFrameRef.current);
+    }
+
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      scroller.scrollTo({
+        top: scroller.scrollHeight,
+        behavior,
+      });
+    });
+  }, []);
+
+  const keepMobileChatAnchored = useCallback(
+    (behavior = "auto") => {
+      shouldStickToBottomRef.current = true;
+
+      const sync = () => {
+        if (isMobileChat) {
+          window.scrollTo(0, 0);
+        }
+
+        scrollMessagesToBottom(behavior);
+      };
+
+      mobileSyncTimeoutsRef.current.forEach((timeoutId) => {
+        window.clearTimeout(timeoutId);
+      });
+
+      mobileSyncTimeoutsRef.current = [
+        window.setTimeout(sync, 0),
+        window.setTimeout(sync, 120),
+        window.setTimeout(sync, 320),
+      ];
+    },
+    [isMobileChat, scrollMessagesToBottom],
+  );
+
   useEffect(() => {
     if (activeConversation?._id) {
       dispatch(
@@ -67,25 +115,64 @@ const ChatWindow = () => {
   }, [activeConversation?._id, dispatch, messages.length]);
 
   useEffect(() => {
-    const scroller = messagesScrollerRef.current;
+    keepMobileChatAnchored(messagesLoading ? "auto" : "smooth");
+  }, [
+    activeConversation?._id,
+    keepMobileChatAnchored,
+    messages.length,
+    messagesLoading,
+  ]);
 
-    if (!scroller) return undefined;
+  useEffect(() => {
+    const content = messagesContentRef.current;
 
-    const frameId = requestAnimationFrame(() => {
-      scroller.scrollTo({
-        top: scroller.scrollHeight,
-        behavior: messagesLoading ? "auto" : "smooth",
-      });
+    if (!content || typeof ResizeObserver === "undefined") return undefined;
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (shouldStickToBottomRef.current) {
+        scrollMessagesToBottom("auto");
+      }
     });
 
-    return () => cancelAnimationFrame(frameId);
-  }, [activeConversation?._id, messages.length, messagesLoading]);
+    resizeObserver.observe(content);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [scrollMessagesToBottom]);
+
+  useEffect(() => {
+    if (!isMobileChat || !activeConversation?._id) return undefined;
+
+    const visualViewport = window.visualViewport;
+    const handleViewportChange = () => {
+      keepMobileChatAnchored("auto");
+    };
+
+    visualViewport?.addEventListener("resize", handleViewportChange);
+    visualViewport?.addEventListener("scroll", handleViewportChange);
+    window.addEventListener("resize", handleViewportChange);
+
+    return () => {
+      visualViewport?.removeEventListener("resize", handleViewportChange);
+      visualViewport?.removeEventListener("scroll", handleViewportChange);
+      window.removeEventListener("resize", handleViewportChange);
+    };
+  }, [activeConversation?._id, isMobileChat, keepMobileChatAnchored]);
 
   useEffect(() => {
     return () => {
       if (filePreviewUrlRef.current) {
         URL.revokeObjectURL(filePreviewUrlRef.current);
       }
+
+      if (scrollFrameRef.current) {
+        cancelAnimationFrame(scrollFrameRef.current);
+      }
+
+      mobileSyncTimeoutsRef.current.forEach((timeoutId) => {
+        window.clearTimeout(timeoutId);
+      });
     };
   }, []);
 
@@ -158,6 +245,7 @@ const ChatWindow = () => {
         setText("");
         clearSelectedFile();
         setReplyTarget(null);
+        keepMobileChatAnchored("smooth");
       }
     } finally {
       setSendingReceiverId(null);
@@ -233,26 +321,35 @@ const ChatWindow = () => {
 
       <div
         ref={messagesScrollerRef}
-        className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3 sm:p-4"
-      >
-        {messagesLoading ? (
-          <div className="space-y-3">
-            <SkeletonBlock className="h-10 w-2/3 rounded-2xl" />
-            <SkeletonBlock className="ml-auto h-10 w-1/2 rounded-2xl" />
-            <SkeletonBlock className="h-10 w-3/5 rounded-2xl" />
-          </div>
-        ) : null}
+        onScroll={(event) => {
+          const scroller = event.currentTarget;
+          const distanceFromBottom =
+            scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
 
-        {!messagesLoading
-          ? messages.map((message) => (
-              <MessageBubble
-                key={message._id}
-                message={message}
-                isMine={message.sender?._id === currentUser?._id}
-                onReply={setReplyTarget}
-              />
-            ))
-          : null}
+          shouldStickToBottomRef.current = distanceFromBottom < 96;
+        }}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4"
+      >
+        <div ref={messagesContentRef} className="space-y-3">
+          {messagesLoading ? (
+            <div className="space-y-3">
+              <SkeletonBlock className="h-10 w-2/3 rounded-2xl" />
+              <SkeletonBlock className="ml-auto h-10 w-1/2 rounded-2xl" />
+              <SkeletonBlock className="h-10 w-3/5 rounded-2xl" />
+            </div>
+          ) : null}
+
+          {!messagesLoading
+            ? messages.map((message) => (
+                <MessageBubble
+                  key={message._id}
+                  message={message}
+                  isMine={message.sender?._id === currentUser?._id}
+                  onReply={setReplyTarget}
+                />
+              ))
+            : null}
+        </div>
       </div>
 
       {replyTarget ? (
@@ -349,6 +446,7 @@ const ChatWindow = () => {
             setText(event.target.value);
             handleTyping();
           }}
+          onFocus={() => keepMobileChatAnchored("auto")}
           disabled={isSending}
           placeholder={replyTarget ? "Reply..." : "Message..."}
           enterKeyHint="send"

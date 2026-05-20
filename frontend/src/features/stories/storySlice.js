@@ -239,6 +239,13 @@ const storySlice = createSlice({
       .addCase(fetchSingleStory.fulfilled, (state, action) => {
         state.loading = false;
         state.currentStory = action.payload;
+
+        if (action.payload?._id) {
+          state.storyGroups = replaceStoryById(
+            state.storyGroups,
+            action.payload,
+          );
+        }
       })
       .addCase(fetchSingleStory.rejected, (state, action) => {
         state.loading = false;

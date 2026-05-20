@@ -1,13 +1,19 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Plus } from "lucide-react";
 
 import Avatar from "../../../components/common/Avatar";
 import EmptyState from "../../../components/ui/EmptyState";
 import { StoryTraySkeleton } from "../../../components/ui/Skeleton";
+import { getStoryRingTone } from "../storyViewStatus";
 
 const StoryBar = () => {
+  const location = useLocation();
   const { storyGroups, loading } = useSelector((state) => state.stories);
+  const currentUserId = useSelector((state) => state.auth.user?._id);
+  const storyReturnState = {
+    storyReturnTo: `${location.pathname}${location.search}`,
+  };
 
   if (loading) {
     return <StoryTraySkeleton count={5} />;
@@ -30,11 +36,13 @@ const StoryBar = () => {
           storyGroups.map((storyGroup) => {
             const user = storyGroup.author || storyGroup.user || {};
             const firstStory = storyGroup.stories?.[0] || storyGroup;
+            const stories = storyGroup.stories || [firstStory];
 
             return (
               <Link
                 key={user._id || firstStory._id}
                 to={`/stories/${firstStory._id}`}
+                state={storyReturnState}
                 className="flex shrink-0 flex-col items-center gap-2"
               >
                 <Avatar
@@ -42,6 +50,11 @@ const StoryBar = () => {
                   alt={user.username}
                   size="lg"
                   ring
+                  ringTone={getStoryRingTone({
+                    authorId: user?._id,
+                    currentUserId,
+                    stories,
+                  })}
                 />
                 <span className="max-w-16 truncate text-xs text-slate-500">
                   {user.username || "story"}
