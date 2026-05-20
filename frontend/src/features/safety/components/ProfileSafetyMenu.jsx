@@ -61,7 +61,7 @@ const ProfileSafetyMenu = ({ profile }) => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full sm:w-auto">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -72,7 +72,7 @@ const ProfileSafetyMenu = ({ profile }) => {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-12 z-30 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
+        <div className="absolute left-0 top-12 z-30 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950 sm:left-auto sm:right-0">
           <button
             type="button"
             onClick={handleMuteToggle}
