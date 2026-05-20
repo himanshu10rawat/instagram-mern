@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 import { mobilePrimaryPaths, navItems } from "./navigationItems";
 
@@ -8,7 +8,18 @@ const mobileNavItems = navItems.filter((item) =>
 );
 
 const MobileBottomNav = () => {
+  const location = useLocation();
+  const activeConversation = useSelector(
+    (state) => state.messages.activeConversation,
+  );
   const unreadMessages = useSelector((state) => state.messages.unreadCount);
+  const isChatRoomOpen =
+    location.pathname.startsWith("/messages") && Boolean(activeConversation);
+  const isStoryViewerRoute = location.pathname.startsWith("/stories/");
+
+  if (isChatRoomOpen || isStoryViewerRoute) {
+    return null;
+  }
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-2 pt-1.5 pb-[calc(0.45rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden">

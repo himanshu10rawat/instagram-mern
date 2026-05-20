@@ -27,8 +27,10 @@ const getPostMedia = (post) => {
   const media = post.media?.[0];
 
   return {
-    url: media?.thumbnailUrl || media?.optimizedUrl || media?.url,
+    imageUrl: media?.thumbnailUrl || media?.optimizedUrl || media?.url || "",
+    thumbnailUrl: media?.thumbnailUrl || "",
     type: media?.type || "image",
+    videoUrl: media?.optimizedUrl || media?.url || "",
   };
 };
 
@@ -155,15 +157,19 @@ const CollectionDetailPage = () => {
               <Link to={`/posts/${post._id}`} className="block h-full w-full">
                 {media.type === "video" ? (
                   <video
-                    src={media.url}
+                    src={media.videoUrl}
+                    poster={media.thumbnailUrl}
+                    preload="metadata"
                     className="h-full w-full object-cover"
                     muted
                     playsInline
                   />
                 ) : (
                   <img
-                    src={media.url}
+                    src={media.imageUrl}
                     alt={post.caption || "Collection post"}
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover"
                   />
                 )}

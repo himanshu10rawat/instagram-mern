@@ -36,6 +36,7 @@ api.interceptors.response.use(
       !originalRequest._retry &&
       !requestUrl.includes(API_ROUTES.auth.login) &&
       !requestUrl.includes(API_ROUTES.auth.register) &&
+      !requestUrl.includes(API_ROUTES.auth.logout) &&
       !requestUrl.includes(API_ROUTES.auth.refreshToken)
     ) {
       originalRequest._retry = true;

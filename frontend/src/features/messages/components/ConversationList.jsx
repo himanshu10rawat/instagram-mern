@@ -19,7 +19,7 @@ const ConversationList = ({
   onSelect,
 }) => {
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden border-r border-slate-200 dark:border-slate-800">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className="shrink-0 border-b border-slate-200 p-4 dark:border-slate-800">
         <h1 className="text-xl font-bold text-slate-950 dark:text-white">
           Messages
@@ -55,7 +55,7 @@ const ConversationList = ({
                   : "hover:bg-slate-50 dark:hover:bg-slate-900"
               }`}
             >
-              <div className="relative">
+              <div className="relative shrink-0">
                 <Avatar src={user?.avatar?.url} alt={user?.username} />
 
                 {isOnline ? (

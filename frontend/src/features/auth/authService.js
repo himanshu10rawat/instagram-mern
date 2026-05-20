@@ -17,7 +17,15 @@ export const getCurrentUserApi = async () => {
 };
 
 export const logoutUserApi = async () => {
-  const response = await api.post(API_ROUTES.auth.logout);
+  const refreshToken = localStorage.getItem("refreshToken");
+  const hasStoredRefreshToken =
+    refreshToken && refreshToken !== "undefined" && refreshToken !== "null";
+
+  const response = await api.post(
+    API_ROUTES.auth.logout,
+    hasStoredRefreshToken ? { refreshToken } : {},
+  );
+
   return response.data.data;
 };
 

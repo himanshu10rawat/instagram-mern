@@ -13,6 +13,24 @@ import {
 } from "./profileService";
 import { FORM_DATA_FIELDS } from "../../constants/apiRoutes";
 
+const getApiErrorMessage = (error, fallbackMessage) => {
+  const data = error.response?.data;
+  const details = (data?.errors || [])
+    .map((item) => {
+      if (typeof item === "string") return item;
+
+      return item?.field ? `${item.field}: ${item.message}` : item?.message;
+    })
+    .filter(Boolean)
+    .join(" ");
+
+  if (data?.message && details) {
+    return `${data.message}. ${details}`;
+  }
+
+  return data?.message || details || fallbackMessage;
+};
+
 export const fetchMyProfile = createAsyncThunk(
   "profile/fetchMyProfile",
   async (_, { rejectWithValue }) => {
@@ -100,7 +118,7 @@ export const updateAvatar = createAsyncThunk(
       return await updateAvatarApi(formData);
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to update avatar",
+        getApiErrorMessage(error, "Failed to update avatar"),
       );
     }
   },

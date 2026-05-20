@@ -2,15 +2,31 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { createPostApi, createReelApi, createStoryApi } from "./createService";
 
+const getApiErrorMessage = (error, fallbackMessage) => {
+  const data = error.response?.data;
+  const details = (data?.errors || [])
+    .map((item) => {
+      if (typeof item === "string") return item;
+
+      return item?.field ? `${item.field}: ${item.message}` : item?.message;
+    })
+    .filter(Boolean)
+    .join(" ");
+
+  if (data?.message && details) {
+    return `${data.message}. ${details}`;
+  }
+
+  return data?.message || details || fallbackMessage;
+};
+
 export const createPost = createAsyncThunk(
   "create/createPost",
   async (formData, { rejectWithValue }) => {
     try {
       return await createPostApi(formData);
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to create post",
-      );
+      return rejectWithValue(getApiErrorMessage(error, "Failed to create post"));
     }
   },
 );
@@ -21,9 +37,7 @@ export const createReel = createAsyncThunk(
     try {
       return await createReelApi(formData);
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to create reel",
-      );
+      return rejectWithValue(getApiErrorMessage(error, "Failed to create reel"));
     }
   },
 );
@@ -35,7 +49,7 @@ export const createStory = createAsyncThunk(
       return await createStoryApi(formData);
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to create story",
+        getApiErrorMessage(error, "Failed to create story"),
       );
     }
   },

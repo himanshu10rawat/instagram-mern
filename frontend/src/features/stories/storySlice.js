@@ -2,7 +2,9 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
   getSingleStoryApi,
+  getStoryEngagementApi,
   getStoriesFeedApi,
+  getUserStoriesApi,
   likeStoryApi,
   markStoryViewedApi,
   replyStoryApi,
@@ -44,6 +46,35 @@ export const fetchSingleStory = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch story",
+      );
+    }
+  },
+);
+
+export const fetchUserStories = createAsyncThunk(
+  "stories/fetchUserStories",
+  async (userId, { rejectWithValue }) => {
+    try {
+      return await getUserStoriesApi(userId);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch user stories",
+      );
+    }
+  },
+);
+
+export const fetchStoryEngagement = createAsyncThunk(
+  "stories/fetchStoryEngagement",
+  async (storyId, { rejectWithValue }) => {
+    try {
+      return {
+        storyId,
+        engagement: await getStoryEngagementApi(storyId),
+      };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch story engagement",
       );
     }
   },
@@ -99,6 +130,16 @@ const replaceStoryById = (stories, updatedStory) =>
     ),
   }));
 
+const getStoryTime = (story) => Date.parse(story?.createdAt || "") || 0;
+
+const sortStoriesAscending = (stories = []) =>
+  [...stories].filter(Boolean).sort((first, second) => {
+    return getStoryTime(first) - getStoryTime(second);
+  });
+
+const getGroupLatestStoryTime = (group) =>
+  Math.max(...(group.stories || []).map(getStoryTime), 0);
+
 const normalizeStoryGroups = (payload = []) => {
   if (!Array.isArray(payload)) return [];
 
@@ -111,9 +152,12 @@ const normalizeStoryGroups = (payload = []) => {
     return validItems
       .map((group) => ({
         ...group,
-        stories: (group.stories || []).filter(Boolean),
+        stories: sortStoriesAscending(group.stories || []),
       }))
-      .filter((group) => group.stories.length > 0);
+      .filter((group) => group.stories.length > 0)
+      .sort((first, second) => {
+        return getGroupLatestStoryTime(second) - getGroupLatestStoryTime(first);
+      });
   }
 
   const groupedStories = new Map();
@@ -133,15 +177,26 @@ const normalizeStoryGroups = (payload = []) => {
     groupedStories.set(authorId, existingGroup);
   });
 
-  return [...groupedStories.values()];
+  return [...groupedStories.values()]
+    .map((group) => ({
+      ...group,
+      stories: sortStoriesAscending(group.stories),
+    }))
+    .sort((first, second) => {
+      return getGroupLatestStoryTime(second) - getGroupLatestStoryTime(first);
+    });
 };
 
 const initialState = {
   storyGroups: [],
   currentStory: null,
+  viewerAuthorId: null,
+  viewerStories: [],
+  storyEngagementById: {},
   lastFetched: 0,
   loading: false,
   actionLoading: false,
+  engagementLoading: false,
   error: null,
   successMessage: "",
 };
@@ -152,6 +207,8 @@ const storySlice = createSlice({
   reducers: {
     clearCurrentStory: (state) => {
       state.currentStory = null;
+      state.viewerAuthorId = null;
+      state.viewerStories = [];
     },
 
     clearStoryStatus: (state) => {
@@ -185,6 +242,60 @@ const storySlice = createSlice({
       })
       .addCase(fetchSingleStory.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(fetchUserStories.fulfilled, (state, action) => {
+        const stories = sortStoriesAscending(action.payload || []);
+        const authorId =
+          stories[0]?.author?._id || stories[0]?.author || action.meta.arg;
+
+        state.viewerStories = stories;
+        state.viewerAuthorId = authorId || null;
+
+        if (authorId) {
+          const existingGroupIndex = state.storyGroups.findIndex((group) => {
+            const groupUser = group.user || group.author || group.stories?.[0]?.author;
+            const groupUserId = groupUser?._id || groupUser;
+
+            return groupUserId === authorId;
+          });
+          const nextGroup = {
+            user: stories[0]?.author,
+            stories,
+          };
+
+          if (existingGroupIndex === -1) {
+            state.storyGroups = normalizeStoryGroups([
+              ...state.storyGroups,
+              nextGroup,
+            ]);
+          } else {
+            state.storyGroups[existingGroupIndex] = {
+              ...state.storyGroups[existingGroupIndex],
+              ...nextGroup,
+            };
+            state.storyGroups = normalizeStoryGroups(state.storyGroups);
+          }
+        }
+      })
+
+      .addCase(fetchStoryEngagement.pending, (state) => {
+        state.engagementLoading = true;
+      })
+      .addCase(fetchStoryEngagement.fulfilled, (state, action) => {
+        state.engagementLoading = false;
+
+        if (!action.payload?.storyId) return;
+
+        state.storyEngagementById[action.payload.storyId] =
+          action.payload.engagement || {
+            viewers: [],
+            likes: [],
+          };
+      })
+      .addCase(fetchStoryEngagement.rejected, (state, action) => {
+        state.engagementLoading = false;
         state.error = action.payload;
       })
 

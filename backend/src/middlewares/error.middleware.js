@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import multer from "multer";
 
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 
@@ -22,6 +23,20 @@ export const errorMiddleware = (error, _req, res, _next) => {
     statusCode = HTTP_STATUS.CONFLICT;
     const fields = Object.keys(error.keyValue).join(", ");
     message = `${fields} already exists`;
+  }
+
+  if (error instanceof multer.MulterError) {
+    statusCode = HTTP_STATUS.BAD_REQUEST;
+
+    if (error.code === "LIMIT_FILE_SIZE") {
+      message = "Selected file is too large";
+      errors = ["Each uploaded file must be 5 MB or smaller."];
+    } else if (error.code === "LIMIT_UNEXPECTED_FILE") {
+      message = "Unexpected upload field";
+      errors = ["Please choose the file from the correct upload control."];
+    } else {
+      message = error.message || "Upload failed";
+    }
   }
 
   res.status(statusCode).json({

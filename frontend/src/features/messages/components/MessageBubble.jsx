@@ -45,9 +45,11 @@ const MessageBubble = ({ message, isMine, onReply }) => {
   };
 
   return (
-    <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+    <div
+      className={`flex min-w-0 ${isMine ? "justify-end" : "justify-start"}`}
+    >
       <div
-        className={`max-w-[75%] rounded-2xl px-4 py-2 ${
+        className={`max-w-[82%] overflow-hidden rounded-2xl px-4 py-2 sm:max-w-[75%] ${
           isMine
             ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
             : "bg-slate-100 text-slate-950 dark:bg-slate-900 dark:text-white"
@@ -114,7 +116,9 @@ const MessageBubble = ({ message, isMine, onReply }) => {
           </div>
         ) : (
           <>
-            {message.text ? <p className="text-sm">{message.text}</p> : null}
+            {message.text ? (
+              <p className="break-words text-sm">{message.text}</p>
+            ) : null}
 
             {message.shared?.post ? (
               <Link

@@ -1,38 +1,184 @@
-import { Heart, Send, Share2, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Heart,
+  Send,
+  Share2,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../components/common/Avatar";
+import ModalShell from "../components/ui/ModalShell";
 import { SkeletonBlock } from "../components/ui/Skeleton";
 import ShareModal from "../features/messages/components/ShareModal";
 import {
   clearCurrentStory,
   clearStoryStatus,
   fetchSingleStory,
+  fetchStoryEngagement,
+  fetchUserStories,
   likeStory,
   replyStory,
 } from "../features/stories/storySlice";
 
 const getId = (value) => (typeof value === "string" ? value : value?._id);
+const getStoryTime = (story) => Date.parse(story?.createdAt || "") || 0;
+const getViewerUser = (viewer) => viewer?.user || viewer;
+
+const StoryEngagementModal = ({
+  activeTab,
+  likes,
+  loading,
+  onClose,
+  onTabChange,
+  viewers,
+}) => {
+  const items = activeTab === "viewers" ? viewers : likes;
+
+  return (
+    <ModalShell
+      title="Story activity"
+      description={`${viewers.length} views · ${likes.length} likes`}
+      onClose={onClose}
+      className="max-w-md"
+      contentClassName="p-4"
+    >
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => onTabChange("viewers")}
+          className={`flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold ${
+            activeTab === "viewers"
+              ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
+              : "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300"
+          }`}
+        >
+          <Eye size={17} />
+          Views
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onTabChange("likes")}
+          className={`flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold ${
+            activeTab === "likes"
+              ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
+              : "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300"
+          }`}
+        >
+          <Heart size={17} />
+          Likes
+        </button>
+      </div>
+
+      {loading ? (
+        <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+          Loading activity...
+        </p>
+      ) : null}
+
+      {!loading && items.length === 0 ? (
+        <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+          {activeTab === "viewers"
+            ? "No one has viewed this story yet."
+            : "No likes on this story yet."}
+        </p>
+      ) : null}
+
+      {!loading && items.length > 0 ? (
+        <div className="space-y-3">
+          {items.map((item) => {
+            const user = getViewerUser(item);
+            const key = getId(user) || getId(item) || item?.viewedAt;
+
+            return (
+              <div key={key} className="flex items-center gap-3">
+                <Avatar src={user?.avatar?.url} alt={user?.username} />
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                    {user?.username || "Unknown user"}
+                  </p>
+
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                    {user?.fullName ||
+                      (item?.viewedAt
+                        ? `Viewed ${new Date(item.viewedAt).toLocaleTimeString(
+                            [],
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}`
+                        : "Liked your story")}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+    </ModalShell>
+  );
+};
 
 const StoryViewerPage = () => {
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showEngagementModal, setShowEngagementModal] = useState(false);
+  const [engagementTab, setEngagementTab] = useState("viewers");
   const { storyId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const currentUser = useSelector((state) => state.auth.user);
-  const { currentStory, loading, actionLoading, error, successMessage } =
-    useSelector((state) => state.stories);
+  const {
+    currentStory,
+    loading,
+    actionLoading,
+    error,
+    engagementLoading,
+    successMessage,
+    viewerAuthorId,
+    viewerStories,
+    storyEngagementById,
+  } = useSelector((state) => state.stories);
 
   const [replyText, setReplyText] = useState("");
 
   const media = currentStory?.media;
   const author = currentStory?.author;
+  const authorId = getId(author);
   const currentUserId = currentUser?._id;
   const storyCaption = currentStory?.caption || currentStory?.text;
   const isOwnStory = getId(author) === currentUserId;
+  const activeStories = useMemo(() => {
+    const stories =
+      viewerAuthorId === authorId && viewerStories.length
+        ? viewerStories
+        : currentStory
+          ? [currentStory]
+          : [];
+
+    return [...stories].sort((first, second) => {
+      return getStoryTime(first) - getStoryTime(second);
+    });
+  }, [authorId, currentStory, viewerAuthorId, viewerStories]);
+  const currentStoryIndex = activeStories.findIndex(
+    (story) => story?._id === currentStory?._id,
+  );
+  const previousStory =
+    currentStoryIndex > 0 ? activeStories[currentStoryIndex - 1] : null;
+  const nextStory =
+    currentStoryIndex >= 0 && currentStoryIndex < activeStories.length - 1
+      ? activeStories[currentStoryIndex + 1]
+      : null;
+  const storyEngagement = storyEngagementById[storyId] || {};
+  const storyViewers = storyEngagement.viewers || currentStory?.viewers || [];
+  const storyLikes = storyEngagement.likes || currentStory?.likes || [];
 
   const isLiked = useMemo(() => {
     return currentStory?.likes?.some((item) => getId(item) === currentUserId);
@@ -46,6 +192,24 @@ const StoryViewerPage = () => {
       dispatch(clearStoryStatus());
     };
   }, [dispatch, storyId]);
+
+  useEffect(() => {
+    if (!authorId || viewerAuthorId === authorId) return;
+
+    dispatch(fetchUserStories(authorId));
+  }, [authorId, dispatch, viewerAuthorId]);
+
+  useEffect(() => {
+    if (!isOwnStory || !storyId) return;
+
+    dispatch(fetchStoryEngagement(storyId));
+  }, [dispatch, isOwnStory, storyId]);
+
+  const handleNavigateStory = (story) => {
+    if (!story?._id) return;
+
+    navigate(`/stories/${story._id}`);
+  };
 
   const handleReplySubmit = async (event) => {
     event.preventDefault();
@@ -66,8 +230,8 @@ const StoryViewerPage = () => {
 
   if (loading && !currentStory) {
     return (
-      <section className="mx-auto flex min-h-[calc(100dvh_-_10.5rem)] max-w-md items-center justify-center md:min-h-[calc(100dvh_-_3rem)]">
-        <SkeletonBlock className="h-[calc(100dvh_-_10.5rem)] w-full rounded-xl md:h-[calc(100dvh_-_3rem)] md:rounded-2xl" />
+      <section className="mx-auto flex h-full min-h-0 max-w-md items-center justify-center md:min-h-[calc(100dvh_-_2rem)]">
+        <SkeletonBlock className="h-full w-full rounded-none md:h-[calc(100dvh_-_2rem)] md:rounded-2xl" />
       </section>
     );
   }
@@ -87,11 +251,26 @@ const StoryViewerPage = () => {
   }
 
   return (
-    <section className="mx-auto flex min-h-[calc(100dvh_-_10.5rem)] max-w-md items-center justify-center md:min-h-[calc(100dvh_-_3rem)]">
-      <article className="relative h-[calc(100dvh_-_10.5rem)] min-h-120 w-full overflow-hidden rounded-xl bg-black text-white md:h-[calc(100dvh_-_3rem)] md:max-h-205 md:min-h-155 md:rounded-2xl">
+    <section className="mx-auto flex h-full min-h-0 max-w-md items-center justify-center md:min-h-[calc(100dvh_-_2rem)]">
+      <article className="relative h-full min-h-0 w-full overflow-hidden bg-black text-white md:h-[calc(100dvh_-_2rem)] md:max-h-205 md:min-h-155 md:rounded-2xl">
         <div className="absolute left-0 right-0 top-0 z-30 p-4">
-          <div className="h-1 overflow-hidden rounded-full bg-white/30">
-            <div className="h-full w-full bg-white" />
+          <div className="flex gap-1">
+            {(activeStories.length ? activeStories : [currentStory]).map(
+              (story, index) => (
+                <div
+                  key={story?._id || index}
+                  className="h-1 flex-1 overflow-hidden rounded-full bg-white/30"
+                >
+                  <div
+                    className={`h-full ${
+                      index <= Math.max(currentStoryIndex, 0)
+                        ? "w-full bg-white"
+                        : "w-0 bg-white"
+                    }`}
+                  />
+                </div>
+              ),
+            )}
           </div>
 
           <div className="mt-4 flex items-center justify-between">
@@ -130,8 +309,10 @@ const StoryViewerPage = () => {
         {media?.type === "video" ? (
           <video
             src={media.optimizedUrl || media.url}
-            controls
             autoPlay
+            loop
+            muted
+            playsInline
             className="h-full w-full object-cover"
           />
         ) : (
@@ -142,7 +323,33 @@ const StoryViewerPage = () => {
           />
         )}
 
-        <div className="absolute inset-x-0 bottom-0 z-30 bg-linear-to-t from-black/80 to-transparent p-4">
+        {previousStory ? (
+          <button
+            type="button"
+            onClick={() => handleNavigateStory(previousStory)}
+            className="absolute bottom-32 left-0 top-24 z-20 flex w-1/3 items-center justify-start px-3 text-white"
+            aria-label="Previous story"
+          >
+            <span className="rounded-full bg-black/30 p-2 backdrop-blur">
+              <ChevronLeft size={22} />
+            </span>
+          </button>
+        ) : null}
+
+        {nextStory ? (
+          <button
+            type="button"
+            onClick={() => handleNavigateStory(nextStory)}
+            className="absolute bottom-32 right-0 top-24 z-20 flex w-1/3 items-center justify-end px-3 text-white"
+            aria-label="Next story"
+          >
+            <span className="rounded-full bg-black/30 p-2 backdrop-blur">
+              <ChevronRight size={22} />
+            </span>
+          </button>
+        ) : null}
+
+        <div className="absolute inset-x-0 bottom-0 z-30 bg-linear-to-t from-black/80 to-transparent p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           {storyCaption ? (
             <p className="mb-4 rounded-2xl bg-black/30 p-3 text-sm">
               {storyCaption}
@@ -156,9 +363,30 @@ const StoryViewerPage = () => {
           ) : null}
 
           {isOwnStory ? (
-            <p className="rounded-full border border-white/30 bg-black/30 px-4 py-3 text-center text-sm text-white/80">
-              This is your story
-            </p>
+            <div className="rounded-2xl border border-white/25 bg-black/35 p-3 backdrop-blur">
+              <p className="text-center text-sm font-semibold text-white/90">
+                This is your story
+              </p>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEngagementTab("viewers");
+                  setShowEngagementModal(true);
+                }}
+                className="mt-3 grid min-h-12 w-full grid-cols-2 overflow-hidden rounded-xl border border-white/20 bg-white/10 text-sm font-semibold text-white"
+              >
+                <span className="flex items-center justify-center gap-2 border-r border-white/20">
+                  <Eye size={18} />
+                  {storyViewers.length} views
+                </span>
+
+                <span className="flex items-center justify-center gap-2">
+                  <Heart size={18} />
+                  {storyLikes.length} likes
+                </span>
+              </button>
+            </div>
           ) : (
             <form
               onSubmit={handleReplySubmit}
@@ -209,6 +437,17 @@ const StoryViewerPage = () => {
           storyId,
         }}
       />
+
+      {showEngagementModal ? (
+        <StoryEngagementModal
+          activeTab={engagementTab}
+          likes={storyLikes}
+          loading={engagementLoading}
+          onClose={() => setShowEngagementModal(false)}
+          onTabChange={setEngagementTab}
+          viewers={storyViewers}
+        />
+      ) : null}
     </section>
   );
 };

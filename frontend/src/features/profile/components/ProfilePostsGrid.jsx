@@ -6,9 +6,11 @@ import { GridSkeleton } from "../../../components/ui/Skeleton";
 
 const getMedia = (item, type) => {
   if (type === "reels") {
+    const video = item.video || item.media;
+
     return {
-      url:
-        item.video?.thumbnailUrl || item.video?.optimizedUrl || item.video?.url,
+      thumbnailUrl: video?.thumbnailUrl || "",
+      videoUrl: video?.optimizedUrl || video?.url || "",
       mediaType: "video",
     };
   }
@@ -16,7 +18,9 @@ const getMedia = (item, type) => {
   const media = item.media?.[0];
 
   return {
-    url: media?.thumbnailUrl || media?.optimizedUrl || media?.url,
+    imageUrl: media?.thumbnailUrl || media?.optimizedUrl || media?.url || "",
+    thumbnailUrl: media?.thumbnailUrl || "",
+    videoUrl: media?.optimizedUrl || media?.url || "",
     mediaType: media?.type || "image",
   };
 };
@@ -83,15 +87,19 @@ const ProfilePostsGrid = ({ items = [], type = "posts", loading = false }) => {
           >
             {media.mediaType === "video" ? (
               <video
-                src={media.url}
+                src={media.videoUrl}
+                poster={media.thumbnailUrl}
+                preload="metadata"
                 className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                 muted
                 playsInline
               />
             ) : (
               <img
-                src={media.url}
+                src={media.imageUrl}
                 alt={item.caption || "Profile media"}
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
               />
             )}

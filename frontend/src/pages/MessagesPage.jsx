@@ -138,7 +138,7 @@ const MessagesPage = () => {
   };
 
   return (
-    <section className="mobile-edge flex h-[calc(100dvh-10.5rem)] min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 md:h-[calc(100dvh-3rem)] md:rounded-2xl">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden bg-white dark:bg-slate-950 md:h-[calc(100dvh_-_2rem)] md:rounded-2xl md:border md:border-slate-200 md:dark:border-slate-800">
       {error ? (
         <div className="shrink-0 border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}
@@ -157,7 +157,7 @@ const MessagesPage = () => {
             activeConversation ? "hidden md:block" : "block"
           }`}
         >
-          <div className="flex h-full min-h-0 flex-col border-r border-slate-200 dark:border-slate-800">
+          <div className="flex h-full min-h-0 flex-col md:border-r md:border-slate-200 md:dark:border-slate-800">
             <div className="flex shrink-0 border-b border-slate-200 dark:border-slate-800">
               <button
                 type="button"

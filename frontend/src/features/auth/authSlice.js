@@ -167,12 +167,12 @@ export const getCurrentUser = createAsyncThunk(
 
 export const logoutUser = createAsyncThunk(
   "auth/logoutUser",
-  async (_, { rejectWithValue }) => {
+  async () => {
     try {
       await logoutUserApi();
       return true;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Logout failed");
+    } catch {
+      return false;
     }
   },
 );

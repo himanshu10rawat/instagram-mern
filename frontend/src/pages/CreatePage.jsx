@@ -1,5 +1,5 @@
 import { Image, Plus, Video, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -11,6 +11,7 @@ import {
   createReel,
   createStory,
 } from "../features/create/createSlice";
+import { fetchStoriesFeed } from "../features/stories/storySlice";
 import { FORM_DATA_FIELDS } from "../constants/apiRoutes";
 
 const contentTypes = [
@@ -31,12 +32,161 @@ const contentTypes = [
   },
 ];
 
+const maxUploadSizeMb = 5;
+const maxUploadSizeBytes = maxUploadSizeMb * 1024 * 1024;
+
+const uploadRules = {
+  post: {
+    maxFiles: 10,
+    allowedKinds: ["image", "video"],
+    emptyMessage: "Choose at least one image or video before publishing a post.",
+    typeMessage:
+      "Posts support JPG, PNG, WEBP, GIF, AVIF, HEIC, HEIF, MP4, WEBM and MOV files.",
+  },
+  reel: {
+    maxFiles: 1,
+    allowedKinds: ["video"],
+    emptyMessage: "Choose one video before publishing a reel.",
+    typeMessage: "Reels support video files only: MP4, WEBM or MOV.",
+  },
+  story: {
+    maxFiles: 1,
+    allowedKinds: ["image", "video"],
+    emptyMessage: "Choose one image or video before publishing a story.",
+    typeMessage:
+      "Stories support JPG, PNG, WEBP, GIF, AVIF, HEIC, HEIF, MP4, WEBM and MOV files.",
+  },
+};
+
+const fileTypeLabels = {
+  image: "image",
+  video: "video",
+};
+
+const allowedMimeTypes = {
+  image: new Set([
+    "image/jpeg",
+    "image/jpg",
+    "image/pjpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/avif",
+    "image/heic",
+    "image/heif",
+  ]),
+  video: new Set(["video/mp4", "video/webm", "video/quicktime"]),
+};
+
+const allowedExtensions = {
+  image: ["jpg", "jpeg", "png", "webp", "gif", "avif", "heic", "heif"],
+  video: ["mp4", "webm", "mov"],
+};
+
 const getInitialType = (type) => {
   if (["post", "reel", "story"].includes(type)) {
     return type;
   }
 
   return "post";
+};
+
+const getFileExtension = (fileName = "") => {
+  const parts = fileName.toLowerCase().split(".");
+
+  return parts.length > 1 ? parts.at(-1) : "";
+};
+
+const getFileKind = (file) => {
+  const extension = getFileExtension(file.name);
+
+  if (
+    allowedMimeTypes.image.has(file.type) ||
+    allowedExtensions.image.includes(extension)
+  ) {
+    return "image";
+  }
+
+  if (
+    allowedMimeTypes.video.has(file.type) ||
+    allowedExtensions.video.includes(extension)
+  ) {
+    return "video";
+  }
+
+  return "";
+};
+
+const getFileId = (file, index = 0) =>
+  `${file.name}-${file.lastModified}-${file.size}-${index}`;
+
+const createFilePreviews = (selectedFiles) =>
+  selectedFiles.map((file, index) => ({
+    id: getFileId(file, index),
+    kind: getFileKind(file),
+    name: file.name,
+    type: file.type,
+    url: URL.createObjectURL(file),
+  }));
+
+const revokeFilePreviews = (filePreviews) => {
+  filePreviews.forEach((preview) => {
+    URL.revokeObjectURL(preview.url);
+  });
+};
+
+const formatFileSize = (size) => `${(size / 1024 / 1024).toFixed(1)} MB`;
+
+const getSelectedFilesError = (selectedFiles, contentType) => {
+  const rule = uploadRules[contentType];
+
+  if (!selectedFiles.length) {
+    return rule.emptyMessage;
+  }
+
+  if (selectedFiles.length > rule.maxFiles) {
+    const label =
+      contentType === "post"
+        ? "Posts"
+        : contentType === "reel"
+          ? "Reels"
+          : "Stories";
+
+    return `${label} accept ${rule.maxFiles} file${
+      rule.maxFiles > 1 ? "s" : ""
+    }. You selected ${selectedFiles.length}.`;
+  }
+
+  const invalidSizeFile = selectedFiles.find(
+    (file) => file.size > maxUploadSizeBytes,
+  );
+
+  if (invalidSizeFile) {
+    return `${invalidSizeFile.name} is ${formatFileSize(
+      invalidSizeFile.size,
+    )}. Maximum allowed size is ${maxUploadSizeMb} MB per file.`;
+  }
+
+  const invalidTypeFile = selectedFiles.find((file) => {
+    const kind = getFileKind(file);
+
+    return !rule.allowedKinds.includes(kind);
+  });
+
+  if (invalidTypeFile) {
+    const detectedType =
+      invalidTypeFile.type ||
+      (getFileExtension(invalidTypeFile.name)
+        ? `.${getFileExtension(invalidTypeFile.name)} file`
+        : "unknown file type");
+    const allowedLabels = rule.allowedKinds
+      .map((kind) => fileTypeLabels[kind])
+      .join(" or ");
+
+    return `${invalidTypeFile.name} was detected as ${detectedType}. For a ${contentType}, choose ${allowedLabels} media. ${rule.typeMessage}`;
+  }
+
+  return "";
 };
 
 const CreatePage = () => {
@@ -60,39 +210,36 @@ const CreatePage = () => {
   const [storyText, setStoryText] = useState("");
   const [isCloseFriends, setIsCloseFriends] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-
-  const previews = useMemo(() => {
-    return files.map((file) => ({
-      id: `${file.name}-${file.lastModified}`,
-      url: URL.createObjectURL(file),
-      type: file.type,
-      name: file.name,
-    }));
-  }, [files]);
-
-  useEffect(() => {
-    return () => {
-      previews.forEach((preview) => {
-        URL.revokeObjectURL(preview.url);
-      });
-    };
-  }, [previews]);
+  const [localError, setLocalError] = useState("");
+  const [previews, setPreviews] = useState([]);
+  const previewsRef = useRef([]);
 
   useEffect(() => {
     dispatch(clearCreateStatus());
 
     return () => {
+      revokeFilePreviews(previewsRef.current);
       dispatch(clearCreateStatus());
     };
   }, [dispatch]);
 
+  const replaceFiles = (nextFiles) => {
+    const nextPreviews = createFilePreviews(nextFiles);
+
+    revokeFilePreviews(previewsRef.current);
+    previewsRef.current = nextPreviews;
+    setFiles(nextFiles);
+    setPreviews(nextPreviews);
+  };
+
   const resetForm = () => {
-    setFiles([]);
+    replaceFiles([]);
     setCaption("");
     setLocation("");
     setTags("");
     setStoryText("");
     setIsCloseFriends(false);
+    setLocalError("");
   };
 
   const handleTypeChange = (value) => {
@@ -102,12 +249,18 @@ const CreatePage = () => {
   };
 
   const setSelectedFiles = (selectedFiles) => {
-    if (contentType === "post") {
-      setFiles(selectedFiles);
+    const nextFiles = Array.from(selectedFiles || []);
+    const validationError = getSelectedFilesError(nextFiles, contentType);
+
+    dispatch(clearCreateStatus());
+
+    if (validationError) {
+      setLocalError(validationError);
       return;
     }
 
-    setFiles(selectedFiles.slice(0, 1));
+    setLocalError("");
+    replaceFiles(nextFiles);
   };
 
   const handleFilesChange = (event) => {
@@ -133,9 +286,16 @@ const CreatePage = () => {
   };
 
   const removeFile = (fileId) => {
-    setFiles((prev) =>
-      prev.filter((file) => `${file.name}-${file.lastModified}` !== fileId),
+    setLocalError("");
+    dispatch(clearCreateStatus());
+
+    const indexToRemove = files.findIndex(
+      (file, index) => getFileId(file, index) === fileId,
     );
+
+    if (indexToRemove === -1) return;
+
+    replaceFiles(files.filter((_, index) => index !== indexToRemove));
   };
 
   const appendCommonPostFields = (formData, tagField = "tags") => {
@@ -199,8 +359,18 @@ const CreatePage = () => {
     event.preventDefault();
 
     if (!files.length) {
+      setLocalError(uploadRules[contentType].emptyMessage);
       return;
     }
+
+    const validationError = getSelectedFilesError(files, contentType);
+
+    if (validationError) {
+      setLocalError(validationError);
+      return;
+    }
+
+    setLocalError("");
 
     let result;
 
@@ -233,6 +403,7 @@ const CreatePage = () => {
       }
 
       if (contentType === "story") {
+        await dispatch(fetchStoriesFeed({ force: true }));
         navigate("/");
       }
     }
@@ -281,9 +452,9 @@ const CreatePage = () => {
           })}
         </div>
 
-        {error ? (
+        {localError || error ? (
           <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
+            {localError || error}
           </div>
         ) : null}
 
@@ -339,16 +510,34 @@ const CreatePage = () => {
                     key={preview.id}
                     className="relative aspect-square overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-900"
                   >
-                    {preview.type.startsWith("video/") ? (
+                    {preview.kind === "video" ? (
                       <video
                         src={preview.url}
                         controls
+                        muted
+                        playsInline
+                        preload="auto"
+                        onLoadedMetadata={(event) => {
+                          const video = event.currentTarget;
+
+                          if (
+                            Number.isFinite(video.duration) &&
+                            video.duration > 0
+                          ) {
+                            video.currentTime = Math.min(
+                              0.1,
+                              video.duration / 2,
+                            );
+                          }
+                        }}
                         className="h-full w-full object-cover"
                       />
                     ) : (
                       <img
                         src={preview.url}
                         alt={preview.name}
+                        loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover"
                       />
                     )}

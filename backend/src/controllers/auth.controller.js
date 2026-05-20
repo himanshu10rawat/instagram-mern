@@ -251,7 +251,7 @@ export const login = asyncHandler(async (req, res) => {
 });
 
 export const logout = asyncHandler(async (req, res) => {
-  const refreshToken = req.cookies?.refreshToken || req.body.refreshToken;
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
   if (refreshToken) {
     await Session.findOneAndUpdate(

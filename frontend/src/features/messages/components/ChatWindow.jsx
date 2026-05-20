@@ -24,7 +24,7 @@ const getOtherParticipant = (conversation, currentUserId) => {
 const ChatWindow = () => {
   const dispatch = useDispatch();
 
-  const bottomRef = useRef(null);
+  const messagesScrollerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
   const currentUser = useSelector((state) => state.auth.user);
@@ -62,8 +62,19 @@ const ChatWindow = () => {
   }, [activeConversation?._id, dispatch, messages.length]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+    const scroller = messagesScrollerRef.current;
+
+    if (!scroller) return undefined;
+
+    const frameId = requestAnimationFrame(() => {
+      scroller.scrollTo({
+        top: scroller.scrollHeight,
+        behavior: messagesLoading ? "auto" : "smooth",
+      });
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [activeConversation?._id, messages.length, messagesLoading]);
 
   useEffect(() => {
     return () => {
@@ -154,7 +165,7 @@ const ChatWindow = () => {
   const isSending = sendingReceiverId === otherUser?._id;
 
   return (
-    <div className="flex h-[calc(100dvh-10.5rem)] min-h-0 flex-col overflow-hidden md:h-[calc(100dvh-3rem)] rounded-t-2xl md:rounded-2xl md:border md:border-slate-200 md:dark:border-slate-800 bg-white dark:bg-slate-950">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white dark:bg-slate-950 md:rounded-2xl md:border md:border-slate-200 md:dark:border-slate-800">
       <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 p-3 dark:border-slate-800 sm:p-4">
         <button
           type="button"
@@ -167,12 +178,12 @@ const ChatWindow = () => {
 
         <Avatar src={otherUser?.avatar?.url} alt={otherUser?.username} />
 
-        <div>
+        <div className="min-w-0">
           <h2 className="text-sm font-semibold text-slate-950 dark:text-white">
             {otherUser?.username}
           </h2>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
             {isTyping ? "typing..." : otherUser?.fullName || "Chat"}
           </p>
         </div>
@@ -185,7 +196,10 @@ const ChatWindow = () => {
         </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:p-4">
+      <div
+        ref={messagesScrollerRef}
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3 sm:p-4"
+      >
         {messagesLoading ? (
           <div className="space-y-3">
             <SkeletonBlock className="h-10 w-2/3 rounded-2xl" />
@@ -204,8 +218,6 @@ const ChatWindow = () => {
               />
             ))
           : null}
-
-        <div ref={bottomRef} />
       </div>
 
       {replyTarget ? (
@@ -303,7 +315,7 @@ const ChatWindow = () => {
           className="flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-950 px-3 text-sm font-semibold text-white disabled:opacity-60"
         >
           <Send size={18} />
-          {isSending ? <span>Sending...</span> : null}
+          {isSending ? <span className="hidden sm:inline">Sending...</span> : null}
         </button>
       </form>
     </div>

@@ -25,6 +25,8 @@ import { buildRealtimeMessagePayload } from "../utils/messageRealtime.js";
 
 const userPublicFields = "username fullName avatar isVerified isPrivate followers closeFriends";
 const messageUserPublicFields = "username fullName avatar isVerified";
+const ACTIVE_STORY_LIMIT = 10;
+const STORY_DURATION_MS = 24 * 60 * 60 * 1000;
 
 const messagePopulate = [
   {
@@ -122,6 +124,20 @@ export const createStory = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Story media is required");
   }
 
+  const activeStoryCount = await Story.countDocuments({
+    author: req.user._id,
+    expiresAt: { $gt: new Date() },
+    isDeleted: false,
+  });
+
+  if (activeStoryCount >= ACTIVE_STORY_LIMIT) {
+    throw new ApiError(
+      HTTP_STATUS.BAD_REQUEST,
+      "Story limit reached",
+      [`You can have up to ${ACTIVE_STORY_LIMIT} active stories at a time. Stories expire after 24 hours.`],
+    );
+  }
+
   const uploadedMedia = await uploadToCloudinary(req.file.buffer, "instagram/stories", "auto");
 
   await addMediaJob({
@@ -167,7 +183,7 @@ export const createStory = asyncHandler(async (req, res) => {
     mentions: mentionedUsers.map((user) => user._id),
     caption: req.body.caption || "",
     visibility: req.body.visibility || "public",
-    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    expiresAt: new Date(Date.now() + STORY_DURATION_MS),
   });
 
   await Promise.all(
@@ -305,7 +321,9 @@ export const getStoryViewers = asyncHandler(async (req, res) => {
     _id: storyId,
     author: req.user._id,
     isDeleted: false,
-  }).populate("viewers.user", "username fullName avatar isVerified");
+  })
+    .populate("viewers.user", "username fullName avatar isVerified")
+    .populate("likes", "username fullName avatar isVerified");
 
   if (!story) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Story not found");
@@ -313,7 +331,16 @@ export const getStoryViewers = asyncHandler(async (req, res) => {
 
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, story.viewers, "Story viewers fetched successfully"));
+    .json(
+      new ApiResponse(
+        HTTP_STATUS.Ok,
+        {
+          viewers: story.viewers,
+          likes: story.likes,
+        },
+        "Story engagement fetched successfully",
+      ),
+    );
 });
 
 export const deleteStory = asyncHandler(async (req, res) => {

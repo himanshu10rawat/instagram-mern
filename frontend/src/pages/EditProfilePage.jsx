@@ -13,6 +13,60 @@ import {
   updateProfile,
 } from "../features/profile/profileSlice";
 
+const maxAvatarSizeMb = 5;
+const maxAvatarSizeBytes = maxAvatarSizeMb * 1024 * 1024;
+const allowedAvatarMimeTypes = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+  "image/heic",
+  "image/heif",
+]);
+const allowedAvatarExtensions = [
+  "jpg",
+  "jpeg",
+  "png",
+  "webp",
+  "gif",
+  "avif",
+  "heic",
+  "heif",
+];
+
+const getFileExtension = (fileName = "") => {
+  const parts = fileName.toLowerCase().split(".");
+
+  return parts.length > 1 ? parts.at(-1) : "";
+};
+
+const getAvatarValidationError = (file) => {
+  if (!file) return "";
+
+  if (file.size > maxAvatarSizeBytes) {
+    return `${file.name} is ${(file.size / 1024 / 1024).toFixed(
+      1,
+    )} MB. Profile photo must be ${maxAvatarSizeMb} MB or smaller.`;
+  }
+
+  const extension = getFileExtension(file.name);
+  const isSupportedImage =
+    allowedAvatarMimeTypes.has(file.type) ||
+    allowedAvatarExtensions.includes(extension);
+
+  if (!isSupportedImage) {
+    const detectedType =
+      file.type || (extension ? `.${extension} file` : "unknown file type");
+
+    return `${file.name} was detected as ${detectedType}. Profile photo supports JPG, PNG, WEBP, GIF, AVIF, HEIC and HEIF images.`;
+  }
+
+  return "";
+};
+
 const EditProfileForm = ({ profile, updating }) => {
   const dispatch = useDispatch();
 
@@ -22,6 +76,7 @@ const EditProfileForm = ({ profile, updating }) => {
     website: profile?.website || "",
     isPrivate: Boolean(profile?.isPrivate),
   }));
+  const [avatarError, setAvatarError] = useState("");
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -31,6 +86,7 @@ const EditProfileForm = ({ profile, updating }) => {
       [name]: type === "checkbox" ? checked : value,
     }));
 
+    setAvatarError("");
     dispatch(clearProfileStatus());
   };
 
@@ -38,7 +94,24 @@ const EditProfileForm = ({ profile, updating }) => {
     const file = event.target.files?.[0];
 
     if (file) {
-      await dispatch(updateAvatar(file));
+      dispatch(clearProfileStatus());
+
+      const validationError = getAvatarValidationError(file);
+
+      if (validationError) {
+        setAvatarError(validationError);
+        event.target.value = "";
+        return;
+      }
+
+      setAvatarError("");
+
+      const result = await dispatch(updateAvatar(file));
+
+      if (updateAvatar.rejected.match(result)) {
+        setAvatarError(result.payload || "Failed to update profile photo.");
+      }
+
       event.target.value = "";
     }
   };
@@ -86,8 +159,14 @@ const EditProfileForm = ({ profile, updating }) => {
               Profile photo
             </p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Click the photo to upload a new avatar.
+              JPG, PNG, WEBP, GIF, AVIF, HEIC or HEIF. Maximum 5 MB.
             </p>
+
+            {avatarError ? (
+              <p className="mt-2 text-xs font-medium text-red-600">
+                {avatarError}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
