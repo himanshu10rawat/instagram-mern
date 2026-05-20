@@ -4,7 +4,17 @@ import { Link } from "react-router-dom";
 
 import { editMessage, reactMessage } from "../messageSlice";
 
-const MessageBubble = ({ message, isMine }) => {
+const getReplyPreview = (replyTo) => {
+  if (!replyTo) return "";
+  if (replyTo.text) return replyTo.text;
+  if (replyTo.media?.type === "image") return "Photo";
+  if (replyTo.media?.type === "video") return "Video";
+  return replyTo.messageType || "Message";
+};
+
+const getMediaUrl = (media) => media?.optimizedUrl || media?.url;
+
+const MessageBubble = ({ message, isMine, onReply }) => {
   const dispatch = useDispatch();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -48,26 +58,29 @@ const MessageBubble = ({ message, isMine }) => {
             className={`mb-2 rounded-xl px-3 py-2 text-xs ${
               isMine
                 ? "bg-white/10 text-white/80 dark:bg-slate-950/10 dark:text-slate-600"
-                : "bg-white text-slate-500 dark:bg-slate-950 dark:text-slate-300"
+              : "bg-white text-slate-500 dark:bg-slate-950 dark:text-slate-300"
             }`}
           >
-            Replying to: {message.replyTo.text || message.replyTo.messageType}
+            Replying to: {getReplyPreview(message.replyTo)}
           </div>
         ) : null}
 
         {message.media?.url ? (
-          <div className="mb-2 overflow-hidden rounded-xl">
+          <div className="mb-2 overflow-hidden rounded-xl bg-black/10 dark:bg-white/10">
             {message.media.type === "video" ? (
               <video
-                src={message.media.url}
+                src={getMediaUrl(message.media)}
                 controls
-                className="max-h-72 w-full"
+                poster={message.media.thumbnailUrl}
+                className="max-h-96 w-full max-w-full object-contain"
               />
             ) : (
               <img
-                src={message.media.url}
+                src={getMediaUrl(message.media)}
                 alt="Message media"
-                className="max-h-72 w-full object-cover"
+                loading="lazy"
+                decoding="async"
+                className="max-h-96 w-full max-w-full object-contain"
               />
             )}
           </div>
@@ -167,6 +180,16 @@ const MessageBubble = ({ message, isMine }) => {
             }`}
           >
             Like
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onReply?.(message)}
+            className={`text-xs ${
+              isMine ? "text-white/80 dark:text-slate-600" : "text-slate-500"
+            }`}
+          >
+            Reply
           </button>
 
           {isMine && message.messageType === "text" && !isEditing ? (

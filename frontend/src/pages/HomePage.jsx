@@ -48,8 +48,8 @@ const HomePage = () => {
     : currentUserFromFeed;
 
   return (
-    <section className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="min-w-0">
+    <section className="grid grid-cols-1 justify-items-center gap-4 sm:gap-6 xl:grid-cols-[minmax(0,680px)_320px] xl:items-start xl:justify-center">
+      <div className="w-full min-w-0 max-w-[680px] xl:max-w-none">
         <section className="mx-auto max-w-full space-y-4 sm:space-y-6">
           <StoryTray
             storyGroups={storyGroups}

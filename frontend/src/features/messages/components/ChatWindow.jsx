@@ -1,5 +1,5 @@
-import { ArrowLeft, Image, Send } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, Image, Send, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
@@ -32,14 +32,19 @@ const ChatWindow = () => {
     activeConversation,
     messages,
     messagesLoading,
-    sending,
     typingUsers,
   } = useSelector((state) => state.messages);
 
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
+  const [replyTarget, setReplyTarget] = useState(null);
+  const [sendingReceiverId, setSendingReceiverId] = useState(null);
 
   const otherUser = getOtherParticipant(activeConversation, currentUser?._id);
+  const filePreviewUrl = useMemo(
+    () => (file ? URL.createObjectURL(file) : ""),
+    [file],
+  );
 
   useEffect(() => {
     if (activeConversation?._id) {
@@ -59,6 +64,14 @@ const ChatWindow = () => {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
+
+  useEffect(() => {
+    return () => {
+      if (filePreviewUrl) {
+        URL.revokeObjectURL(filePreviewUrl);
+      }
+    };
+  }, [filePreviewUrl]);
 
   if (!activeConversation) {
     return (
@@ -102,21 +115,43 @@ const ChatWindow = () => {
 
     if (!text.trim() && !file) return;
 
-    const result = await dispatch(
-      sendMessage({
-        receiverId: otherUser._id,
-        text: text.trim(),
-        file,
-      }),
-    );
+    setSendingReceiverId(otherUser._id);
 
-    if (sendMessage.fulfilled.match(result)) {
-      setText("");
-      setFile(null);
+    try {
+      const result = await dispatch(
+        sendMessage({
+          receiverId: otherUser._id,
+          text: text.trim(),
+          file,
+          replyTo: replyTarget?._id,
+        }),
+      );
+
+      if (sendMessage.fulfilled.match(result)) {
+        setText("");
+        setFile(null);
+        setReplyTarget(null);
+      }
+    } finally {
+      setSendingReceiverId(null);
     }
   };
 
+  const getReplyPreview = (message) => {
+    if (!message) return "";
+    if (message.text) return message.text;
+    if (message.media?.type === "image") return "Photo";
+    if (message.media?.type === "video") return "Video";
+    return message.messageType || "Message";
+  };
+
+  const handleFileChange = (event) => {
+    setFile(event.target.files?.[0] || null);
+    event.target.value = "";
+  };
+
   const isTyping = Boolean(typingUsers[activeConversation._id]);
+  const isSending = sendingReceiverId === otherUser?._id;
 
   return (
     <div className="flex h-[calc(100dvh-10.5rem)] min-h-0 flex-col overflow-hidden md:h-[calc(100dvh-3rem)] rounded-t-2xl md:rounded-2xl md:border md:border-slate-200 md:dark:border-slate-800 bg-white dark:bg-slate-950">
@@ -165,6 +200,7 @@ const ChatWindow = () => {
                 key={message._id}
                 message={message}
                 isMine={message.sender?._id === currentUser?._id}
+                onReply={setReplyTarget}
               />
             ))
           : null}
@@ -172,13 +208,62 @@ const ChatWindow = () => {
         <div ref={bottomRef} />
       </div>
 
+      {replyTarget ? (
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-200 px-4 py-2 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-300">
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-950 dark:text-white">
+              Replying to{" "}
+              {replyTarget.sender?._id === currentUser?._id
+                ? "yourself"
+                : replyTarget.sender?.username || otherUser?.username || "user"}
+            </p>
+            <p className="truncate text-xs">{getReplyPreview(replyTarget)}</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setReplyTarget(null)}
+            disabled={isSending}
+            className="flex min-h-9 min-w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:hover:bg-slate-900 dark:hover:text-white"
+            aria-label="Cancel reply"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      ) : null}
+
       {file ? (
-        <div className="shrink-0 border-t border-slate-200 px-4 py-2 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-300">
-          Selected: {file.name}
+        <div className="flex shrink-0 items-center gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-300">
+          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-900">
+            {file.type.startsWith("video/") ? (
+              <video
+                src={filePreviewUrl}
+                className="h-full w-full object-cover"
+                muted
+              />
+            ) : (
+              <img
+                src={filePreviewUrl}
+                alt="Selected media preview"
+                className="h-full w-full object-cover"
+              />
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-medium text-slate-950 dark:text-white">
+              {file.name}
+            </p>
+            <p className="text-xs">
+              {file.type.startsWith("video/") ? "Video selected" : "Image selected"}
+            </p>
+          </div>
+
           <button
             type="button"
             onClick={() => setFile(null)}
-            className="ml-3 font-semibold text-red-500"
+            disabled={isSending}
+            className="font-semibold text-red-500 disabled:opacity-60"
           >
             Remove
           </button>
@@ -195,7 +280,7 @@ const ChatWindow = () => {
           <input
             type="file"
             accept="image/*,video/*"
-            onChange={(event) => setFile(event.target.files?.[0] || null)}
+            onChange={handleFileChange}
             className="hidden"
           />
         </label>
@@ -206,17 +291,19 @@ const ChatWindow = () => {
             setText(event.target.value);
             handleTyping();
           }}
-          placeholder="Message..."
+          disabled={isSending}
+          placeholder={replyTarget ? "Reply..." : "Message..."}
           enterKeyHint="send"
-          className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
+          className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none disabled:opacity-70 focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white"
         />
 
         <button
           type="submit"
-          disabled={sending}
-          className="shrink-0 rounded-xl bg-slate-950 p-3 text-white disabled:opacity-60"
+          disabled={isSending || (!text.trim() && !file)}
+          className="flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-950 px-3 text-sm font-semibold text-white disabled:opacity-60"
         >
           <Send size={18} />
+          {isSending ? <span>Sending...</span> : null}
         </button>
       </form>
     </div>

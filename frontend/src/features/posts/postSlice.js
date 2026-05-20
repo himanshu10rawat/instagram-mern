@@ -29,9 +29,9 @@ export const fetchSinglePost = createAsyncThunk(
 
 export const commentPost = createAsyncThunk(
   "posts/commentPost",
-  async ({ postId, text }, { rejectWithValue }) => {
+  async ({ postId, text, parentComment }, { rejectWithValue }) => {
     try {
-      return await commentPostApi({ postId, text });
+      return await commentPostApi({ postId, text, parentComment });
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to comment post",
@@ -198,16 +198,49 @@ const replacePostById = (posts, updatedPost) => {
   if (!updatedPost?._id) return posts;
 
   return posts.map((post) =>
-    post._id === updatedPost._id ? updatedPost : post,
+    post._id === updatedPost._id
+      ? {
+          ...updatedPost,
+          ...(post.comments && !updatedPost.comments ? { comments: post.comments } : {}),
+        }
+      : post,
   );
 };
+
+const preserveCurrentPostComments = (currentPost, updatedPost) => {
+  if (!currentPost?.comments || updatedPost?.comments) return updatedPost;
+
+  return {
+    ...updatedPost,
+    comments: currentPost.comments,
+  };
+};
+
+const appendCommentToThread = (comments = [], newComment) =>
+  comments.map((comment) => {
+    if (comment._id === newComment.parentComment) {
+      return {
+        ...comment,
+        replies: [...(comment.replies || []), newComment],
+      };
+    }
+
+    return {
+      ...comment,
+      replies: appendCommentToThread(comment.replies || [], newComment),
+    };
+  });
 
 const appendCommentToPost = (post, comment) => {
   if (!post || !comment) return post;
 
+  const nextComments = comment.parentComment
+    ? appendCommentToThread(post.comments || [], comment)
+    : [comment, ...(post.comments || [])];
+
   return {
     ...post,
-    comments: [...(post.comments || []), comment],
+    comments: nextComments,
     commentsCount: (post.commentsCount || 0) + 1,
   };
 };
@@ -273,7 +306,10 @@ const postSlice = createSlice({
         state.archivedPosts = replacePostById(state.archivedPosts, updatedPost);
 
         if (state.currentPost?._id === updatedPost._id) {
-          state.currentPost = updatedPost;
+          state.currentPost = preserveCurrentPostComments(
+            state.currentPost,
+            updatedPost,
+          );
         }
       })
       .addCase(savePost.fulfilled, (state, action) => {
@@ -286,7 +322,10 @@ const postSlice = createSlice({
         state.archivedPosts = replacePostById(state.archivedPosts, updatedPost);
 
         if (state.currentPost?._id === updatedPost._id) {
-          state.currentPost = updatedPost;
+          state.currentPost = preserveCurrentPostComments(
+            state.currentPost,
+            updatedPost,
+          );
         }
       })
       .addCase(fetchSinglePost.pending, (state) => {
@@ -371,7 +410,10 @@ const postSlice = createSlice({
         }
 
         if (state.currentPost?._id === archivedPost._id) {
-          state.currentPost = archivedPost;
+          state.currentPost = preserveCurrentPostComments(
+            state.currentPost,
+            archivedPost,
+          );
         }
       })
 
@@ -385,7 +427,10 @@ const postSlice = createSlice({
         );
 
         if (state.currentPost?._id === unarchivedPost._id) {
-          state.currentPost = unarchivedPost;
+          state.currentPost = preserveCurrentPostComments(
+            state.currentPost,
+            unarchivedPost,
+          );
         }
       })
 
@@ -397,7 +442,10 @@ const postSlice = createSlice({
         state.archivedPosts = replacePostById(state.archivedPosts, updatedPost);
 
         if (state.currentPost?._id === updatedPost._id) {
-          state.currentPost = updatedPost;
+          state.currentPost = preserveCurrentPostComments(
+            state.currentPost,
+            updatedPost,
+          );
         }
       })
 

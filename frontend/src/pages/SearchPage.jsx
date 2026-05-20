@@ -83,10 +83,7 @@ const SearchPage = () => {
 
         <form onSubmit={handleSubmit} className="mt-6">
           <div className="flex items-center gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 focus-within:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:focus-within:border-white">
-            <Search
-              size={20}
-              className="text-slate-500 dark:text-slate-400"
-            />
+            <Search size={20} className="text-slate-500 dark:text-slate-400" />
 
             <input
               value={localQuery}
@@ -128,7 +125,7 @@ const SearchPage = () => {
               ) : null}
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
               {recentSearches.length === 0 ? (
                 <EmptyState
                   icon={Search}

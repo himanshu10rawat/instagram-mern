@@ -7,14 +7,21 @@ import {
   Send,
   Volume2,
   VolumeX,
+  X,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../../../components/common/Avatar";
+import CommentThread from "../../../components/common/CommentThread";
 import ShareModal from "../../messages/components/ShareModal";
 import ReportModal from "../../safety/components/ReportModal";
-import { commentReel, likeReel, saveReel } from "../reelSlice";
+import {
+  commentReel,
+  fetchReelComments,
+  likeReel,
+  saveReel,
+} from "../reelSlice";
 import InsightsModal from "../../analytics/components/InsightsModal";
 import {
   fetchReelAnalytics,
@@ -26,6 +33,7 @@ const ReelCard = ({ reel }) => {
   const videoRef = useRef(null);
 
   const currentUser = useSelector((state) => state.auth.user);
+  const { commentsLoading } = useSelector((state) => state.reels);
   const { detailLoading, reelAnalytics } = useSelector(
     (state) => state.analytics,
   );
@@ -37,8 +45,17 @@ const ReelCard = ({ reel }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showReelMenu, setShowReelMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [replyTarget, setReplyTarget] = useState(null);
+  const commentInputRef = useRef(null);
 
   const isOwnReel = reel.author?._id === currentUser?._id;
+
+  useEffect(() => {
+    if (showCommentBox && reel?._id && !Array.isArray(reel.comments)) {
+      dispatch(fetchReelComments(reel._id));
+    }
+  }, [dispatch, reel?._id, reel.comments, showCommentBox]);
 
   const isLiked = reel.likes?.some((like) => {
     if (typeof like === "string") return like === currentUser?._id;
@@ -77,17 +94,34 @@ const ReelCard = ({ reel }) => {
 
     if (!commentText.trim()) return;
 
-    const result = await dispatch(
-      commentReel({
-        reelId: reel._id,
-        text: commentText.trim(),
-      }),
-    );
+    setCommentSubmitting(true);
 
-    if (commentReel.fulfilled.match(result)) {
-      setCommentText("");
+    try {
+      const result = await dispatch(
+        commentReel({
+          reelId: reel._id,
+          text: commentText.trim(),
+          parentComment: replyTarget?._id,
+        }),
+      );
+
+      if (commentReel.fulfilled.match(result)) {
+        setCommentText("");
+        setReplyTarget(null);
+      }
+    } finally {
+      setCommentSubmitting(false);
     }
   };
+
+  const handleReply = (comment) => {
+    setShowCommentBox(true);
+    setReplyTarget(comment);
+    commentInputRef.current?.focus();
+  };
+
+  const replyUsername =
+    replyTarget?.author?.username || replyTarget?.user?.username || "user";
 
   const handleViewInsights = () => {
     if (!reel?._id) return;
@@ -155,7 +189,10 @@ const ReelCard = ({ reel }) => {
 
             <button
               type="button"
-              onClick={() => setShowCommentBox((prev) => !prev)}
+              onClick={() => {
+                setShowCommentBox((prev) => !prev);
+                setReplyTarget(null);
+              }}
               className="flex flex-col items-center gap-1"
             >
               <MessageCircle size={28} />
@@ -220,24 +257,78 @@ const ReelCard = ({ reel }) => {
         </div>
 
         {showCommentBox ? (
-          <form
-            onSubmit={handleCommentSubmit}
-            className="pointer-events-auto mt-4 flex gap-2"
-          >
-            <input
-              value={commentText}
-              onChange={(event) => setCommentText(event.target.value)}
-              placeholder="Add a comment..."
-              className="flex-1 rounded-xl bg-white/90 px-4 py-2 text-sm text-slate-950 outline-none"
-            />
+          <div className="pointer-events-auto mt-4 rounded-2xl bg-white/95 p-3 text-slate-950 shadow-2xl backdrop-blur dark:bg-slate-950/95 dark:text-white">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold">
+                Comments ({reel.commentsCount || reel.comments?.length || 0})
+              </p>
 
-            <button
-              type="submit"
-              className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950"
-            >
-              Post
-            </button>
-          </form>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCommentBox(false);
+                  setReplyTarget(null);
+                }}
+                className="flex min-h-9 min-w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"
+                aria-label="Close comments"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="max-h-[34dvh] overflow-y-auto pr-1">
+              {commentsLoading && !Array.isArray(reel.comments) ? (
+                <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                  Loading comments...
+                </p>
+              ) : (
+                <CommentThread
+                  comments={reel.comments || []}
+                  emptyText="No comments yet. Start the conversation."
+                  onReply={handleReply}
+                />
+              )}
+            </div>
+
+            {replyTarget ? (
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                <span className="min-w-0 truncate">
+                  Replying to @{replyUsername}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setReplyTarget(null)}
+                  className="min-h-0 font-semibold text-slate-950 dark:text-white"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : null}
+
+            <form onSubmit={handleCommentSubmit} className="mt-3 flex gap-2">
+              <input
+                ref={commentInputRef}
+                value={commentText}
+                onChange={(event) => setCommentText(event.target.value)}
+                disabled={commentSubmitting}
+                placeholder={
+                  replyTarget
+                    ? `Reply to @${replyUsername}...`
+                    : "Add a comment..."
+                }
+                className="min-w-0 flex-1 rounded-xl bg-slate-100 px-4 py-2 text-sm text-slate-950 outline-none placeholder:text-slate-500 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
+              />
+
+              <button
+                type="submit"
+                disabled={commentSubmitting || !commentText.trim()}
+                className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 dark:bg-white dark:text-slate-950"
+              >
+                {commentSubmitting ? "Posting..." : "Post"}
+              </button>
+            </form>
+          </div>
         ) : null}
       </div>
 

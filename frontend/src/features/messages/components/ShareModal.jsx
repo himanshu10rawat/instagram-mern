@@ -21,14 +21,13 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
   const dispatch = useDispatch();
 
   const currentUser = useSelector((state) => state.auth.user);
-  const { conversations = [], sending } = useSelector(
-    (state) => state.messages,
-  );
+  const { conversations = [] } = useSelector((state) => state.messages);
 
   const currentUserId = currentUser?._id;
 
   const [searchValue, setSearchValue] = useState("");
   const [sentUserIds, setSentUserIds] = useState([]);
+  const [sendingUserId, setSendingUserId] = useState(null);
 
   useEffect(() => {
     if (open) {
@@ -58,16 +57,22 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
   }
 
   const handleShare = async (receiverId) => {
-    const result = await dispatch(
-      shareToMessage({
-        receiverId,
-        ...sharePayload,
-      }),
-    );
+    setSendingUserId(receiverId);
 
-    if (shareToMessage.fulfilled.match(result)) {
-      setSentUserIds((prev) => [...prev, receiverId]);
-      dispatch(fetchConversations());
+    try {
+      const result = await dispatch(
+        shareToMessage({
+          receiverId,
+          ...sharePayload,
+        }),
+      );
+
+      if (shareToMessage.fulfilled.match(result)) {
+        setSentUserIds((prev) => [...prev, receiverId]);
+        dispatch(fetchConversations());
+      }
+    } finally {
+      setSendingUserId(null);
     }
   };
 
@@ -110,6 +115,7 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
           {filteredConversations.map((conversation) => {
             const user = getOtherParticipant(conversation, currentUserId);
             const isSent = sentUserIds.includes(user?._id);
+            const isSendingToUser = sendingUserId === user?._id;
 
             return (
               <div
@@ -133,11 +139,11 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
                 <button
                   type="button"
                   onClick={() => handleShare(user?._id)}
-                  disabled={!user?._id || sending || isSent}
+                  disabled={!user?._id || isSendingToUser || isSent}
                   className="flex items-center gap-1 rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60 dark:bg-white dark:text-slate-950"
                 >
                   <Send size={14} />
-                  {isSent ? "Sent" : "Send"}
+                  {isSent ? "Sent" : isSendingToUser ? "Sending..." : "Send"}
                 </button>
               </div>
             );

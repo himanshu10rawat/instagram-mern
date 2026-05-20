@@ -13,6 +13,7 @@ import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import { addMediaJob } from "../queues/media.queue.js";
 import { deleteCacheByPattern } from "../utils/cache.js";
 import trackAnalytics from "../utils/trackAnalytics.js";
+import { getCommentThreads } from "../utils/commentThreads.js";
 import { getOptimizedVideoUrl, getVideoThumbnailUrl } from "../utils/cloudinaryUrl.js";
 
 const userPublicFields = "username fullName avatar isVerified";
@@ -149,9 +150,24 @@ export const getReelById = asyncHandler(async (req, res) => {
     device: req.headers["user-agent"] || "",
   });
 
+  const comments = await getCommentThreads({
+    model: ReelComment,
+    match: { reel: reel._id },
+    userPublicFields,
+  });
+
   res
     .status(HTTP_STATUS.Ok)
-    .json(new ApiResponse(HTTP_STATUS.Ok, reel, "Reel fetched successfully"));
+    .json(
+      new ApiResponse(
+        HTTP_STATUS.Ok,
+        {
+          ...reel.toObject(),
+          comments,
+        },
+        "Reel fetched successfully",
+      ),
+    );
 });
 
 export const getUserReels = asyncHandler(async (req, res) => {
@@ -440,6 +456,18 @@ export const addReelComment = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Reel not found");
   }
 
+  if (parentComment) {
+    const parentCommentExists = await ReelComment.exists({
+      _id: parentComment,
+      reel: reelId,
+      isDeleted: false,
+    });
+
+    if (!parentCommentExists) {
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, "Parent comment not found");
+    }
+  }
+
   const comment = await ReelComment.create({
     reel: reelId,
     author: req.user._id,
@@ -451,10 +479,11 @@ export const addReelComment = asyncHandler(async (req, res) => {
     $inc: { commentsCount: 1 },
   });
 
-  const createdComment = await ReelComment.findById(comment._id).populate(
-    "author",
-    userPublicFields,
-  );
+  const createdComment = await ReelComment.findById(comment._id)
+    .populate("author", userPublicFields)
+    .lean();
+
+  createdComment.replies = [];
 
   await createNotification({
     sender: req.user._id,
@@ -477,13 +506,11 @@ export const getReelComments = asyncHandler(async (req, res) => {
 
   validateObjectId(reelId, "Invalid reel id");
 
-  const comments = await ReelComment.find({
-    reel: reelId,
-    parentComment: null,
-    isDeleted: false,
-  })
-    .populate("author", userPublicFields)
-    .sort({ createdAt: -1 });
+  const comments = await getCommentThreads({
+    model: ReelComment,
+    match: { reel: reelId },
+    userPublicFields,
+  });
 
   res
     .status(HTTP_STATUS.Ok)

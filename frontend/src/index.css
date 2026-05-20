@@ -83,6 +83,12 @@ textarea {
   margin-bottom: 0.5rem;
 }
 
+.post-media {
+  display: block;
+  height: auto;
+  aspect-ratio: 1 / 1;
+}
+
 /* Make small touch targets slightly larger on mobile */
 @media (max-width: 767px) {
   .min-h-11 {

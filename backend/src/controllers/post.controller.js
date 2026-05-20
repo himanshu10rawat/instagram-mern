@@ -18,6 +18,7 @@ import {
   getOptimizedVideoUrl,
   getVideoThumbnailUrl,
 } from "../utils/cloudinaryUrl.js";
+import { getCommentThreads } from "../utils/commentThreads.js";
 import { upsertHashtags } from "../utils/hashtag.js";
 import { extractHashtags, extractMentions } from "../utils/socialParser.js";
 
@@ -215,13 +216,11 @@ export const getPostById = asyncHandler(async (req, res) => {
     device: req.headers["user-agent"] || "",
   });
 
-  const comments = await Comment.find({
-    post: post._id,
-    parentComment: null,
-    isDeleted: false,
-  })
-    .populate("author", userPublicFields)
-    .sort({ createdAt: -1 });
+  const comments = await getCommentThreads({
+    model: Comment,
+    match: { post: post._id },
+    userPublicFields,
+  });
 
   res
     .status(HTTP_STATUS.Ok)
@@ -409,6 +408,18 @@ export const addComment = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Post not found");
   }
 
+  if (parentComment) {
+    const parentCommentExists = await Comment.exists({
+      _id: parentComment,
+      post: postId,
+      isDeleted: false,
+    });
+
+    if (!parentCommentExists) {
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, "Parent comment not found");
+    }
+  }
+
   const comment = await Comment.create({
     post: postId,
     author: req.user._id,
@@ -419,7 +430,11 @@ export const addComment = asyncHandler(async (req, res) => {
   post.commentsCount += 1;
   await post.save();
 
-  const createdComment = await Comment.findById(comment._id).populate("author", userPublicFields);
+  const createdComment = await Comment.findById(comment._id)
+    .populate("author", userPublicFields)
+    .lean();
+
+  createdComment.replies = [];
 
   await createNotification({
     sender: req.user._id,
@@ -442,13 +457,11 @@ export const getPostComments = asyncHandler(async (req, res) => {
 
   validateObjectId(postId, "Invalid post id");
 
-  const comments = await Comment.find({
-    post: postId,
-    parentComment: null,
-    isDeleted: false,
-  })
-    .populate("author", userPublicFields)
-    .sort({ createdAt: -1 });
+  const comments = await getCommentThreads({
+    model: Comment,
+    match: { post: postId },
+    userPublicFields,
+  });
 
   res
     .status(HTTP_STATUS.Ok)

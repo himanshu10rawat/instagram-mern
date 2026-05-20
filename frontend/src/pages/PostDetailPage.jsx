@@ -8,11 +8,12 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "../components/common/Avatar";
+import CommentThread from "../components/common/CommentThread";
 import { PostDetailSkeleton } from "../components/ui/Skeleton";
 import EditCaptionModal from "../features/posts/components/EditCaptionModal";
 import {
@@ -42,11 +43,12 @@ const PostDetailPage = () => {
   const [showEditCaption, setShowEditCaption] = useState(false);
 
   const currentUser = useSelector((state) => state.auth.user);
-  const { currentPost, loading, actionLoading, error } = useSelector(
-    (state) => state.posts,
-  );
+  const { currentPost, loading, error } = useSelector((state) => state.posts);
 
   const [commentText, setCommentText] = useState("");
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [replyTarget, setReplyTarget] = useState(null);
+  const commentInputRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchSinglePost(postId));
@@ -61,17 +63,33 @@ const PostDetailPage = () => {
 
     if (!commentText.trim()) return;
 
-    const result = await dispatch(
-      commentPost({
-        postId,
-        text: commentText.trim(),
-      }),
-    );
+    setCommentSubmitting(true);
 
-    if (commentPost.fulfilled.match(result)) {
-      setCommentText("");
+    try {
+      const result = await dispatch(
+        commentPost({
+          postId,
+          text: commentText.trim(),
+          parentComment: replyTarget?._id,
+        }),
+      );
+
+      if (commentPost.fulfilled.match(result)) {
+        setCommentText("");
+        setReplyTarget(null);
+      }
+    } finally {
+      setCommentSubmitting(false);
     }
   };
+
+  const handleReply = (comment) => {
+    setReplyTarget(comment);
+    commentInputRef.current?.focus();
+  };
+
+  const replyUsername =
+    replyTarget?.author?.username || replyTarget?.user?.username || "user";
 
   if (loading && !currentPost) {
     return <PostDetailSkeleton />;
@@ -218,34 +236,11 @@ const PostDetailPage = () => {
               </div>
             ) : null}
 
-            <div className="space-y-4">
-              {(currentPost.comments || []).map((comment) => (
-                <div key={comment._id} className="flex gap-3">
-                  <Avatar
-                    src={comment.author?.avatar?.url || comment.user?.avatar?.url}
-                    alt={comment.author?.username || comment.user?.username}
-                    size="sm"
-                  />
-
-                  <div>
-                    <p className="text-sm text-slate-800 dark:text-slate-200">
-                      <span className="font-semibold text-slate-950 dark:text-white">
-                        {comment.author?.username ||
-                          comment.user?.username ||
-                          "user"}
-                      </span>{" "}
-                      {comment.text}
-                    </p>
-
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      {comment.createdAt
-                        ? new Date(comment.createdAt).toLocaleString()
-                        : ""}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <CommentThread
+              comments={currentPost.comments || []}
+              emptyText="No comments yet. Start the conversation."
+              onReply={handleReply}
+            />
           </div>
 
           <div className="border-t border-slate-200 p-3 dark:border-slate-800 sm:p-4">
@@ -296,20 +291,42 @@ const PostDetailPage = () => {
               {currentPost.likes?.length || 0} likes
             </p>
 
+            {replyTarget ? (
+              <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                <span className="min-w-0 truncate">
+                  Replying to @{replyUsername}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setReplyTarget(null)}
+                  className="min-h-0 font-semibold text-slate-950 dark:text-white"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : null}
+
             <form onSubmit={handleCommentSubmit} className="mt-4 flex gap-2 sm:gap-3">
               <input
+                ref={commentInputRef}
                 value={commentText}
                 onChange={(event) => setCommentText(event.target.value)}
-                placeholder="Add a comment..."
+                disabled={commentSubmitting}
+                placeholder={
+                  replyTarget
+                    ? `Reply to @${replyUsername}...`
+                    : "Add a comment..."
+                }
                 className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white sm:text-sm"
               />
 
               <button
                 type="submit"
-                disabled={actionLoading || !commentText.trim()}
+                disabled={commentSubmitting || !commentText.trim()}
                 className="min-h-12 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
               >
-                Post
+                {commentSubmitting ? "Posting..." : "Post"}
               </button>
             </form>
           </div>

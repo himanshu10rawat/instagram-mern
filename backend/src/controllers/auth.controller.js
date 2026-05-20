@@ -19,8 +19,41 @@ const getCookieOptions = () => ({
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 });
 
+const durationUnitsInMs = {
+  ms: 1,
+  s: 1000,
+  m: 60 * 1000,
+  h: 60 * 60 * 1000,
+  d: 24 * 60 * 60 * 1000,
+};
+
+const getCookieExpiresInMs = () => {
+  return Number(process.env.COOKIE_EXPIRES_IN || 7) * durationUnitsInMs.d;
+};
+
+const parseDurationToMs = (value, fallback) => {
+  const normalizedValue = String(value || "").trim();
+  const match = normalizedValue.match(/^(\d+)\s*(ms|s|m|h|d)$/i);
+
+  if (match) {
+    return Number(match[1]) * durationUnitsInMs[match[2].toLowerCase()];
+  }
+
+  const numericValue = Number(normalizedValue);
+
+  if (Number.isFinite(numericValue) && numericValue > 0) {
+    return numericValue * 1000;
+  }
+
+  return fallback;
+};
+
+const getAccessTokenCookieMaxAge = () => {
+  return parseDurationToMs(process.env.ACCESS_TOKEN_EXPIRES_IN, getCookieExpiresInMs());
+};
+
 const getRefreshTokenCookieMaxAge = () => {
-  return Number(process.env.COOKIE_EXPIRES_IN || 7) * 24 * 60 * 60 * 1000;
+  return parseDurationToMs(process.env.REFRESH_TOKEN_EXPIRES_IN, getCookieExpiresInMs());
 };
 
 const generateTokens = async (user) => {
@@ -198,7 +231,7 @@ export const login = asyncHandler(async (req, res) => {
     .status(HTTP_STATUS.Ok)
     .cookie("accessToken", accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000,
+      maxAge: getAccessTokenCookieMaxAge(),
     })
     .cookie("refreshToken", refreshToken, {
       ...cookieOptions,
@@ -210,6 +243,7 @@ export const login = asyncHandler(async (req, res) => {
         {
           user: loggedInUser,
           accessToken,
+          refreshToken,
         },
         "Logged in successfully",
       ),
@@ -294,7 +328,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
     .status(HTTP_STATUS.Ok)
     .cookie("accessToken", accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000,
+      maxAge: getAccessTokenCookieMaxAge(),
     })
     .cookie("refreshToken", refreshToken, {
       ...cookieOptions,
@@ -305,6 +339,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
         HTTP_STATUS.Ok,
         {
           accessToken,
+          refreshToken,
         },
         "Access token refreshed successfully",
       ),
@@ -537,7 +572,7 @@ export const verifyLoginTwoFactor = asyncHandler(async (req, res) => {
     .status(HTTP_STATUS.OK)
     .cookie("accessToken", accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000,
+      maxAge: getAccessTokenCookieMaxAge(),
     })
     .cookie("refreshToken", refreshToken, {
       ...cookieOptions,

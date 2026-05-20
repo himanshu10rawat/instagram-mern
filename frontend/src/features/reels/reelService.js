@@ -29,9 +29,15 @@ export const saveReelApi = async (reelId, isSaved = false) => {
   return response.data.data;
 };
 
-export const commentReelApi = async ({ reelId, text }) => {
+export const getReelCommentsApi = async (reelId) => {
+  const response = await api.get(API_ROUTES.reels.comments(reelId));
+  return response.data.data;
+};
+
+export const commentReelApi = async ({ reelId, text, parentComment }) => {
   const response = await api.post(API_ROUTES.reels.comments(reelId), {
     text,
+    ...(parentComment ? { parentComment } : {}),
   });
 
   return response.data.data;

@@ -39,9 +39,10 @@ export const savePostApi = async (postId, isSaved = false) => {
   return response.data.data;
 };
 
-export const commentPostApi = async ({ postId, text }) => {
+export const commentPostApi = async ({ postId, text, parentComment }) => {
   const response = await api.post(API_ROUTES.posts.comments(postId), {
     text,
+    ...(parentComment ? { parentComment } : {}),
   });
 
   return response.data.data;
