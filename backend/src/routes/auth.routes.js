@@ -50,11 +50,16 @@ router.post("/logout", isAuthenticated, logout);
 
 router.post(
   "/forgot-password",
-  rateLimiter({ keyPrefix: "forgot-password", limit: 3, windowSeconds: 300 }),
+  rateLimiter({ keyPrefix: "forgot-password", limit: 5, windowSeconds: 300 }),
   validate(forgotPasswordSchema),
   forgotPassword,
 );
-router.post("/reset-password/:token", validate(resetPasswordSchema), resetPassword);
+router.post(
+  "/reset-password/:token",
+  rateLimiter({ keyPrefix: "reset-password", limit: 5, windowSeconds: 300 }),
+  validate(resetPasswordSchema),
+  resetPassword,
+);
 router.post("/change-password", isAuthenticated, validate(changePasswordSchema), changePassword);
 router.get("/verify-email/:token", verifyEmail);
 router.post("/resend-email-verification", isAuthenticated, resendEmailVerification);

@@ -67,10 +67,10 @@ const MainLayout = () => {
         <div
           className={`mx-auto w-full max-w-7xl ${
             isFullHeightMobileRoute
-              ? "h-[calc(100dvh_-_3.5rem)] min-h-0 px-0 py-0 md:h-auto md:min-h-dvh md:px-4 md:py-4"
+              ? "h-[calc(100dvh-3.5rem)] min-h-0 px-0 py-0 md:h-auto md:min-h-dvh md:px-4 md:py-4"
               : isMessagesRoute
-                ? "h-[calc(100dvh_-_8.5rem_-_env(safe-area-inset-bottom))] min-h-0 px-0 py-0 md:h-auto md:min-h-dvh md:px-4 md:py-4"
-                : "min-h-[calc(100dvh_-_8.5rem_-_env(safe-area-inset-bottom))] px-3 py-3 sm:px-4 sm:py-4 md:min-h-dvh"
+                ? "h-[calc(100dvh-8.5rem-env(safe-area-inset-bottom))] min-h-0 px-0 py-0 md:h-auto md:min-h-dvh md:px-4 md:py-4"
+                : "min-h-[calc(100dvh-8.5rem-env(safe-area-inset-bottom))] px-3 py-3 sm:px-4 sm:py-4 md:min-h-dvh"
           }`}
         >
           <Outlet />
