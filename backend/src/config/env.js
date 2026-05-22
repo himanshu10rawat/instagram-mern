@@ -27,12 +27,27 @@ const emailProviderDefaults = {
   },
 };
 
+const publicMailboxDomains = new Set([
+  "gmail.com",
+  "googlemail.com",
+  "yahoo.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+]);
+
 const assertUrl = (name) => {
   try {
     new URL(process.env[name]);
   } catch {
     throw new Error(`${name} must be a valid URL`);
   }
+};
+
+const getEmailFromDomain = () => {
+  const match = process.env.EMAIL_FROM?.match(/@([^>\s]+)/);
+
+  return match?.[1]?.toLowerCase();
 };
 
 export const validateEnv = () => {
@@ -73,4 +88,15 @@ export const validateEnv = () => {
     throw new Error("JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be at least 32 characters");
   }
 
+  const emailFromDomain = getEmailFromDomain();
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    emailProvider === "brevo" &&
+    publicMailboxDomains.has(emailFromDomain)
+  ) {
+    console.warn(
+      "EMAIL_FROM uses a public mailbox domain. For reliable Brevo delivery, use a verified sender or domain.",
+    );
+  }
 };

@@ -7,7 +7,7 @@ import SignupVerification from "../models/signupVerification.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { addEmailJob } from "../queues/email.queue.js";
+import { sendEmail } from "../utils/sendEmail.js";
 import Session from "../models/session.model.js";
 import { createRawToken, hashToken } from "../utils/token.js";
 import { emailVerificationTemplate, signupEmailOtpTemplate } from "../utils/emailTemplates.js";
@@ -174,7 +174,7 @@ export const requestSignupVerification = asyncHandler(async (req, res) => {
     expiresInMinutes: SIGNUP_OTP_EXPIRES_MINUTES,
   });
 
-  await addEmailJob({
+  await sendEmail({
     to: email,
     subject: emailTemplate.subject,
     html: emailTemplate.html,
@@ -467,7 +467,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-  await addEmailJob({
+  await sendEmail({
     to: user.email,
     subject: "Reset your password",
     html: `
@@ -598,7 +598,7 @@ export const resendEmailVerification = asyncHandler(async (req, res) => {
     verificationUrl,
   });
 
-  await addEmailJob({
+  await sendEmail({
     to: user.email,
     subject: emailTemplate.subject,
     html: emailTemplate.html,

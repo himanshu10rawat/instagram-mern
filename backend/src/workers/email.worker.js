@@ -1,7 +1,7 @@
 import { Worker } from "bullmq";
 
 import { createRedisClient } from "../config/redis.js";
-import transporter from "../config/email.js";
+import { sendEmail } from "../utils/sendEmail.js";
 
 const connection = createRedisClient({
   maxRetriesPerRequest: null,
@@ -18,20 +18,7 @@ const EMAIL_WORKER_CONCURRENCY = getPositiveNumber(process.env.EMAIL_WORKER_CONC
 export const emailWorker = new Worker(
   "email-queue",
   async (job) => {
-    const { to, subject, html, text } = job.data;
-    const startedAt = Date.now();
-
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to,
-      subject,
-      html,
-      text,
-    });
-
-    console.log(`Email sent to ${to} in ${Date.now() - startedAt}ms`, {
-      messageId: info.messageId,
-    });
+    await sendEmail(job.data, { attempts: 1 });
   },
   {
     connection,
