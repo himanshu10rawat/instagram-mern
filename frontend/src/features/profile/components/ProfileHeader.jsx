@@ -1,4 +1,14 @@
-import { Calendar, Globe, Lock, Settings, Share2 } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  Calendar,
+  Globe,
+  Lock,
+  MapPin,
+  Settings,
+  Share2,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -15,6 +25,18 @@ import {
 } from "../../follow/followSlice";
 import { fetchUserProfile } from "../profileSlice";
 import FollowListModal from "./FollowListModal";
+
+const accountTypeLabels = {
+  personal: "Personal",
+  creator: "Creator",
+  business: "Business",
+};
+
+const genderLabels = {
+  male: "Male",
+  female: "Female",
+  other: "Other",
+};
 
 const ProfileHeader = ({
   profile,
@@ -38,6 +60,11 @@ const ProfileHeader = ({
   const followingCount =
     profile?.following?.length || profile?.followingCount || 0;
   const postsCount = profile?.postsCount || profile?.posts?.length || 0;
+  const accountTypeLabel = accountTypeLabels[profile?.accountType];
+  const genderLabel =
+    profile?.gender && profile.gender !== "prefer_not_to_say"
+      ? genderLabels[profile.gender]
+      : "";
 
   const isFollowing = profile?.followers?.some((follower) => {
     if (typeof follower === "string") {
@@ -175,6 +202,41 @@ const ProfileHeader = ({
               <p className="mt-3 max-w-2xl wrap-break-word text-sm text-slate-700 dark:text-slate-300">
                 {profile.bio}
               </p>
+            ) : null}
+
+            {profile?.profession ||
+            profile?.location ||
+            accountTypeLabel ||
+            genderLabel ? (
+              <div className="mt-3 flex flex-wrap justify-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 sm:justify-start">
+                {profile?.profession ? (
+                  <span className="inline-flex min-h-7 items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-900">
+                    <BriefcaseBusiness size={13} />
+                    {profile.profession}
+                  </span>
+                ) : null}
+
+                {profile?.location ? (
+                  <span className="inline-flex min-h-7 items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-900">
+                    <MapPin size={13} />
+                    {profile.location}
+                  </span>
+                ) : null}
+
+                {accountTypeLabel ? (
+                  <span className="inline-flex min-h-7 items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-900">
+                    <Sparkles size={13} />
+                    {accountTypeLabel}
+                  </span>
+                ) : null}
+
+                {genderLabel ? (
+                  <span className="inline-flex min-h-7 items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-900">
+                    <UserRound size={13} />
+                    {genderLabel}
+                  </span>
+                ) : null}
+              </div>
             ) : null}
 
             <div className="mt-4 flex flex-col items-center gap-2 text-sm text-slate-600 dark:text-slate-400 sm:flex-row sm:flex-wrap sm:items-start sm:gap-4">

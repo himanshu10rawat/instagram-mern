@@ -8,6 +8,7 @@ import {
   loginUserApi,
   logoutUserApi,
   registerUserApi,
+  requestSignupVerificationApi,
   resetPasswordApi,
 } from "./authService";
 
@@ -37,7 +38,7 @@ const fieldLabels = {
   username: "Username",
   fullName: "Full name",
   email: "Email",
-  phoneNumber: "Phone number",
+  emailOtp: "Email code",
   password: "Password",
   dateOfBirth: "Date of birth",
 };
@@ -148,6 +149,19 @@ export const registerUser = createAsyncThunk(
       return await registerUserApi(payload);
     } catch (error) {
       return rejectWithValue(getApiErrorPayload(error, "Registration failed"));
+    }
+  },
+);
+
+export const requestSignupVerification = createAsyncThunk(
+  "auth/requestSignupVerification",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await requestSignupVerificationApi(payload);
+    } catch (error) {
+      return rejectWithValue(
+        getApiErrorPayload(error, "Failed to send verification codes"),
+      );
     }
   },
 );
@@ -290,6 +304,21 @@ const authSlice = createSlice({
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "Registration failed";
+      })
+
+      .addCase(requestSignupVerification.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.successMessage = "";
+      })
+      .addCase(requestSignupVerification.fulfilled, (state) => {
+        state.loading = false;
+        state.successMessage = "Email verification code sent successfully";
+      })
+      .addCase(requestSignupVerification.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.payload?.message || "Failed to send verification code";
       })
 
       .addCase(getCurrentUser.pending, (state) => {

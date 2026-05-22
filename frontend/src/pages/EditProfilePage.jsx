@@ -37,6 +37,19 @@ const allowedAvatarExtensions = [
   "heif",
 ];
 
+const genderOptions = [
+  { value: "prefer_not_to_say", label: "Prefer not to say" },
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Other" },
+];
+
+const accountTypeOptions = [
+  { value: "personal", label: "Personal" },
+  { value: "creator", label: "Creator" },
+  { value: "business", label: "Business" },
+];
+
 const getFileExtension = (fileName = "") => {
   const parts = fileName.toLowerCase().split(".");
 
@@ -74,6 +87,10 @@ const EditProfileForm = ({ profile, updating }) => {
     fullName: profile?.fullName || "",
     bio: profile?.bio || "",
     website: profile?.website || "",
+    location: profile?.location || "",
+    profession: profile?.profession || "",
+    gender: profile?.gender || "prefer_not_to_say",
+    accountType: profile?.accountType || "personal",
     isPrivate: Boolean(profile?.isPrivate),
   }));
   const [avatarError, setAvatarError] = useState("");
@@ -124,6 +141,10 @@ const EditProfileForm = ({ profile, updating }) => {
         fullName: formData.fullName.trim(),
         bio: formData.bio.trim(),
         website: formData.website.trim(),
+        location: formData.location.trim(),
+        profession: formData.profession.trim(),
+        gender: formData.gender,
+        accountType: formData.accountType,
         isPrivate: formData.isPrivate,
       }),
     );
@@ -211,6 +232,74 @@ const EditProfileForm = ({ profile, updating }) => {
           onChange={handleChange}
           placeholder="https://example.com"
         />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Input
+            label="Location"
+            name="location"
+            value={formData.location}
+            onChange={handleChange}
+            placeholder="City, country"
+            maxLength={80}
+          />
+
+          <Input
+            label="Profession"
+            name="profession"
+            value={formData.profession}
+            onChange={handleChange}
+            placeholder="Designer, founder, student..."
+            maxLength={80}
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label
+              htmlFor="gender"
+              className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
+              Gender
+            </label>
+
+            <select
+              id="gender"
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white sm:text-sm"
+            >
+              {genderOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="accountType"
+              className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
+              Account type
+            </label>
+
+            <select
+              id="accountType"
+              name="accountType"
+              value={formData.accountType}
+              onChange={handleChange}
+              className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-white sm:text-sm"
+            >
+              {accountTypeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         <label className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800">
           <span>

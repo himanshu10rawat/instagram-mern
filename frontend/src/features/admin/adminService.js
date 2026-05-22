@@ -14,6 +14,22 @@ export const getAdminUsersApi = async (params = {}) => {
   return response.data.data;
 };
 
+export const getAdminPostsApi = async (params = {}) => {
+  const response = await api.get(API_ROUTES.admin.posts, {
+    params,
+  });
+
+  return response.data.data;
+};
+
+export const getAdminReelsApi = async (params = {}) => {
+  const response = await api.get(API_ROUTES.admin.reels, {
+    params,
+  });
+
+  return response.data.data;
+};
+
 export const blockAdminUserApi = async (userId) => {
   const response = await api.patch(API_ROUTES.admin.blockUser(userId));
   return response.data.data;
@@ -21,6 +37,14 @@ export const blockAdminUserApi = async (userId) => {
 
 export const unblockAdminUserApi = async (userId) => {
   const response = await api.patch(API_ROUTES.admin.unblockUser(userId));
+  return response.data.data;
+};
+
+export const updateAdminUserRoleApi = async ({ userId, role }) => {
+  const response = await api.patch(API_ROUTES.admin.updateUserRole(userId), {
+    role,
+  });
+
   return response.data.data;
 };
 

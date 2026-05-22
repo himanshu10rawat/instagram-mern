@@ -51,4 +51,5 @@ export const validateEnv = () => {
   ) {
     throw new Error("JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be at least 32 characters");
   }
+
 };

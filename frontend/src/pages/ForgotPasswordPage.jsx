@@ -22,7 +22,7 @@ const ForgotPasswordPage = () => {
     setSuccessMessage("");
 
     if (!identifier.trim()) {
-      setError("Email, username or phone number is required");
+      setError("Email or username is required");
       return;
     }
 
@@ -56,7 +56,7 @@ const ForgotPasswordPage = () => {
           Reset Password
         </h1>
         <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">
-          Enter your account identifier to get a reset link
+          Enter your email or username to get a reset link
         </p>
 
         {error ? (
@@ -73,11 +73,11 @@ const ForgotPasswordPage = () => {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <Input
-            label="Email, username or phone"
+            label="Email or username"
             name="identifier"
             value={identifier}
             onChange={(event) => setIdentifier(event.target.value)}
-            placeholder="Enter email, username or phone"
+            placeholder="Enter email or username"
             autoComplete="username"
           />
 

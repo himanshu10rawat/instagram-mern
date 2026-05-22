@@ -58,6 +58,8 @@ const getReactionGroups = (reactions = []) => {
   return Array.from(groups.values());
 };
 
+const isDeletedSharedProfile = (profile) => !profile || profile.isDeleted;
+
 const MessageBubble = ({ message, isMine, onReply }) => {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -216,12 +218,18 @@ const MessageBubble = ({ message, isMine, onReply }) => {
             ) : null}
 
             {message.shared?.profile ? (
-              <Link
-                to={`/profile/${message.shared.profile.username}`}
-                className="mt-2 block rounded-xl bg-black/10 p-3 text-sm font-semibold"
-              >
-                Shared @{message.shared.profile.username}
-              </Link>
+              isDeletedSharedProfile(message.shared.profile) ? (
+                <div className="mt-2 block rounded-xl bg-black/10 p-3 text-sm font-semibold">
+                  Shared profile is no longer available
+                </div>
+              ) : (
+                <Link
+                  to={`/profile/${message.shared.profile.username}`}
+                  className="mt-2 block rounded-xl bg-black/10 p-3 text-sm font-semibold"
+                >
+                  Shared @{message.shared.profile.username}
+                </Link>
+              )
             ) : null}
           </>
         )}

@@ -3,13 +3,14 @@ import crypto from "crypto";
 
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import User from "../models/user.model.js";
+import SignupVerification from "../models/signupVerification.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { addEmailJob } from "../queues/email.queue.js";
 import Session from "../models/session.model.js";
 import { createRawToken, hashToken } from "../utils/token.js";
-import { emailVerificationTemplate } from "../utils/emailTemplates.js";
+import { emailVerificationTemplate, signupEmailOtpTemplate } from "../utils/emailTemplates.js";
 import { createSession, getSessionExpiresAt } from "../utils/session.js";
 import { verifyTwoFactorToken, hashBackupCode } from "../utils/twoFactor.js";
 
@@ -75,114 +76,214 @@ const buildUserQuery = (identifier) => {
     $or: [
       { email: normalizedIdentifier },
       { username: normalizedIdentifier },
-      { phoneNumber: identifier },
     ],
   };
 };
 
-export const register = asyncHandler(async (req, res) => {
-  const { username, fullName, email, phoneNumber, password, dateOfBirth, gender, accountType } =
-    req.body;
+const SIGNUP_OTP_EXPIRES_MINUTES = Number(process.env.SIGNUP_OTP_EXPIRES_MINUTES) || 10;
+const MAX_SIGNUP_VERIFICATION_ATTEMPTS =
+  Number(process.env.MAX_SIGNUP_VERIFICATION_ATTEMPTS) || 5;
 
-  const duplicateChecks = [{ username }];
+const createOtp = () => crypto.randomInt(100000, 1000000).toString();
+
+const hashSignupOtp = ({ email, otp }) => {
+  return hashToken(`${email}:signup-email:${otp}`);
+};
+
+const getDuplicateUserErrors = async ({ username, email }) => {
+  const duplicateChecks = [];
+
+  if (username) {
+    duplicateChecks.push({ username });
+  }
 
   if (email) {
     duplicateChecks.push({ email });
   }
 
-  if (phoneNumber) {
-    duplicateChecks.push({ phoneNumber });
+  if (!duplicateChecks.length) {
+    return [];
   }
 
-  const existingUser = await User.findOne({
+  const existingUsers = await User.find({
     $or: duplicateChecks,
+  }).select("username email");
+
+  const duplicateErrors = [];
+
+  if (existingUsers.some((user) => user.username === username)) {
+    duplicateErrors.push({
+      field: "username",
+      message: "Username is already taken",
+    });
+  }
+
+  if (email && existingUsers.some((user) => user.email === email)) {
+    duplicateErrors.push({
+      field: "email",
+      message: "Email is already registered",
+    });
+  }
+
+  return duplicateErrors;
+};
+
+const throwIfDuplicateUser = async ({ username, email }) => {
+  const duplicateErrors = await getDuplicateUserErrors({ username, email });
+
+  if (!duplicateErrors.length) {
+    return;
+  }
+
+  const duplicateMessage =
+    duplicateErrors.map((error) => error.message).join(". ") ||
+    "Username or email already exists";
+
+  throw new ApiError(HTTP_STATUS.CONFLICT, duplicateMessage, duplicateErrors);
+};
+
+export const requestSignupVerification = asyncHandler(async (req, res) => {
+  const { username, fullName, email } = req.body;
+
+  await throwIfDuplicateUser({ username, email });
+
+  const emailOtp = createOtp();
+  const expiresAt = new Date(Date.now() + SIGNUP_OTP_EXPIRES_MINUTES * 60 * 1000);
+
+  await SignupVerification.findOneAndUpdate(
+    { email },
+    {
+      email,
+      emailOtpHash: hashSignupOtp({
+        email,
+        otp: emailOtp,
+      }),
+      attempts: 0,
+      expiresAt,
+    },
+    {
+      upsert: true,
+      setDefaultsOnInsert: true,
+      new: true,
+    },
+  );
+
+  const emailTemplate = signupEmailOtpTemplate({
+    fullName,
+    otp: emailOtp,
+    expiresInMinutes: SIGNUP_OTP_EXPIRES_MINUTES,
   });
 
-  if (existingUser) {
-    const duplicateErrors = [];
+  await addEmailJob({
+    to: email,
+    subject: emailTemplate.subject,
+    html: emailTemplate.html,
+    text: emailTemplate.text,
+  });
 
-    if (existingUser.username === username) {
-      duplicateErrors.push({
-        field: "username",
-        message: "Username is already taken",
-      });
-    }
+  const responseData =
+    process.env.NODE_ENV === "development"
+      ? {
+          emailOtp,
+          expiresAt,
+        }
+      : {
+          expiresAt,
+        };
 
-    if (email && existingUser.email === email) {
-      duplicateErrors.push({
-        field: "email",
-        message: "Email is already registered",
-      });
-    }
+  res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, responseData, "Email verification code sent"));
+});
 
-    if (phoneNumber && existingUser.phoneNumber === phoneNumber) {
-      duplicateErrors.push({
-        field: "phoneNumber",
-        message: "Phone number is already registered",
-      });
-    }
+export const register = asyncHandler(async (req, res) => {
+  const {
+    username,
+    fullName,
+    email,
+    password,
+    dateOfBirth,
+    gender,
+    accountType,
+    emailOtp,
+  } = req.body;
 
-    const duplicateMessage =
-      duplicateErrors.map((error) => error.message).join(". ") ||
-      "Username, email, or phone number already exists";
+  await throwIfDuplicateUser({ username, email });
 
-    throw new ApiError(HTTP_STATUS.CONFLICT, duplicateMessage, duplicateErrors);
+  const signupVerification = await SignupVerification.findOne({
+    email,
+    expiresAt: {
+      $gt: new Date(),
+    },
+  }).select("+emailOtpHash +attempts");
+
+  if (!signupVerification) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Please request fresh verification codes", [
+      {
+        field: "emailOtp",
+        message: "Verification code is expired or missing",
+      },
+    ]);
+  }
+
+  if (signupVerification.attempts >= MAX_SIGNUP_VERIFICATION_ATTEMPTS) {
+    await SignupVerification.deleteOne({ _id: signupVerification._id });
+
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Too many verification attempts", [
+      {
+        field: "emailOtp",
+        message: "Please request new verification codes",
+      },
+    ]);
+  }
+
+  const isEmailOtpValid =
+    signupVerification.emailOtpHash ===
+    hashSignupOtp({
+      email,
+      otp: emailOtp,
+    });
+
+  if (!isEmailOtpValid) {
+    signupVerification.attempts += 1;
+    await signupVerification.save({ validateBeforeSave: false });
+
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid verification code", [
+      {
+        field: "emailOtp",
+        message: "Invalid email verification code",
+      },
+    ]);
   }
 
   const user = await User.create({
     username,
     fullName,
     email,
-    phoneNumber,
     password,
     dateOfBirth,
     gender,
     accountType,
+    isEmailVerified: true,
   });
-
-  let rawEmailVerificationToken;
-  let verificationUrl;
-
-  if (user.email) {
-    rawEmailVerificationToken = createRawToken();
-    verificationUrl = `${process.env.CLIENT_URL}/verify-email/${rawEmailVerificationToken}`;
-
-    user.emailVerificationToken = hashToken(rawEmailVerificationToken);
-    user.emailVerificationExpires = new Date(Date.now() + 30 * 60 * 1000);
-
-    await user.save({ validateBeforeSave: false });
-
-    const emailTemplate = emailVerificationTemplate({
-      fullName: user.fullName,
-      verificationUrl,
-    });
-
-    await addEmailJob({
-      to: user.email,
-      subject: emailTemplate.subject,
-      html: emailTemplate.html,
-      text: emailTemplate.text,
-    });
-  }
 
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken -passwordResetToken -passwordResetExpires",
   );
 
-  const responseData =
-    process.env.NODE_ENV === "development" && rawEmailVerificationToken
-      ? {
-          user: createdUser,
-          emailVerificationToken: rawEmailVerificationToken,
-          verificationUrl,
-        }
-      : {
-          user: createdUser,
-        };
+  await SignupVerification.deleteOne({ _id: signupVerification._id });
 
   res
     .status(HTTP_STATUS.CREATED)
-    .json(new ApiResponse(HTTP_STATUS.CREATED, responseData, "Account created successfully"));
+    .json(
+      new ApiResponse(
+        HTTP_STATUS.CREATED,
+        {
+          user: createdUser,
+        },
+        "Verified account created successfully",
+      ),
+    );
 });
 
 export const login = asyncHandler(async (req, res) => {

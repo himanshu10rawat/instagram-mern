@@ -10,6 +10,40 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const adminUserFields =
+  "username fullName email avatar role accountType isDeleted isBlockedByAdmin createdAt lastLogin";
+
+const getPagination = (query) => {
+  const page = Math.max(Number(query.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(query.limit) || 20, 1), 100);
+
+  return {
+    page,
+    limit,
+    skip: (page - 1) * limit,
+  };
+};
+
+const getMatchedUserIds = async (search) => {
+  if (!search) return [];
+
+  const searchRegex = new RegExp(escapeRegExp(search), "i");
+  const users = await User.find({
+    $or: [
+      { username: searchRegex },
+      { email: searchRegex },
+      { fullName: searchRegex },
+    ],
+  })
+    .select("_id")
+    .limit(100);
+
+  return users.map((user) => user._id);
+};
+
+const toCountMap = (counts) => {
+  return new Map(counts.map((item) => [item._id.toString(), item.count]));
+};
 
 export const getDashboardStats = asyncHandler(async (_req, res) => {
   const [
@@ -45,9 +79,7 @@ export const getDashboardStats = asyncHandler(async (_req, res) => {
 });
 
 export const getUsers = asyncHandler(async (req, res) => {
-  const page = Math.max(Number(req.query.page) || 1, 1);
-  const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
-  const skip = (page - 1) * limit;
+  const { page, limit, skip } = getPagination(req.query);
   const search = req.query.search?.trim();
   const filter = { isDeleted: false };
 
@@ -69,12 +101,37 @@ export const getUsers = asyncHandler(async (req, res) => {
       .limit(limit),
     User.countDocuments(filter),
   ]);
+  const userIds = users.map((user) => user._id);
+  const [postCounts, reelCounts] = await Promise.all([
+    Post.aggregate([
+      { $match: { author: { $in: userIds }, isDeleted: false } },
+      { $group: { _id: "$author", count: { $sum: 1 } } },
+    ]),
+    Reel.aggregate([
+      { $match: { author: { $in: userIds }, isDeleted: false } },
+      { $group: { _id: "$author", count: { $sum: 1 } } },
+    ]),
+  ]);
+  const postCountMap = toCountMap(postCounts);
+  const reelCountMap = toCountMap(reelCounts);
+  const usersWithActivity = users.map((user) => {
+    const userObject = user.toObject();
+    const userId = user._id.toString();
+
+    return {
+      ...userObject,
+      followersCount: user.followers?.length || 0,
+      followingCount: user.following?.length || 0,
+      postsCount: postCountMap.get(userId) || 0,
+      reelsCount: reelCountMap.get(userId) || 0,
+    };
+  });
 
   res.status(HTTP_STATUS.OK).json(
     new ApiResponse(
       HTTP_STATUS.OK,
       {
-        users,
+        users: usersWithActivity,
         pagination: {
           page,
           limit,
@@ -83,6 +140,101 @@ export const getUsers = asyncHandler(async (req, res) => {
         },
       },
       "Users fetched successfully",
+    ),
+  );
+});
+
+export const getPosts = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = getPagination(req.query);
+  const search = req.query.search?.trim();
+  const filter = { isDeleted: false };
+
+  if (search) {
+    const searchRegex = new RegExp(escapeRegExp(search), "i");
+    const matchedUserIds = await getMatchedUserIds(search);
+    const searchFilters = [
+      { caption: searchRegex },
+      { location: searchRegex },
+      { tags: searchRegex },
+    ];
+
+    if (matchedUserIds.length > 0) {
+      searchFilters.push({ author: { $in: matchedUserIds } });
+    }
+
+    filter.$or = searchFilters;
+  }
+
+  const [posts, total] = await Promise.all([
+    Post.find(filter)
+      .populate("author", adminUserFields)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Post.countDocuments(filter),
+  ]);
+
+  res.status(HTTP_STATUS.OK).json(
+    new ApiResponse(
+      HTTP_STATUS.OK,
+      {
+        posts,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+      "Posts fetched successfully",
+    ),
+  );
+});
+
+export const getReels = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = getPagination(req.query);
+  const search = req.query.search?.trim();
+  const filter = { isDeleted: false };
+
+  if (search) {
+    const searchRegex = new RegExp(escapeRegExp(search), "i");
+    const matchedUserIds = await getMatchedUserIds(search);
+    const searchFilters = [
+      { caption: searchRegex },
+      { location: searchRegex },
+      { hashtags: searchRegex },
+      { audioName: searchRegex },
+    ];
+
+    if (matchedUserIds.length > 0) {
+      searchFilters.push({ author: { $in: matchedUserIds } });
+    }
+
+    filter.$or = searchFilters;
+  }
+
+  const [reels, total] = await Promise.all([
+    Reel.find(filter)
+      .populate("author", adminUserFields)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Reel.countDocuments(filter),
+  ]);
+
+  res.status(HTTP_STATUS.OK).json(
+    new ApiResponse(
+      HTTP_STATUS.OK,
+      {
+        reels,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+      "Reels fetched successfully",
     ),
   );
 });
@@ -173,6 +325,33 @@ export const unblockUserByAdmin = asyncHandler(async (req, res) => {
   res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, user, "User unblocked by admin successfully"));
+});
+
+export const updateUserRoleByAdmin = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const { role } = req.body;
+
+  if (!["user", "admin"].includes(role)) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid user role");
+  }
+
+  if (req.user._id.toString() === userId && role !== "admin") {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "You cannot remove your own admin role");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { role },
+    { new: true, runValidators: true },
+  ).select("-password -refreshToken");
+
+  if (!user) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "User not found");
+  }
+
+  res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, user, "User role updated successfully"));
 });
 
 export const removePostByAdmin = asyncHandler(async (req, res) => {

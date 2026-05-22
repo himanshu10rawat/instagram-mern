@@ -8,6 +8,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import cloudinary from "../config/cloudinary.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 import trackAnalytics from "../utils/trackAnalytics.js";
+import { cleanupDeletedUserData } from "../utils/accountCleanup.js";
 
 const userSelectFields =
   "-password -refreshToken -passwordResetToken -passwordResetExpires -loginAttempts -lockUntil";
@@ -217,7 +218,28 @@ export const softDeleteAccount = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Password is incorrect");
   }
 
+  await cleanupDeletedUserData(user._id);
+
   user.isDeleted = true;
+  user.username = `deleted_${user._id.toString().slice(-12)}`;
+  user.fullName = "Deleted user";
+  user.email = undefined;
+  user.avatar = {};
+  user.bio = "";
+  user.website = "";
+  user.location = "";
+  user.profession = "";
+  user.links = [];
+  user.followers = [];
+  user.following = [];
+  user.blockedUsers = [];
+  user.mutedUsers = [];
+  user.closeFriends = [];
+  user.isPrivate = true;
+  user.isEmailVerified = false;
+  user.twoFactorEnabled = false;
+  user.twoFactorSecret = undefined;
+  user.twoFactorBackupCodes = [];
   user.refreshToken = undefined;
 
   await user.save({ validateBeforeSave: false });

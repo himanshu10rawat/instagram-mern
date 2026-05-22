@@ -11,6 +11,11 @@ export const registerUserApi = async (payload) => {
   return response.data.data;
 };
 
+export const requestSignupVerificationApi = async (payload) => {
+  const response = await api.post(API_ROUTES.auth.signupVerification, payload);
+  return response.data.data;
+};
+
 export const getCurrentUserApi = async () => {
   const response = await api.get(API_ROUTES.auth.me);
   return response.data.data;

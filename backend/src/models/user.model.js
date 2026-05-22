@@ -80,15 +80,6 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
 
-    phoneNumber: {
-      type: String,
-      unique: true,
-      sparse: true,
-      trim: true,
-      match: [/^[0-9]{10,15}$/, "Invalid phone number"],
-      index: true,
-    },
-
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -285,11 +276,6 @@ const userSchema = new mongoose.Schema(
     emailVerificationExpires: {
       type: Date,
       select: false,
-    },
-
-    isPhoneVerified: {
-      type: Boolean,
-      default: false,
     },
 
     twoFactorSecret: {

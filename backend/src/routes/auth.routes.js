@@ -8,6 +8,7 @@ import {
   logout,
   refreshAccessToken,
   register,
+  requestSignupVerification,
   resendEmailVerification,
   resetPassword,
   verifyEmail,
@@ -19,6 +20,7 @@ import {
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
+  requestSignupVerificationSchema,
   resetPasswordSchema,
   verifyLoginTwoFactorSchema,
 } from "../validators/auth.validator.js";
@@ -27,6 +29,12 @@ import { rateLimiter } from "../middlewares/rateLimiter.middleware.js";
 
 const router = Router();
 
+router.post(
+  "/signup-verification",
+  rateLimiter({ keyPrefix: "signup-verification", limit: 3, windowSeconds: 300 }),
+  validate(requestSignupVerificationSchema),
+  requestSignupVerification,
+);
 router.post("/register", validate(registerSchema), register);
 router.post(
   "/login",

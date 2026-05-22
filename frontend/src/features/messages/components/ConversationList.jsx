@@ -5,10 +5,19 @@ import EmptyState from "../../../components/ui/EmptyState";
 
 const getOtherParticipant = (conversation, currentUserId) => {
   return conversation.participants?.find((participant) => {
+    if (!participant) return true;
     if (typeof participant === "string") return participant !== currentUserId;
 
     return participant._id !== currentUserId;
   });
+};
+
+const isDeletedParticipant = (user) => !user || user.isDeleted;
+
+const getParticipantName = (user) => {
+  return isDeletedParticipant(user)
+    ? "This user no longer exists"
+    : user.username || "Unknown user";
 };
 
 const ConversationList = ({
@@ -41,7 +50,8 @@ const ConversationList = ({
         {conversations.map((conversation) => {
           const user = getOtherParticipant(conversation, currentUserId);
           const isActive = activeConversationId === conversation._id;
-          const isOnline = onlineUsers.includes(user?._id);
+          const isDeletedUser = isDeletedParticipant(user);
+          const isOnline = !isDeletedUser && onlineUsers.includes(user?._id);
           const unreadCount = Number(conversation.unreadCount) || 0;
 
           return (
@@ -56,7 +66,10 @@ const ConversationList = ({
               }`}
             >
               <div className="relative shrink-0">
-                <Avatar src={user?.avatar?.url} alt={user?.username} />
+                <Avatar
+                  src={isDeletedUser ? "" : user?.avatar?.url}
+                  alt={getParticipantName(user)}
+                />
 
                 {isOnline ? (
                   <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500 dark:border-slate-950" />
@@ -66,7 +79,7 @@ const ConversationList = ({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
-                    {user?.username || "Unknown user"}
+                    {getParticipantName(user)}
                   </p>
 
                   {unreadCount > 0 ? (
@@ -84,7 +97,9 @@ const ConversationList = ({
                   }`}
                 >
                   {conversation.lastMessage?.text ||
-                    conversation.lastMessage?.messageType ||
+                    (isDeletedUser
+                      ? "Account deleted"
+                      : conversation.lastMessage?.messageType) ||
                     "Start conversation"}
                 </p>
               </div>

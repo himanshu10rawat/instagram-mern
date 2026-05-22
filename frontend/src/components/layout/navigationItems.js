@@ -8,6 +8,7 @@ import {
   Flag,
   Folder,
   Home,
+  Image,
   MessageCircle,
   PlusSquare,
   Radio,
@@ -108,6 +109,16 @@ export const adminNavItems = [
     label: "Admin Users",
     path: "/admin/users",
     icon: Users,
+  },
+  {
+    label: "Admin Posts",
+    path: "/admin/posts",
+    icon: Image,
+  },
+  {
+    label: "Admin Reels",
+    path: "/admin/reels",
+    icon: Clapperboard,
   },
   {
     label: "Reports",

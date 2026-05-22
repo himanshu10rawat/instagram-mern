@@ -40,6 +40,8 @@ const VerifyTwoFactorPage = lazy(() => import("../pages/VerifyTwoFactorPage"));
 const AdminDashboardPage = lazy(
   () => import("../features/admin/components/AdminDashboardPage"),
 );
+const AdminPostsPage = lazy(() => import("../pages/admin/AdminPostsPage"));
+const AdminReelsPage = lazy(() => import("../pages/admin/AdminReelsPage"));
 const AdminReportsPage = lazy(() => import("../pages/admin/AdminReportsPage"));
 const AdminUsersPage = lazy(() => import("../pages/admin/AdminUsersPage"));
 
@@ -94,6 +96,8 @@ const AppRoutes = () => {
             <Route element={<AdminRoute />}>
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
+              <Route path="/admin/posts" element={<AdminPostsPage />} />
+              <Route path="/admin/reels" element={<AdminReelsPage />} />
               <Route path="/admin/reports" element={<AdminReportsPage />} />
             </Route>
 

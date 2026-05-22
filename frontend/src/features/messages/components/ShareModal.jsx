@@ -9,12 +9,21 @@ import { fetchConversations, shareToMessage } from "../messageSlice";
 
 const getOtherParticipant = (conversation, currentUserId) => {
   return conversation?.participants?.find((participant) => {
+    if (!participant) return true;
     if (typeof participant === "string") {
       return participant !== currentUserId;
     }
 
     return participant?._id !== currentUserId;
   });
+};
+
+const isDeletedParticipant = (user) => !user || user.isDeleted;
+
+const getParticipantName = (user) => {
+  return isDeletedParticipant(user)
+    ? "This user no longer exists"
+    : user.username || "Unknown user";
 };
 
 const ShareModal = ({ open, onClose, sharePayload }) => {
@@ -44,6 +53,7 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
 
     return conversations.filter((conversation) => {
       const user = getOtherParticipant(conversation, currentUserId);
+      if (isDeletedParticipant(user)) return false;
 
       return (
         user?.username?.toLowerCase().includes(query) ||
@@ -114,6 +124,7 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
 
           {filteredConversations.map((conversation) => {
             const user = getOtherParticipant(conversation, currentUserId);
+            const isDeletedUser = isDeletedParticipant(user);
             const isSent = sentUserIds.includes(user?._id);
             const isSendingToUser = sendingUserId === user?._id;
 
@@ -123,15 +134,18 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
                 className="flex items-center justify-between gap-3 rounded-xl p-3 hover:bg-slate-50 dark:hover:bg-slate-900"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <Avatar src={user?.avatar?.url} alt={user?.username} />
+                  <Avatar
+                    src={isDeletedUser ? "" : user?.avatar?.url}
+                    alt={getParticipantName(user)}
+                  />
 
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
-                      {user?.username || "Unknown user"}
+                      {getParticipantName(user)}
                     </p>
 
                     <p className="truncate text-xs text-slate-500">
-                      {user?.fullName || "Instagram user"}
+                      {isDeletedUser ? "Account deleted" : user?.fullName || "Instagram user"}
                     </p>
                   </div>
                 </div>
@@ -139,7 +153,7 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
                 <button
                   type="button"
                   onClick={() => handleShare(user?._id)}
-                  disabled={!user?._id || isSendingToUser || isSent}
+                  disabled={!user?._id || isDeletedUser || isSendingToUser || isSent}
                   className="flex items-center gap-1 rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60 dark:bg-white dark:text-slate-950"
                 >
                   <Send size={14} />

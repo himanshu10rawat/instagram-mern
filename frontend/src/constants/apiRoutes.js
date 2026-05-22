@@ -1,6 +1,7 @@
 export const API_ROUTES = {
   auth: {
     register: "/auth/register",
+    signupVerification: "/auth/signup-verification",
     login: "/auth/login",
     logout: "/auth/logout",
     me: "/auth/me",
@@ -212,8 +213,11 @@ export const API_ROUTES = {
   admin: {
     dashboard: "/admin/dashboard",
     users: "/admin/users",
+    posts: "/admin/posts",
+    reels: "/admin/reels",
     blockUser: (userId) => `/admin/users/${userId}/block`,
     unblockUser: (userId) => `/admin/users/${userId}/unblock`,
+    updateUserRole: (userId) => `/admin/users/${userId}/role`,
     reports: "/admin/reports",
     updateReportStatus: (reportId) => `/admin/reports/${reportId}/status`,
     resolveReport: (reportId) => `/admin/reports/${reportId}/status`,

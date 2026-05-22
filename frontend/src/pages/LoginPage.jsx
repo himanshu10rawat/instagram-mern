@@ -48,7 +48,7 @@ const LoginPage = () => {
     const errors = {};
 
     if (!formData.identifier.trim()) {
-      errors.identifier = "Email, username or phone number is required";
+      errors.identifier = "Email or username is required";
     }
 
     if (!formData.password.trim()) {
@@ -95,11 +95,11 @@ const LoginPage = () => {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <Input
-            label={"Email, username or phone"}
+            label={"Email or username"}
             name={"identifier"}
             value={formData.identifier}
             onChange={handleChange}
-            placeholder={"Enter email, username or phone"}
+            placeholder={"Enter email or username"}
             error={formErrors.identifier}
             autoComplete={"username"}
           />

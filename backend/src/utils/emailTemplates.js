@@ -14,3 +14,18 @@ export const emailVerificationTemplate = ({ fullName, verificationUrl }) => {
     text: `Verify your email using this link: ${verificationUrl}`,
   };
 };
+
+export const signupEmailOtpTemplate = ({ fullName, otp, expiresInMinutes }) => {
+  return {
+    subject: "Your signup verification code",
+    html: `
+      <div style="font-family: Arial, sans-serif;">
+        <h2>Hello ${fullName},</h2>
+        <p>Use this code to verify your email address and finish creating your account.</p>
+        <p style="font-size:24px;font-weight:700;letter-spacing:6px;">${otp}</p>
+        <p>This code will expire in ${expiresInMinutes} minutes.</p>
+      </div>
+    `,
+    text: `Your signup verification code is ${otp}. It expires in ${expiresInMinutes} minutes.`,
+  };
+};

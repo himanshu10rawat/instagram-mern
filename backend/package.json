@@ -7,6 +7,7 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "worker": "node src/workers/index.js",
+    "cleanup:orphans": "node src/scripts/cleanupOrphans.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write"

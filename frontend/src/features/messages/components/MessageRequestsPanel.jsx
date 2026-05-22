@@ -14,10 +14,19 @@ import {
 
 const getOtherParticipant = (conversation, currentUserId) => {
   return conversation?.participants?.find((participant) => {
+    if (!participant) return true;
     if (typeof participant === "string") return participant !== currentUserId;
 
     return participant?._id !== currentUserId;
   });
+};
+
+const isDeletedParticipant = (user) => !user || user.isDeleted;
+
+const getParticipantName = (user) => {
+  return isDeletedParticipant(user)
+    ? "This user no longer exists"
+    : user.username || "Unknown user";
 };
 
 const MessageRequestsPanel = () => {
@@ -68,17 +77,21 @@ const MessageRequestsPanel = () => {
       <div className="divide-y divide-slate-100 dark:divide-slate-800">
         {requests.map((conversation) => {
           const user = getOtherParticipant(conversation, currentUser?._id);
+          const isDeletedUser = isDeletedParticipant(user);
           const unreadCount = Number(conversation.unreadCount) || 0;
 
           return (
             <div key={conversation._id} className="p-4">
               <div className="flex items-center gap-3">
-                <Avatar src={user?.avatar?.url} alt={user?.username} />
+                <Avatar
+                  src={isDeletedUser ? "" : user?.avatar?.url}
+                  alt={getParticipantName(user)}
+                />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
-                      {user?.username || "Unknown user"}
+                      {getParticipantName(user)}
                     </p>
 
                     {unreadCount > 0 ? (
@@ -90,7 +103,9 @@ const MessageRequestsPanel = () => {
 
                   <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                     {conversation.lastMessage?.text ||
-                      conversation.lastMessage?.messageType ||
+                      (isDeletedUser
+                        ? "Account deleted"
+                        : conversation.lastMessage?.messageType) ||
                       "Message request"}
                   </p>
                 </div>
@@ -100,7 +115,8 @@ const MessageRequestsPanel = () => {
                 <button
                   type="button"
                   onClick={() => handleAccept(conversation._id)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+                  disabled={isDeletedUser}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-950"
                 >
                   <Check size={16} />
                   Accept

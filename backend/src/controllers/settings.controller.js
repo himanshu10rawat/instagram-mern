@@ -4,7 +4,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const userSelectFields =
-  "username fullName email phoneNumber theme language isPrivate notificationPreferences privacySettings accountType twoFactorEnabled";
+  "username fullName email theme language isPrivate notificationPreferences privacySettings accountType twoFactorEnabled";
 
 export const getSettings = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select(userSelectFields);

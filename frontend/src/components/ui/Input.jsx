@@ -7,6 +7,7 @@ const Input = ({
   placeholder,
   error,
   autoComplete,
+  ...props
 }) => {
   return (
     <div>
@@ -27,6 +28,7 @@ const Input = ({
         onChange={onChange}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        {...props}
         className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-white sm:text-sm"
       />
 

@@ -1,10 +1,38 @@
-import { Flag, Image, Radio, RefreshCcw, Users, Video } from "lucide-react";
+import { ArrowRight, Flag, Image, Radio, RefreshCcw, Users, Video } from "lucide-react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
 import { StatGridSkeleton } from "../../../components/ui/Skeleton";
 import { fetchAdminDashboard, resetAdmin } from "../adminSlice";
 import AdminStatCard from "./AdminStatCard";
+
+const activityLinks = [
+  {
+    label: "Users",
+    description: "Accounts, roles, blocks, and activity counts",
+    path: "/admin/users",
+    icon: Users,
+  },
+  {
+    label: "Posts",
+    description: "Captions, tags, authors, likes, comments",
+    path: "/admin/posts",
+    icon: Image,
+  },
+  {
+    label: "Reels",
+    description: "Creators, audio, views, shares, hashtags",
+    path: "/admin/reels",
+    icon: Video,
+  },
+  {
+    label: "Reports",
+    description: "Review reported users and content",
+    path: "/admin/reports",
+    icon: Flag,
+  },
+];
 
 const AdminDashboardPage = () => {
   const dispatch = useDispatch();
@@ -91,6 +119,35 @@ const AdminDashboardPage = () => {
           />
         </div>
       ) : null}
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {activityLinks.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className="group rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                <item.icon size={18} />
+              </span>
+
+              <ArrowRight
+                size={17}
+                className="mt-2 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-200"
+              />
+            </div>
+
+            <h2 className="mt-4 text-sm font-bold text-slate-950 dark:text-white">
+              {item.label}
+            </h2>
+
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              {item.description}
+            </p>
+          </Link>
+        ))}
+      </div>
     </section>
   );
 };

@@ -7,10 +7,13 @@ import {
   deleteAdminReelApi,
   deleteReportApi,
   getAdminDashboardApi,
+  getAdminPostsApi,
+  getAdminReelsApi,
   getAdminReportsApi,
   getAdminUsersApi,
   resolveReportApi,
   unblockAdminUserApi,
+  updateAdminUserRoleApi,
 } from "./adminService";
 
 export const fetchAdminDashboard = createAsyncThunk(
@@ -62,6 +65,45 @@ export const unblockAdminUser = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to unblock user",
+      );
+    }
+  },
+);
+
+export const fetchAdminPosts = createAsyncThunk(
+  "admin/fetchAdminPosts",
+  async (params, { rejectWithValue }) => {
+    try {
+      return await getAdminPostsApi(params);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch posts",
+      );
+    }
+  },
+);
+
+export const fetchAdminReels = createAsyncThunk(
+  "admin/fetchAdminReels",
+  async (params, { rejectWithValue }) => {
+    try {
+      return await getAdminReelsApi(params);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch reels",
+      );
+    }
+  },
+);
+
+export const updateAdminUserRole = createAsyncThunk(
+  "admin/updateAdminUserRole",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await updateAdminUserRoleApi(payload);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update user role",
       );
     }
   },
@@ -153,6 +195,8 @@ export const deleteAdminComment = createAsyncThunk(
 const initialState = {
   dashboard: null,
   users: [],
+  posts: [],
+  reels: [],
   reports: [],
   pagination: null,
   loading: false,
@@ -164,6 +208,12 @@ const initialState = {
 const updateUserBlockStatus = (users, userId, isBlockedByAdmin) => {
   return users.map((user) =>
     user._id === userId ? { ...user, isBlockedByAdmin } : user,
+  );
+};
+
+const replaceUser = (users, updatedUser) => {
+  return users.map((user) =>
+    user._id === updatedUser._id ? { ...user, ...updatedUser } : user,
   );
 };
 
@@ -179,6 +229,8 @@ const adminSlice = createSlice({
     resetAdmin: (state) => {
       state.dashboard = null;
       state.users = [];
+      state.posts = [];
+      state.reels = [];
       state.reports = [];
       state.pagination = null;
       state.loading = false;
@@ -212,6 +264,34 @@ const adminSlice = createSlice({
         state.pagination = action.payload?.pagination || null;
       })
       .addCase(fetchAdminUsers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(fetchAdminPosts.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAdminPosts.fulfilled, (state, action) => {
+        state.loading = false;
+        state.posts = action.payload?.posts || [];
+        state.pagination = action.payload?.pagination || null;
+      })
+      .addCase(fetchAdminPosts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(fetchAdminReels.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAdminReels.fulfilled, (state, action) => {
+        state.loading = false;
+        state.reels = action.payload?.reels || [];
+        state.pagination = action.payload?.pagination || null;
+      })
+      .addCase(fetchAdminReels.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -258,6 +338,21 @@ const adminSlice = createSlice({
         state.error = action.payload;
       })
 
+      .addCase(updateAdminUserRole.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+        state.successMessage = "";
+      })
+      .addCase(updateAdminUserRole.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        state.users = replaceUser(state.users, action.payload);
+        state.successMessage = "User role updated successfully";
+      })
+      .addCase(updateAdminUserRole.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload;
+      })
+
       .addMatcher(
         (action) =>
           [
@@ -294,8 +389,10 @@ const adminSlice = createSlice({
             deleteAdminReel.fulfilled.type,
             deleteAdminComment.fulfilled.type,
           ].includes(action.type),
-        (state) => {
+        (state, action) => {
           state.actionLoading = false;
+          state.posts = state.posts.filter((post) => post._id !== action.payload);
+          state.reels = state.reels.filter((reel) => reel._id !== action.payload);
           state.successMessage = "Content removed successfully";
         },
       )

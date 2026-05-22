@@ -17,7 +17,7 @@ import {
 } from "../utils/cloudinaryUrl.js";
 import { buildRealtimeMessagePayload } from "../utils/messageRealtime.js";
 
-const userPublicFields = "username fullName avatar isVerified";
+const userPublicFields = "username fullName avatar isVerified isDeleted";
 
 const messagePopulate = [
   {
