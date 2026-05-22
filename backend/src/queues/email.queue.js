@@ -3,8 +3,19 @@ import { Queue } from "bullmq";
 import { createRedisClient } from "../config/redis.js";
 
 const connection = createRedisClient({
+  enableOfflineQueue: false,
   maxRetriesPerRequest: null,
 });
+
+const getPositiveNumber = (value, fallback) => {
+  const number = Number(value);
+
+  return Number.isFinite(number) && number > 0 ? number : fallback;
+};
+
+const EMAIL_JOB_ATTEMPTS = getPositiveNumber(process.env.EMAIL_JOB_ATTEMPTS, 2);
+const EMAIL_JOB_BACKOFF_MS = getPositiveNumber(process.env.EMAIL_JOB_BACKOFF_MS, 1000);
+const EMAIL_JOB_PRIORITY = getPositiveNumber(process.env.EMAIL_JOB_PRIORITY, 1);
 
 let emailQueue;
 
@@ -13,13 +24,19 @@ export const getEmailQueue = () => {
     emailQueue = new Queue("email-queue", {
       connection,
       defaultJobOptions: {
-        attempts: 3,
+        attempts: EMAIL_JOB_ATTEMPTS,
         backoff: {
-          type: "exponential",
-          delay: 5000,
+          type: "fixed",
+          delay: EMAIL_JOB_BACKOFF_MS,
         },
-        removeOnComplete: true,
-        removeOnFail: false,
+        removeOnComplete: {
+          age: 60 * 60,
+          count: 1000,
+        },
+        removeOnFail: {
+          age: 24 * 60 * 60,
+          count: 1000,
+        },
       },
     });
   }
@@ -27,6 +44,8 @@ export const getEmailQueue = () => {
   return emailQueue;
 };
 
-export const addEmailJob = async (data) => {
-  await getEmailQueue().add("send-email", data);
+export const addEmailJob = async (data, options = {}) => {
+  await getEmailQueue().add("send-email", data, {
+    priority: options.priority || EMAIL_JOB_PRIORITY,
+  });
 };

@@ -7,12 +7,21 @@ const connection = createRedisClient({
   maxRetriesPerRequest: null,
 });
 
+const getPositiveNumber = (value, fallback) => {
+  const number = Number(value);
+
+  return Number.isFinite(number) && number > 0 ? number : fallback;
+};
+
+const EMAIL_WORKER_CONCURRENCY = getPositiveNumber(process.env.EMAIL_WORKER_CONCURRENCY, 3);
+
 export const emailWorker = new Worker(
   "email-queue",
   async (job) => {
     const { to, subject, html, text } = job.data;
+    const startedAt = Date.now();
 
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM,
       to,
       subject,
@@ -20,10 +29,13 @@ export const emailWorker = new Worker(
       text,
     });
 
-    console.log(`Email sent to ${to}`);
+    console.log(`Email sent to ${to} in ${Date.now() - startedAt}ms`, {
+      messageId: info.messageId,
+    });
   },
   {
     connection,
+    concurrency: EMAIL_WORKER_CONCURRENCY,
   },
 );
 

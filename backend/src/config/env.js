@@ -14,14 +14,18 @@ const productionRequiredEnvVars = [
   "AGORA_APP_ID",
   "AGORA_APP_CERTIFICATE",
   "REDIS_URL",
-  "SMTP_HOST",
-  "SMTP_PORT",
   "SMTP_USER",
-  "SMTP_PASS",
   "EMAIL_FROM",
 ];
 
 const isPresent = (value) => typeof value === "string" && value.trim().length > 0;
+
+const emailProviderDefaults = {
+  brevo: {
+    host: "smtp-relay.brevo.com",
+    port: 587,
+  },
+};
 
 const assertUrl = (name) => {
   try {
@@ -38,6 +42,23 @@ export const validateEnv = () => {
       : baseRequiredEnvVars;
 
   const missingEnvVars = requiredEnvVars.filter((name) => !isPresent(process.env[name]));
+  const emailProvider = process.env.EMAIL_PROVIDER?.trim().toLowerCase();
+  const hasEmailProviderDefaults = Boolean(emailProviderDefaults[emailProvider]);
+  const hasSmtpPassword = isPresent(process.env.SMTP_PASS) || isPresent(process.env.BREVO_SMTP_KEY);
+
+  if (process.env.NODE_ENV === "production" && !hasEmailProviderDefaults) {
+    if (!isPresent(process.env.SMTP_HOST)) {
+      missingEnvVars.push("SMTP_HOST");
+    }
+
+    if (!isPresent(process.env.SMTP_PORT)) {
+      missingEnvVars.push("SMTP_PORT");
+    }
+  }
+
+  if (process.env.NODE_ENV === "production" && !hasSmtpPassword) {
+    missingEnvVars.push("SMTP_PASS or BREVO_SMTP_KEY");
+  }
 
   if (missingEnvVars.length > 0) {
     throw new Error(`Missing required environment variables: ${missingEnvVars.join(", ")}`);

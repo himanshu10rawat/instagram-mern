@@ -13,7 +13,9 @@ const formatCommentTime = (createdAt) => {
 const CommentItem = ({ comment, onReply, depth = 0 }) => {
   const author = getCommentAuthor(comment);
   const replies = Array.isArray(comment.replies) ? comment.replies : [];
-  const authorProfilePath = author.username ? `/profile/${author.username}` : "";
+  const authorProfilePath = author.username
+    ? `/profile/${author.username}`
+    : "";
   const indentClass =
     depth > 0
       ? "ml-8 border-l border-slate-200 pl-3 dark:border-slate-800"
@@ -34,7 +36,7 @@ const CommentItem = ({ comment, onReply, depth = 0 }) => {
         )}
 
         <div className="min-w-0 flex-1">
-          <p className="break-words text-sm text-slate-800 dark:text-slate-200">
+          <p className="wrap-break-word text-sm text-slate-800 dark:text-slate-200">
             {authorProfilePath ? (
               <Link
                 to={authorProfilePath}

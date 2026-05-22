@@ -28,6 +28,21 @@ cp frontend/.env.example frontend/.env
 
 3. Fill the copied `.env` files with real credentials.
 
+### Email With Brevo
+
+The backend uses Nodemailer SMTP. For Brevo transactional email, set these in `backend/.env`:
+
+```bash
+EMAIL_PROVIDER=brevo
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=your-brevo-smtp-login
+SMTP_PASS=your-brevo-smtp-key
+EMAIL_FROM="Instagram MERN <no-reply@your-verified-domain.com>"
+```
+
+You can get the SMTP login and SMTP key from Brevo's SMTP/API settings. The sender email or domain must be verified in Brevo.
+
 4. Start the backend:
 
 ```bash
