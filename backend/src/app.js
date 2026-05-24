@@ -5,6 +5,7 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import compression from "compression";
 import hpp from "hpp";
+import { corsOptions } from "./config/cors.js";
 import mongoSanitize from "mongo-sanitize";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { notFoundMiddleware } from "./middlewares/notFound.middleware.js";
@@ -36,12 +37,7 @@ import highlightRoutes from "./routes/highlight.routes.js";
 
 const app = express();
 
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true,
-  }),
-);
+app.use(cors(corsOptions));
 
 app.use(helmet());
 app.use(hpp());
