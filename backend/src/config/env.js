@@ -14,7 +14,6 @@ const productionRequiredEnvVars = [
   "AGORA_APP_ID",
   "AGORA_APP_CERTIFICATE",
   "REDIS_URL",
-  "SMTP_USER",
   "EMAIL_FROM",
 ];
 
@@ -59,20 +58,36 @@ export const validateEnv = () => {
   const missingEnvVars = requiredEnvVars.filter((name) => !isPresent(process.env[name]));
   const emailProvider = process.env.EMAIL_PROVIDER?.trim().toLowerCase();
   const hasEmailProviderDefaults = Boolean(emailProviderDefaults[emailProvider]);
+  const hasBrevoApiKey = isPresent(process.env.BREVO_API_KEY);
+  const hasSmtpUser = isPresent(process.env.SMTP_USER);
   const hasSmtpPassword = isPresent(process.env.SMTP_PASS) || isPresent(process.env.BREVO_SMTP_KEY);
 
-  if (process.env.NODE_ENV === "production" && !hasEmailProviderDefaults) {
-    if (!isPresent(process.env.SMTP_HOST)) {
-      missingEnvVars.push("SMTP_HOST");
-    }
+  if (process.env.NODE_ENV === "production") {
+    if (emailProvider === "brevo") {
+      const hasBrevoSmtpCredentials = hasSmtpUser && hasSmtpPassword;
 
-    if (!isPresent(process.env.SMTP_PORT)) {
-      missingEnvVars.push("SMTP_PORT");
-    }
-  }
+      if (!hasBrevoApiKey && !hasBrevoSmtpCredentials) {
+        missingEnvVars.push("BREVO_API_KEY or SMTP_USER with SMTP_PASS/BREVO_SMTP_KEY");
+      }
+    } else {
+      if (!hasEmailProviderDefaults) {
+        if (!isPresent(process.env.SMTP_HOST)) {
+          missingEnvVars.push("SMTP_HOST");
+        }
 
-  if (process.env.NODE_ENV === "production" && !hasSmtpPassword) {
-    missingEnvVars.push("SMTP_PASS or BREVO_SMTP_KEY");
+        if (!isPresent(process.env.SMTP_PORT)) {
+          missingEnvVars.push("SMTP_PORT");
+        }
+      }
+
+      if (!hasSmtpUser) {
+        missingEnvVars.push("SMTP_USER");
+      }
+
+      if (!hasSmtpPassword) {
+        missingEnvVars.push("SMTP_PASS or BREVO_SMTP_KEY");
+      }
+    }
   }
 
   if (missingEnvVars.length > 0) {

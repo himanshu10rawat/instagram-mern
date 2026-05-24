@@ -30,7 +30,17 @@ cp frontend/.env.example frontend/.env
 
 ### Email With Brevo
 
-The backend uses Nodemailer SMTP. For Brevo transactional email, set these in `backend/.env`:
+The backend can send Brevo transactional email through the HTTPS API or SMTP. The HTTPS API is recommended for production hosts that block outbound SMTP ports.
+
+Recommended production setup:
+
+```bash
+EMAIL_PROVIDER=brevo
+BREVO_API_KEY=your-brevo-api-key
+EMAIL_FROM="Instagram MERN <no-reply@your-verified-domain.com>"
+```
+
+SMTP fallback:
 
 ```bash
 EMAIL_PROVIDER=brevo
@@ -41,7 +51,18 @@ SMTP_PASS=your-brevo-smtp-key
 EMAIL_FROM="Instagram MERN <no-reply@your-verified-domain.com>"
 ```
 
-You can get the SMTP login and SMTP key from Brevo's SMTP/API settings. The sender email or domain must be verified in Brevo.
+You can get the API key or SMTP login/key from Brevo's SMTP/API settings. The sender email or domain must be verified in Brevo.
+
+### Production Frontend Env
+
+For Vercel or any static frontend host, set these build-time environment variables:
+
+```bash
+VITE_API_BASE_URL=https://your-api-domain.com/api/v1
+VITE_SOCKET_URL=https://your-api-domain.com
+```
+
+Never deploy the frontend with `localhost` API URLs; that makes production browsers call the visitor's own machine instead of your deployed backend.
 
 4. Start the backend:
 
