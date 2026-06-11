@@ -1,113 +1,81 @@
-# Instagram MERN
+# Instagram MERN Clone
 
-Full-stack Instagram-style MERN application with authentication, posts, stories, reels, messaging, notifications, live features, analytics, admin tools, Redis-backed realtime presence/cache, and background workers.
+A full-stack social media application inspired by Instagram, built using the MERN stack.
 
-## Project Structure
+## 🚀 Features
 
-- `backend`: Express, MongoDB, Socket.IO, BullMQ, Redis, Cloudinary, SMTP, Agora.
-- `frontend`: React, Vite, Redux Toolkit, Tailwind CSS.
+* User Authentication & Authorization
+* Create, Edit & Delete Posts
+* Like and Comment on Posts
+* User Profile Management
+* Follow & Unfollow Users
+* Image Upload Functionality
+* Responsive Design
+* Real-time User Experience
 
-## Local Setup
+## 🛠️ Tech Stack
 
-1. Install dependencies:
+### Frontend
+
+* React.js
+* Redux Toolkit
+* JavaScript
+* HTML5
+* CSS3
+
+### Backend
+
+* Node.js
+* Express.js
+* MongoDB
+* JWT Authentication
+
+## 📦 Installation
+
+### Clone Repository
 
 ```bash
-cd backend
+git clone https://github.com/himanshu10rawat/instagram-mern.git
+```
+
+### Install Dependencies
+
+```bash
 npm install
-
-cd ../frontend
-npm install
 ```
 
-2. Create environment files:
+### Start Frontend
 
 ```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-```
-
-3. Fill the copied `.env` files with real credentials.
-
-### Email With Brevo
-
-The backend can send Brevo transactional email through the HTTPS API or SMTP. The HTTPS API is recommended for production hosts that block outbound SMTP ports.
-
-Recommended production setup:
-
-```bash
-EMAIL_PROVIDER=brevo
-BREVO_API_KEY=your-brevo-api-key
-EMAIL_FROM="Instagram MERN <no-reply@your-verified-domain.com>"
-```
-
-SMTP fallback:
-
-```bash
-EMAIL_PROVIDER=brevo
-SMTP_HOST=smtp-relay.brevo.com
-SMTP_PORT=587
-SMTP_USER=your-brevo-smtp-login
-SMTP_PASS=your-brevo-smtp-key
-EMAIL_FROM="Instagram MERN <no-reply@your-verified-domain.com>"
-```
-
-You can get the API key or SMTP login/key from Brevo's SMTP/API settings. The sender email or domain must be verified in Brevo.
-
-### Production Frontend Env
-
-For Vercel or any static frontend host, set these build-time environment variables:
-
-```bash
-VITE_API_BASE_URL=https://your-api-domain.com/api/v1
-VITE_SOCKET_URL=https://your-api-domain.com
-```
-
-Never deploy the frontend with `localhost` API URLs; that makes production browsers call the visitor's own machine instead of your deployed backend.
-
-4. Start the backend:
-
-```bash
-cd backend
 npm run dev
 ```
 
-5. Start the frontend:
+### Start Backend
 
 ```bash
-cd frontend
-npm run dev
+npm run start
 ```
 
-## Production
+## 📸 Screenshots
 
-Build the frontend:
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/fdb2b0a0-3eac-45eb-9ad0-3c806971a42d" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/9efd3dcc-30d3-4dee-a29a-6fc7088500ea" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/bc2e5c06-587b-46e8-aebe-45a97cee3865" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/563e1033-c13a-4ea1-827e-dfede53dbeee" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/04774ace-30cb-4e6c-a3e5-d96d78bf8c89" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/ab8c314f-8821-445e-90f3-65eaa3a9803c" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/2c4f4bd1-cde0-45f6-82ff-7d732ce5a15d" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/186fb786-6487-4bc3-b1e4-f6f76d269937" />
 
-```bash
-cd frontend
-npm run build
-```
 
-Run the API:
 
-```bash
-cd backend
-npm start
-```
+## 📌 Future Enhancements
 
-For separate queue workers, set `WORKERS_ENABLED=false` on the API process and run:
+* Real-time Chat
+* Story Feature
+* Notifications
+* Video Upload Support
 
-```bash
-cd backend
-npm run worker
-```
+## 👨‍💻 Author
 
-## Verification
-
-```bash
-cd backend
-npm run lint
-
-cd ../frontend
-npm run lint
-npm run build
-```
+Himanshu Rawat
