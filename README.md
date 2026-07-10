@@ -37,5 +37,5 @@ Follow these steps to run PixelFeed locally on your machine:
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/your-username/pixelfeed.git](https://github.com/your-username/pixelfeed.git)
+git clone https://github.com/himanshu10rawat/PixelFeed.git
 cd pixelfeed
