@@ -94,7 +94,7 @@ const FollowListModal = ({ profileId, type, onClose }) => {
                 {user.username}
               </p>
               <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                {user.fullName || "Instagram user"}
+                {user.fullName || "pixelFeed user"}
               </p>
             </div>
           </Link>

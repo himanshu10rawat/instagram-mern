@@ -1,25 +1,62 @@
-import pkg from "agora-access-token";
+import agoraToken from "agora-token";
 
-const { RtcRole, RtcTokenBuilder } = pkg;
+const { RtcRole, RtcTokenBuilder } = agoraToken;
+
+const DEFAULT_TOKEN_EXPIRES_IN_SECONDS = 3600;
+
+const getPositiveInteger = (value, fallback) => {
+  const number = Number(value);
+
+  return Number.isInteger(number) && number > 0 ? number : fallback;
+};
+
+export const getAgoraRtcRole = (role) => {
+  const normalizedRole = String(role || "").trim().toLowerCase();
+
+  if (["audience", "subscriber", "viewer"].includes(normalizedRole)) {
+    return RtcRole.SUBSCRIBER;
+  }
+
+  return RtcRole.PUBLISHER;
+};
+
+export const getAgoraTokenExpiresInSeconds = () => {
+  return getPositiveInteger(
+    process.env.AGORA_RTC_TOKEN_EXPIRES_IN_SECONDS,
+    DEFAULT_TOKEN_EXPIRES_IN_SECONDS,
+  );
+};
 
 export const generateAgoraToken = ({
   channelName,
   uid,
-  role = RtcRole.PUBLISHER,
-  expirationTimeInSeconds = 3600,
+  role = "publisher",
+  expiresInSeconds = getAgoraTokenExpiresInSeconds(),
 }) => {
-  const currentTimestamp = Math.floor(Date.now() / 1000);
+  const tokenExpiresInSeconds = getPositiveInteger(
+    expiresInSeconds,
+    DEFAULT_TOKEN_EXPIRES_IN_SECONDS,
+  );
+  const privilegeExpiresInSeconds = tokenExpiresInSeconds;
+  const rtcRole = typeof role === "number" ? role : getAgoraRtcRole(role);
 
-  const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
+  if (!process.env.AGORA_APP_ID || !process.env.AGORA_APP_CERTIFICATE) {
+    throw new Error("AGORA_APP_ID and AGORA_APP_CERTIFICATE are required");
+  }
 
   const token = RtcTokenBuilder.buildTokenWithUid(
     process.env.AGORA_APP_ID,
     process.env.AGORA_APP_CERTIFICATE,
     channelName,
     uid,
-    role,
-    privilegeExpiredTs,
+    rtcRole,
+    tokenExpiresInSeconds,
+    privilegeExpiresInSeconds,
   );
 
-  return token;
+  return {
+    token,
+    expiresIn: tokenExpiresInSeconds,
+    expiresAt: new Date(Date.now() + tokenExpiresInSeconds * 1000).toISOString(),
+  };
 };

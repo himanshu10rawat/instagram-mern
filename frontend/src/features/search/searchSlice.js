@@ -43,7 +43,7 @@ const getRecentSearchEntry = (item) => {
       type: "user",
       value: user.username.trim(),
       label: user.username.trim(),
-      subtitle: user.fullName || "Instagram user",
+      subtitle: user.fullName || "pixelFeed user",
       user,
       historyId: item.historyId || item._id,
     };

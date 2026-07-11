@@ -1,11 +1,22 @@
 import crypto from "crypto";
 
-import redis from "../config/redis.js";
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import ApiError from "../utils/ApiError.js";
 
+const duplicateContentStore = new Map();
+
 const hashText = (text = "") => {
   return crypto.createHash("sha256").update(text.trim().toLowerCase()).digest("hex");
+};
+
+const cleanupExpiredEntries = () => {
+  const now = Date.now();
+
+  for (const [key, expiresAt] of duplicateContentStore.entries()) {
+    if (expiresAt <= now) {
+      duplicateContentStore.delete(key);
+    }
+  }
 };
 
 export const blockDuplicateContent = ({
@@ -13,7 +24,7 @@ export const blockDuplicateContent = ({
   keyPrefix = "duplicate-content",
   ttlSeconds = 120,
 }) => {
-  return async (req, _res, next) => {
+  return (req, _res, next) => {
     const value = req.body[field];
 
     if (!value) {
@@ -23,28 +34,22 @@ export const blockDuplicateContent = ({
 
     const userId = req.user?._id?.toString() || req.ip;
     const key = `${keyPrefix}:${userId}:${hashText(value)}`;
+    const expiresAt = duplicateContentStore.get(key);
 
-    let exists;
-
-    try {
-      exists = await redis.get(key);
-    } catch {
-      next();
-      return;
-    }
-
-    if (exists) {
-      throw new ApiError(
-        HTTP_STATUS.BAD_REQUEST,
-        "You are repeating the same content. Please wait before posting again.",
+    if (expiresAt && expiresAt > Date.now()) {
+      next(
+        new ApiError(
+          HTTP_STATUS.BAD_REQUEST,
+          "You are repeating the same content. Please wait before posting again.",
+        ),
       );
+      return;
     }
 
-    try {
-      await redis.set(key, "1", "EX", ttlSeconds);
-    } catch {
-      next();
-      return;
+    duplicateContentStore.set(key, Date.now() + ttlSeconds * 1000);
+
+    if (duplicateContentStore.size > 1000) {
+      cleanupExpiredEntries();
     }
 
     next();

@@ -52,7 +52,7 @@ const MobileTopBar = () => {
           to="/"
           className="text-xl font-bold tracking-tight text-slate-950 dark:text-white"
         >
-          Instagram
+          pixelFeed
         </Link>
 
         <div className="flex items-center gap-1">

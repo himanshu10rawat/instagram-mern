@@ -224,7 +224,7 @@ const CloseFriendsSettings = ({ profile }) => {
                       </p>
 
                       <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                        {user.fullName || "Instagram user"}
+                        {user.fullName || "pixelFeed user"}
                       </p>
                     </div>
 
@@ -272,7 +272,7 @@ const CloseFriendsSettings = ({ profile }) => {
                       </p>
 
                       <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                        {friend.fullName || "Instagram user"}
+                        {friend.fullName || "pixelFeed user"}
                       </p>
                     </div>
 

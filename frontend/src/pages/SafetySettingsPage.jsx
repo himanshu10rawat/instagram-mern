@@ -25,7 +25,7 @@ const SafetyUserRow = ({ user, actionLabel, onAction, actionLoading }) => {
           </p>
 
           <p className="truncate text-xs text-slate-500">
-            {user.fullName || user.bio || "Instagram user"}
+            {user.fullName || user.bio || "pixelFeed user"}
           </p>
         </div>
       </div>

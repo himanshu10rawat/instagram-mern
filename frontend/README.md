@@ -1,6 +1,6 @@
-# Instagram MERN Frontend
+# pixelFeed Frontend
 
-React + Vite client for the Instagram MERN project.
+React + Vite client for the pixelFeed project.
 
 ## Scripts
 

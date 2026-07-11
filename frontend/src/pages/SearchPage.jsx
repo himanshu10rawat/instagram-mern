@@ -91,7 +91,7 @@ const SearchPage = () => {
       type: "user",
       value: user.username,
       label: user.username,
-      subtitle: user.fullName || "Instagram user",
+      subtitle: user.fullName || "pixelFeed user",
       user,
     };
 
@@ -136,7 +136,7 @@ const SearchPage = () => {
             <input
               value={localQuery}
               onChange={(event) => setLocalQuery(event.target.value)}
-              placeholder="Search Instagram"
+              placeholder="Search pixelFeed"
               className="min-w-0 flex-1 bg-transparent text-base text-slate-950 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500 sm:text-sm"
             />
 
@@ -205,7 +205,7 @@ const SearchPage = () => {
                             {item.label || item.user.username}
                           </span>
                           <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
-                            {item.subtitle || "Instagram user"}
+                            {item.subtitle || "pixelFeed user"}
                           </span>
                         </span>
                       </Link>

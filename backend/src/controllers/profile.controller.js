@@ -262,7 +262,7 @@ export const updateAvatar = asyncHandler(async (req, res) => {
     await cloudinary.uploader.destroy(currentUser.avatar.publicId);
   }
 
-  const uploadedImage = await uploadToCloudinary(req.file.buffer, "instagram/avatar");
+  const uploadedImage = await uploadToCloudinary(req.file.buffer, "pixelfeed/avatar");
 
   currentUser.avatar = {
     url: uploadedImage.secure_url,

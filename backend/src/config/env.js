@@ -13,7 +13,6 @@ const productionRequiredEnvVars = [
   "CLOUDINARY_API_SECRET",
   "AGORA_APP_ID",
   "AGORA_APP_CERTIFICATE",
-  "REDIS_URL",
   "EMAIL_FROM",
 ];
 

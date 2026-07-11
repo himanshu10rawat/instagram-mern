@@ -39,8 +39,8 @@ const Sidebar = () => {
   return (
     <aside className="fixed left-0 top-0 z-40 hidden h-screen w-20 flex-col border-r border-slate-200 bg-white px-3 py-5 dark:border-slate-800 dark:bg-slate-950 md:flex xl:w-64 xl:px-4 xl:py-6">
       <h1 className="shrink-0 px-2 text-center text-xl font-bold tracking-tight text-slate-950 dark:text-white xl:px-3 xl:text-left xl:text-2xl">
-        <span className="xl:hidden">IG</span>
-        <span className="hidden xl:inline">Instagram</span>
+        <span className="xl:hidden">PF</span>
+        <span className="hidden xl:inline">pixelFeed</span>
       </h1>
 
       <nav className="mt-6 min-h-0 flex-1 space-y-1 overflow-y-auto pr-0.5 xl:mt-8 xl:pr-1">

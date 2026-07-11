@@ -145,7 +145,7 @@ const ShareModal = ({ open, onClose, sharePayload }) => {
                     </p>
 
                     <p className="truncate text-xs text-slate-500">
-                      {isDeletedUser ? "Account deleted" : user?.fullName || "Instagram user"}
+                      {isDeletedUser ? "Account deleted" : user?.fullName || "pixelFeed user"}
                     </p>
                   </div>
                 </div>

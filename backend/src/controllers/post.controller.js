@@ -56,7 +56,7 @@ export const createPost = asyncHandler(async (req, res) => {
 
   const uploadedMedia = await Promise.all(
     req.files.map(async (file) => {
-      const uploadedFile = await uploadToCloudinary(file.buffer, "instagram/posts", "auto");
+      const uploadedFile = await uploadToCloudinary(file.buffer, "pixelfeed/posts", "auto");
 
       await addMediaJob({
         type: getMediaType(file.mimetype),

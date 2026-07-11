@@ -248,7 +248,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
   let messageType = "text";
 
   if (req.file) {
-    const uploadedMedia = await uploadToCloudinary(req.file.buffer, "instagram/messages", "auto");
+    const uploadedMedia = await uploadToCloudinary(req.file.buffer, "pixelfeed/messages", "auto");
 
     const mediaType = getMediaType(req.file.mimetype);
 

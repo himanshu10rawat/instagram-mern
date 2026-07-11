@@ -138,7 +138,7 @@ export const createStory = asyncHandler(async (req, res) => {
     );
   }
 
-  const uploadedMedia = await uploadToCloudinary(req.file.buffer, "instagram/stories", "auto");
+  const uploadedMedia = await uploadToCloudinary(req.file.buffer, "pixelfeed/stories", "auto");
 
   await addMediaJob({
     type: getMediaType(req.file.mimetype),

@@ -5,8 +5,8 @@ import speakeasy from "speakeasy";
 
 export const generateTwoFactorSecret = ({ username }) => {
   return speakeasy.generateSecret({
-    name: `Instagram Clone (${username})`,
-    issuer: "Instagram Clone",
+    name: `pixelFeed (${username})`,
+    issuer: "pixelFeed",
     length: 20,
   });
 };

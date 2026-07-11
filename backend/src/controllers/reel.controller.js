@@ -35,7 +35,7 @@ export const createReel = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Only video file is allowed for reel");
   }
 
-  const uploadedVideo = await uploadToCloudinary(req.file.buffer, "instagram/reels", "video");
+  const uploadedVideo = await uploadToCloudinary(req.file.buffer, "pixelfeed/reels", "video");
 
   await addMediaJob({
     type: "video",

@@ -1,0 +1,16 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pfGradient" x1="8" y1="56" x2="56" y2="8" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" />
+      <stop offset="55%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="14" fill="#0F172A" />
+  <rect x="9" y="9" width="46" height="46" rx="12" fill="url(#pfGradient)" />
+  <rect x="17" y="17" width="10" height="10" rx="2" fill="#ECFEFF" />
+  <rect x="30" y="17" width="17" height="10" rx="2" fill="#A3E635" />
+  <rect x="17" y="30" width="30" height="17" rx="4" fill="#F8FAFC" />
+  <path d="M29 34.5L39 38.5L29 42.5V34.5Z" fill="#0F172A" />
+</svg>

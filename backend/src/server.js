@@ -13,10 +13,6 @@ const startServer = async () => {
     validateEnv();
     await connectDB();
 
-    if (process.env.WORKERS_ENABLED !== "false") {
-      await import("./workers/index.js");
-    }
-
     const server = http.createServer(app);
 
     initSocket(server);
